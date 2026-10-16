@@ -1,0 +1,12 @@
+ts	phase	decision	why	evidence	result
+2026-10-16T16:40:00Z	start	Scaffold SPEC 001 on branch dd/scaffold	Boyd asked for this branch and a draft pull request	docs/SPEC-001.md	open
+2026-10-16T16:40:00Z	runtime	Run TypeScript with node --experimental-strip-types	SPEC says pick strip-types or tsc and add no other build tool	package.json	open
+2026-10-16T16:40:00Z	state	A new pick rests in intake until the scouting report is recorded	A1 prints status intake, and there is no event between create and the report	src/core/reducer.ts	open
+2026-10-16T16:40:00Z	state	scouting is an alias of intake inside next()	The glossary names both, and only intake is event-sourced before the report	src/core/next.ts	open
+2026-10-16T16:40:00Z	state	Exactly one finished candidate skips Film Room and Trade	ARCHITECTURE 3.3 calls that a walkover; zero finished fails the pick	src/core/next.ts	open
+2026-10-16T16:40:00Z	score	Second judge pass when the top two weighted means are within 10 percent	A8; weighted mean is sum(score*weight)/sum(weight)	src/core/score.ts	open
+2026-10-16T16:40:00Z	score	Disagreeing passes use fewer risks, then fewer commands, then lower cand id	Arena tie rule needs a deterministic smaller-and-cleaner pick	src/core/score.ts	open
+2026-10-16T16:40:00Z	store	Same event type plus key is a no-op	A revival that fires twice must not double-launch	src/store/eventlog.ts	open
+2026-10-16T16:40:00Z	policy	The War Room appends inbox rows and never writes pick events	A11; dd intake --from-inbox is the only pick writer	src/server/http.ts	open
+2026-10-16T16:40:00Z	budget	Hard caps live in code: N 5, one relaunch, two fix loops, two judge passes	A10; config cannot raise them	src/core/budget.ts	open
+2026-10-16T17:12:00Z	verify	npm test, tsc --noEmit, and selftest are green; War Room New pick and the drafted pick page were driven in a browser	SPEC 001 VERIFY steps	/opt/cursor/artifacts/war-room/big-board.png	tests green
