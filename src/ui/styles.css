@@ -164,6 +164,7 @@ ol.events li { margin: 6px 0; }
   border-color: var(--gold);
 }
 
+.score-chips .chip { text-transform: none; letter-spacing: 0; }
 .chip[data-close="true"] { background: #4a3a20; color: var(--amber); }
 .chip[data-swap="flipped"] { background: #4a2822; color: var(--red); }
 .chip[data-swap="consistent"], .chip[data-swap="single"] { background: #24532a; color: var(--green); }
