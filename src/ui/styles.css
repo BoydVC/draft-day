@@ -143,6 +143,8 @@ ol.events li { margin: 6px 0; }
 
 .score-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
 
+.score-tools .chip { text-transform: none; letter-spacing: 0; }
+
 .scorecard { overflow-x: auto; }
 
 .scorecard th, .scorecard td {
