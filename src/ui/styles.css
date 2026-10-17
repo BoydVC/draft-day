@@ -353,6 +353,16 @@ ol.events li { margin: 6px 0; }
     border-bottom: 1px solid var(--line);
   }
 
+  #big-board td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    font: 600 11px/1.2 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
   .panel,
   .card,
   .score-col,
