@@ -21,11 +21,11 @@ import {
   parseTargetRepo,
   parseVerdict,
   reduce,
-  timeline,
   type Config,
   type DraftEvent,
   type EventType,
   type Pick,
+  timeline,
   type Timeline,
 } from "../core/index.ts";
 import { allocatePickId, commitPick, loadPicks, readEvents } from "../store/eventlog.ts";
@@ -363,6 +363,13 @@ function humanPick(pick: Pick): string {
   return `${pick.id}  ${pick.status}  runs ${pick.runs}  ${pick.idea}`;
 }
 
+async function show(paths: Paths, pickId: string | undefined): Promise<number> {
+  if (!pickId) throw new Exit("show needs a pick id");
+  const { pick, events } = await loadOne(paths, pickId);
+  emit(paths, { ...pick, eventCount: events.length }, humanPick(pick));
+  return 0;
+}
+
 function timelineText(view: Timeline): string {
   const header = `${view.pickId}  ${view.status}  ${view.elapsedText}  ${view.counts.total} runs`;
   const lines = view.entries.map((entry) => `+${entry.sinceStartText}  ${entry.stage}  ${entry.title}`);
@@ -378,13 +385,6 @@ async function timelineCommand(paths: Paths, pickId: string | undefined): Promis
   const view = timeline(events, now);
   if (!view) throw new Exit(`unknown pick ${pickId}`);
   emit(paths, view, timelineText(view));
-  return 0;
-}
-
-async function show(paths: Paths, pickId: string | undefined): Promise<number> {
-  if (!pickId) throw new Exit("show needs a pick id");
-  const { pick, events } = await loadOne(paths, pickId);
-  emit(paths, { ...pick, eventCount: events.length }, humanPick(pick));
   return 0;
 }
 

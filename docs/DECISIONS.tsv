@@ -14,3 +14,4 @@ ts	phase	decision	why	evidence	result
 2026-10-17T14:20:00Z	timeline	Status and stage come from reduce() and stageLabel at each event's effective time	The 48h go timeout and every other status stay in the reducer	src/core/timeline.ts	open
 2026-10-17T14:20:00Z	timeline	Clock skew clamps each event to the previous effective time	A bad or earlier ts cannot make a duration negative	src/core/timeline.ts	open
 2026-10-17T14:20:00Z	timeline	Agent links require a bc- uuid; every other agent id stays text	Selftest ids are not Cursor agent pages, and payload text is not a URL	src/core/timeline.ts	open
+2026-10-17T14:40:00Z	timeline	The timeline command is placed after show() and its import after the type imports	Pick 1 edits the import beside reduce and the body of show(); this spot merges beside those edits	src/cli/dd.ts	open
