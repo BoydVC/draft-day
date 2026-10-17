@@ -1,0 +1,237 @@
+.dd-replay {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dd-replay-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+}
+
+.dd-replay-nav a,
+.dd-caption a,
+.status-line a[href$="/replay"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 8px 12px;
+}
+
+.dd-film,
+.dd-chapter-block,
+.dd-replay-lists {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dd-film h2,
+.dd-chapter-block h2,
+.dd-replay-lists h2 {
+  margin: 0 0 8px;
+}
+
+.dd-idea {
+  margin: 0 0 8px;
+}
+
+.dd-film-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+  margin: 0 0 8px;
+}
+
+.dd-clock,
+.dd-stage,
+.dd-counter,
+.dd-caption {
+  margin: 0;
+}
+
+.dd-clock {
+  font: 700 32px/1.1 ui-sans-serif, system-ui, sans-serif;
+  color: var(--gold);
+}
+
+.dd-stage {
+  font: 600 18px/1.2 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-counter {
+  color: var(--muted);
+  font: 600 16px/1.3 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-caption {
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.dd-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  max-width: 100%;
+}
+
+.dd-controls input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: 44px;
+  min-height: 44px;
+  margin: 0;
+  font-size: 16px;
+  accent-color: var(--gold);
+  background: linear-gradient(var(--line), var(--line)) center / 100% 8px no-repeat;
+}
+
+.dd-controls input[type="range"]::-webkit-slider-runnable-track {
+  height: 8px;
+  background: var(--line);
+  border-radius: 999px;
+}
+
+.dd-controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  margin-top: -10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gold);
+}
+
+.dd-controls input[type="range"]::-moz-range-track {
+  height: 8px;
+  background: var(--line);
+  border: 0;
+  border-radius: 999px;
+}
+
+.dd-controls input[type="range"]::-moz-range-thumb {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--gold);
+}
+
+.dd-controls button,
+.dd-chapters button {
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  min-width: 48px;
+  min-height: 48px;
+  max-width: 100%;
+  padding: 12px 14px;
+  font-size: 16px;
+  white-space: normal;
+  text-align: start;
+}
+
+.dd-controls button:disabled {
+  opacity: 0.45;
+}
+
+.dd-chapters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.dd-chapters button {
+  background: var(--card);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.dd-chapters button[aria-current="true"] {
+  background: var(--gold);
+  color: var(--on-accent);
+  border-color: var(--gold);
+}
+
+.dd-chapters button[data-beat="yes"] {
+  box-shadow: inset 0 0 0 3px var(--red);
+}
+
+.dd-replay-lists {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dd-runs-so-far,
+.dd-stages-so-far,
+.dd-play {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dd-runs-so-far li,
+.dd-stages-so-far li,
+.dd-play .dd-event {
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.dd-stages-so-far li[aria-current="step"] {
+  color: var(--gold);
+  font-weight: 700;
+}
+
+.dd-play .dd-event[aria-current="true"] {
+  background: var(--glow);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.dd-replay .dd-event a {
+  display: inline;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  line-height: inherit;
+}
+
+@media (min-width: 960px) {
+  .dd-replay {
+    display: grid;
+    grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.8fr);
+    column-gap: 20px;
+    row-gap: 12px;
+    align-items: start;
+  }
+
+  .dd-replay-nav,
+  .dd-film,
+  .dd-controls,
+  .dd-chapter-block {
+    grid-column: 1;
+  }
+
+  .dd-replay-lists {
+    grid-column: 2;
+    grid-row: 1 / span 4;
+  }
+}
