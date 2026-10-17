@@ -8,7 +8,9 @@ import {
   candidateBrief,
   eventKey,
   followUpEvents,
+  filmRoom,
   judgeBrief,
+  labelMapForPass,
   lookupTransition,
   nextAction,
   reduce,
@@ -73,9 +75,10 @@ function scouted(approval: "ask" | "auto" = "ask"): DraftEvent[] {
 }
 
 function finishedReport(cand: string, risks: string[] = []) {
+  const sha = cand === "c1" ? "a".repeat(40) : cand === "c2" ? "b".repeat(40) : "c".repeat(40);
   return {
     branch: `dd/p-20261016-01/${cand}`,
-    headSha: "a".repeat(40),
+    headSha: sha,
     summary: cand,
     commands: [{ cmd: "npm test", exit: 0 }],
     tests: { added: 1, passing: true },
@@ -84,12 +87,18 @@ function finishedReport(cand: string, risks: string[] = []) {
   };
 }
 
-function card(label: "A" | "B" | "C", score: number, gate: "pass" | "fail" = "pass"): Scorecard {
+function card(
+  label: "A" | "B" | "C",
+  score: number,
+  gate: "pass" | "fail" = "pass",
+  diff?: { files: number; added: number; removed: number },
+): Scorecard {
   return {
     label,
     gates: { build: gate, tests: gate, journey: gate },
     crossTests: { passed: 1, total: 1 },
     scores: report.rubric.map((criterion) => ({ criterionId: criterion.id, score: score as 0 | 1 | 2 | 3 | 4, evidence: `${label} ${criterion.id}` })),
+    ...(diff ? { diff } : {}),
   };
 }
 
@@ -205,11 +214,41 @@ test("A8 a close score asks for a reversed pass and sets swapConsistent", () => 
   ]);
   const again = nextAction(first);
   assert.equal(again.kind, "launch_judge");
-  if (again.kind === "launch_judge") assert.match(again.brief, /Pass 2/);
+  if (again.kind === "launch_judge") {
+    assert.match(again.brief, /Pass 2/);
+    const pass2 = labelMapForPass(first.id, ["c1", "c2"], 2);
+    const sha = (cand: string) => (cand === "c1" ? "a".repeat(40) : "b".repeat(40));
+    let cursor = -1;
+    for (const cand of pass2.order) {
+      const at = again.brief.indexOf(sha(cand));
+      assert.ok(at > cursor, cand);
+      cursor = at;
+    }
+  }
 
   const blocked = nextAction(first, { limits: { maxJudgePasses: 1 } });
   assert.equal(blocked.kind, "none");
   if (blocked.kind === "none") assert.equal(blocked.reason, "budget");
+
+  const far = settle([
+    ...scouted(),
+    ev("candidate_finished", { cand: "c1", attempt: 1, report: finishedReport("c1") }),
+    ev("candidate_finished", { cand: "c2", attempt: 1, report: finishedReport("c2", ["risk"]) }),
+    ev("candidate_dropped", { cand: "c3" }),
+    ev("judge_launched", { pass: 1, order: ["c1", "c2"], labels: { A: "c1", B: "c2" } }),
+    ev("judgement_recorded", {
+      pass: 1,
+      order: ["A", "B"],
+      cards: [card("A", 4), card("B", 1)],
+      base: "A",
+      runnerUps: ["B"],
+      trades: [],
+      swapConsistent: null,
+    }),
+  ]);
+  const graft = nextAction(far);
+  assert.equal(graft.kind, "launch_graft");
+  if (graft.kind === "launch_graft") assert.equal(graft.startingRef, "dd/p-20261016-01/c1");
 
   const agreed = settle([
     ...scouted(),
@@ -223,19 +262,27 @@ test("A8 a close score asks for a reversed pass and sets swapConsistent", () => 
   ]);
   assert.equal(agreed.judgement?.swapConsistent, true);
   assert.equal(agreed.judgement?.base, "c1");
+  assert.equal(filmRoom(agreed)?.swap, "consistent");
 
+  const big = { files: 4, added: 220, removed: 80 };
+  const small = { files: 9, added: 30, removed: 20 };
   const split = settle([
     ...scouted(),
     ev("candidate_finished", { cand: "c1", attempt: 1, report: finishedReport("c1", []) }),
     ev("candidate_finished", { cand: "c2", attempt: 1, report: finishedReport("c2", ["risk"]) }),
     ev("candidate_dropped", { cand: "c3" }),
     ev("judge_launched", { pass: 1, order: ["c1", "c2"], labels: { A: "c1", B: "c2" } }),
-    ev("judgement_recorded", { pass: 1, order: ["A", "B"], cards: [card("A", 4), card("B", 4)], base: "c1", runnerUps: ["c2"], trades: [], swapConsistent: null }),
+    ev("judgement_recorded", { pass: 1, order: ["A", "B"], cards: [card("A", 4, "pass", big), card("B", 3, "pass", small)], base: "A", runnerUps: ["B"], trades: [], swapConsistent: null }),
     ev("judge_launched", { pass: 2, order: ["c2", "c1"], labels: { A: "c2", B: "c1" }, reversed: true }),
-    ev("judgement_recorded", { pass: 2, order: ["A", "B"], cards: [card("A", 4), card("B", 4)], base: "c2", runnerUps: ["c1"], trades: [], swapConsistent: null }),
+    ev("judgement_recorded", { pass: 2, order: ["A", "B"], cards: [card("A", 4, "pass", small), card("B", 2, "pass", big)], base: "B", runnerUps: ["A"], trades: [], swapConsistent: null }),
   ]);
+  const splitRoom = filmRoom(split);
   assert.equal(split.judgement?.swapConsistent, false);
-  assert.equal(split.judgement?.base, "c1");
+  assert.equal(split.judgement?.base, "c2");
+  assert.equal(splitRoom?.swap, "flipped");
+  assert.equal(splitRoom?.tieRule?.deciding, "diff_lines");
+  assert.equal(splitRoom?.tieRule?.winner, "c2");
+  assert.deepEqual(splitRoom?.tieRule?.between, ["c1", "c2"]);
 });
 
 test("A9 two fix replies then a failed draft stays unconfirmed", () => {

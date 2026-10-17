@@ -5,7 +5,7 @@ The pick page is one pick: scouting report, candidate cards, scorecard, trades, 
 ## Sub-features
 
 - `pick-open` opens a seeded pick from its Big Board link.
-- `pick-scorecard` shows rubric rows and label columns for a judged pick.
+- `pick-scorecard` shows one column per finished candidate (`cand · label`), gates, cross-tests, weighted scores, rank, and diff. The happy pick's chip reads `Single pass`.
 - `pick-physical` shows the verdict and a draft PR link when the physical recorded one.
 - `pick-back` returns to the Big Board.
 
@@ -23,7 +23,7 @@ Preconditions:
 
 - **Open the pick.** Choose the link whose text is that pick id. The URL hash is `#/picks/<id>` and the page heading is that id. A status chip reads `drafted`.
 - **Read the report.** The region named `Scouting report` contains the restatement about the War Room showing each pick.
-- **Read the scorecard.** The region named `Scorecard` has a table with a Criterion column and label columns. The base line names a candidate.
+- **Read the scorecard.** The region named `Scorecard` has a chip `Single pass`, a column headed with the base candidate and `BASE`, and rows `Gates`, `Cross-tests`, `Weighted`, `Rank`, and `Diff`.
 - **Read the physical.** The region named `Physical` contains `VERIFIED` and a `Draft PR` link.
 - **Return.** Choose `Big Board`. The hash is empty or `#/` and the table is back.
 - **Proof.** Screenshot `/opt/cursor/artifacts/war-room/pick-page.png` while the scorecard and the drafted chip are visible.

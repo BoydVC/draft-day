@@ -1,5 +1,5 @@
 import { isCandId } from "../core/ids.ts";
-import { LABELS, type Criterion, type Label, type Scorecard } from "../core/types.ts";
+import { LABELS, type Criterion, type DiffStat, type Label, type Scorecard } from "../core/types.ts";
 
 export type ParseResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
@@ -74,7 +74,22 @@ export function parseCandidateReport(text: string): ParseResult<{
 
 const GATES = new Set(["pass", "fail", "n/a"]);
 
-function parseCard(value: unknown): Scorecard | string {
+export interface JudgementCheck {
+  labels: Partial<Record<string, string>>;
+  rubricIds: readonly string[];
+}
+
+function parseDiff(value: unknown): DiffStat | undefined | string {
+  if (value === undefined) return undefined;
+  if (!isRecord(value)) return "diff must be {files, added, removed}";
+  for (const key of ["files", "added", "removed"] as const) {
+    const item = value[key];
+    if (typeof item !== "number" || !Number.isInteger(item) || item < 0) return "diff must be {files, added, removed}";
+  }
+  return { files: value.files as number, added: value.added as number, removed: value.removed as number };
+}
+
+function parseCard(value: unknown, ctx?: JudgementCheck): Scorecard | string {
   if (!isRecord(value)) return "scorecard must be an object";
   if (!(LABELS as readonly string[]).includes(String(value.label))) return "scorecard label must be A-E";
   const gates = isRecord(value.gates) ? value.gates : null;
@@ -87,6 +102,7 @@ function parseCard(value: unknown): Scorecard | string {
   }
   if (!Array.isArray(value.scores)) return "scorecard scores are required";
   const scores: Scorecard["scores"] = [];
+  const seen = new Set<string>();
   for (const score of value.scores) {
     if (!isRecord(score) || typeof score.criterionId !== "string" || typeof score.evidence !== "string") {
       return "each score needs criterionId and evidence";
@@ -94,14 +110,33 @@ function parseCard(value: unknown): Scorecard | string {
     if (typeof score.score !== "number" || !Number.isInteger(score.score) || score.score < 0 || score.score > 4) {
       return "scores must be integers 0 through 4";
     }
+    if (!score.evidence.trim()) return `empty evidence for criterionId ${score.criterionId} on label ${String(value.label)}`;
+    if (ctx && !ctx.rubricIds.includes(score.criterionId)) {
+      return `unknown criterionId ${score.criterionId} on label ${String(value.label)}`;
+    }
+    if (seen.has(score.criterionId)) return `duplicate criterionId ${score.criterionId} on label ${String(value.label)}`;
+    seen.add(score.criterionId);
     scores.push({ criterionId: score.criterionId, score: score.score as 0 | 1 | 2 | 3 | 4, evidence: score.evidence });
   }
+  if (ctx) {
+    for (const id of ctx.rubricIds) {
+      if (!seen.has(id)) return `missing criterionId ${id} on label ${String(value.label)}`;
+    }
+  }
+  const diff = parseDiff(value.diff);
+  if (typeof diff === "string") return diff;
   return {
     label: value.label as Label,
     gates: { build: gates.build as Scorecard["gates"]["build"], tests: gates.tests as Scorecard["gates"]["tests"], journey: gates.journey as Scorecard["gates"]["journey"] },
     crossTests: { passed: cross.passed as number, total: cross.total as number },
     scores,
+    ...(diff ? { diff } : {}),
   };
+}
+
+function candIdProblem(field: string, value: string): string | null {
+  if (isCandId(value)) return `${field} ${value} is a candidate id; use a label`;
+  return null;
 }
 
 export interface ParsedJudgement {
@@ -116,20 +151,34 @@ export interface ParsedJudgement {
   note?: string;
 }
 
-export function parseJudgement(text: string): ParseResult<ParsedJudgement> {
+export function parseJudgement(text: string, ctx?: JudgementCheck): ParseResult<ParsedJudgement> {
   const extracted = extractFence(text, "dd-judgement");
   if (!extracted.ok) return extracted;
   const value = extracted.value;
   if (!isRecord(value)) return fail("dd-judgement must be an object");
   if (!Array.isArray(value.passes) || value.passes.length < 1) return fail("dd-judgement.passes is required");
-  const pass = value.passes[value.passes.length - 1];
+  if (value.passes.length !== 1) return fail("dd-judgement has more than one pass");
+  const pass = value.passes[0];
   if (!isRecord(pass) || !Array.isArray(pass.cards) || !Array.isArray(pass.order)) return fail("judgement pass needs order and cards");
   const cards: Scorecard[] = [];
   for (const card of pass.cards) {
-    const parsed = parseCard(card);
+    const parsed = parseCard(card, ctx);
     if (typeof parsed === "string") return fail(parsed);
     cards.push(parsed);
   }
+  if (ctx) {
+    const seen = new Set<string>();
+    for (const card of cards) {
+      if (!ctx.labels[card.label]) return fail(`label ${card.label} is not in this pass's label map`);
+      if (seen.has(card.label)) return fail(`duplicate card for label ${card.label}`);
+      seen.add(card.label);
+    }
+    for (const label of Object.keys(ctx.labels)) {
+      if (!seen.has(label)) return fail(`missing card for label ${label}`);
+    }
+  }
+  const totals = new Set(cards.map((card) => card.crossTests.total));
+  if (totals.size > 1) return fail(`crossTests.total differs across cards (${cards.map((card) => card.crossTests.total).join(", ")})`);
   const tradesIn = Array.isArray(value.trades) ? value.trades : null;
   if (!tradesIn || typeof value.base !== "string" || !Array.isArray(value.runnerUps)) {
     return fail("dd-judgement needs base, runnerUps, and trades");
@@ -145,6 +194,16 @@ export function parseJudgement(text: string): ParseResult<ParsedJudgement> {
     trades.push({ from: trade.from, what: trade.what, pointers, why: trade.why });
   }
   const runnerUps = value.runnerUps.map(String);
+  const baseProblem = candIdProblem("base", value.base);
+  if (baseProblem) return fail(baseProblem);
+  for (const runner of runnerUps) {
+    const problem = candIdProblem("runnerUps", runner);
+    if (problem) return fail(problem);
+  }
+  for (const trade of trades) {
+    const problem = candIdProblem("trades.from", trade.from);
+    if (problem) return fail(problem);
+  }
   return {
     ok: true,
     value: {

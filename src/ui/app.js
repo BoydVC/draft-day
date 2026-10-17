@@ -115,6 +115,89 @@ function section(title, children) {
   return el("section", { class: "panel", "aria-label": title }, [el("h2", {}, [title]), ...children]);
 }
 
+let openPass = { pickId: "", pass: 0 };
+
+function chosenPass(room, pickId) {
+  if (!room || !room.passes || room.passes.length === 0) return null;
+  if (openPass.pickId === pickId) {
+    const found = room.passes.find((pass) => pass.pass === openPass.pass);
+    if (found) return found;
+  }
+  return room.passes[room.passes.length - 1];
+}
+
+function diffText(diff) {
+  if (!diff) return "—";
+  return `+${diff.added} −${diff.removed}, ${diff.files} files`;
+}
+
+function crossText(cross) {
+  const pct = cross.rate === null ? "" : ` (${Math.round(cross.rate * 100)}%)`;
+  return `${cross.passed}/${cross.total}${pct}`;
+}
+
+function scorecardSection(pick) {
+  const room = pick.filmRoom;
+  const view = room ? chosenPass(room, pick.id) : null;
+  if (!room || !view) return [el("p", { class: "empty" }, ["Film Room has not scored this pick."])];
+  const chips = [
+    el("span", { class: "chip", "data-swap": room.swap }, [room.swap === "single" ? "Single pass" : `Swap: ${room.swap}`]),
+  ];
+  if (room.closeCall) chips.push(el("span", { class: "chip", "data-close": "true" }, ["Close call"]));
+  const toggles = room.passes.length >= 2
+    ? el("div", { class: "pass-toggle", role: "group", "aria-label": "Judge passes" }, room.passes.map((pass) => {
+        const button = el("button", { type: "button", "aria-pressed": pass.pass === view.pass ? "true" : "false" }, [`Pass ${pass.pass}`]);
+        button.addEventListener("click", () => {
+          openPass = { pickId: pick.id, pass: pass.pass };
+          void render();
+        });
+        return button;
+      }))
+    : null;
+  const head = [el("th", { scope: "col" }, [" "])].concat(view.lines.map((line) => el("th", {
+    scope: "col",
+    class: line.cand === room.base ? "base" : "",
+  }, [
+    el("span", { class: "cand-label" }, [`${line.cand} · ${line.label}${line.cand === room.base ? " BASE" : ""}`]),
+    el("span", { class: "angle" }, [line.angle || ""]),
+  ])));
+  const row = (name, values) => el("tr", {}, [el("th", { scope: "row" }, [name]), ...values.map((value, index) => {
+    const line = view.lines[index];
+    return el("td", { class: line && line.cand === room.base ? "base" : "" }, [value]);
+  })]);
+  const body = [
+    row("Gates", view.lines.map((line) => `${line.gates.build} ${line.gates.tests} ${line.gates.journey}`)),
+    row("Cross-tests", view.lines.map((line) => crossText(line.cross))),
+  ];
+  const cells = view.lines[0]?.cells || [];
+  for (const criterion of cells) {
+    body.push(row(`${criterion.name} ×${criterion.weight}`, view.lines.map((line) => {
+      const cell = line.cells.find((item) => item.criterionId === criterion.criterionId);
+      if (!cell || cell.score === null) return "—";
+      return `${cell.score} ${cell.evidence}`;
+    })));
+  }
+  body.push(row("Weighted", view.lines.map((line) => line.weighted.toFixed(2))));
+  body.push(row("Rank", view.lines.map((line) => (line.rank === null ? "—" : String(line.rank)))));
+  body.push(row("Diff", view.lines.map((line) => diffText(line.diff))));
+  const notes = [el("p", { class: "reason" }, [room.reason])];
+  if (room.judgeDisagrees || room.secondRead === "disagree") {
+    const offending = room.passes.find((pass) => pass.judgeBase && pass.judgeBase !== pass.winner) || view;
+    notes.push(el("p", { class: "judge-note" }, [`Judge picked ${offending.judgeBase}; the board picked ${room.base}.`]));
+    notes.push(el("p", { class: "second-read" }, [room.note || ""]));
+  }
+  return [
+    el("div", { class: "score-head" }, toggles ? [el("div", { class: "score-chips" }, chips), toggles] : [el("div", { class: "score-chips" }, chips)]),
+    ...notes,
+    el("div", { class: "scorecard-scroll" }, [
+      el("table", { class: "scorecard" }, [
+        el("thead", {}, [el("tr", {}, head)]),
+        el("tbody", {}, body),
+      ]),
+    ]),
+  ];
+}
+
 function pickView(pick) {
   const report = pick.report;
   const acceptance = report
@@ -129,19 +212,6 @@ function pickView(pick) {
         el("p", { class: "meta" }, [cand.branch || "No branch yet"]),
       ]))
     : [el("p", { class: "empty" }, ["No candidates yet."])];
-
-  const scoreHead = ["Criterion"].concat((pick.judgement?.passes.at(-1)?.cards || []).map((card) => card.label));
-  const rubric = report?.rubric || [];
-  const cardsByLabel = new Map((pick.judgement?.passes.at(-1)?.cards || []).map((card) => [card.label, card]));
-  const scoreRows = rubric.map((criterion) => {
-    const cells = [el("td", {}, [criterion.name])];
-    for (const label of scoreHead.slice(1)) {
-      const card = cardsByLabel.get(label);
-      const score = card?.scores.find((item) => item.criterionId === criterion.id);
-      cells.push(el("td", {}, [score ? `${score.score} — ${score.evidence}` : "—"]));
-    }
-    return el("tr", {}, cells);
-  });
 
   const trades = pick.judgement?.trades?.length
     ? pick.judgement.trades.map((trade) => el("li", {}, [`${trade.from}: ${trade.what} (${trade.pointers.join(", ")}) — ${trade.why}`]))
@@ -167,10 +237,6 @@ function pickView(pick) {
     ? pick.events.map((event) => el("li", {}, [`${event.ts} ${event.summary}`]))
     : [el("li", { class: "empty" }, ["No events."])];
 
-  const swap = pick.judgement
-    ? `Base ${pick.judgement.base}. swapConsistent ${String(pick.judgement.swapConsistent)}.`
-    : "No scorecard yet.";
-
   return el("article", { "data-pick-id": pick.id }, [
     el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]),
     el("div", { class: "status-line" }, [
@@ -185,15 +251,7 @@ function pickView(pick) {
       el("ul", {}, acceptance),
     ]),
     section("Candidates", [el("div", { class: "cards" }, cards)]),
-    section("Scorecard", [
-      el("p", {}, [swap]),
-      scoreRows.length
-        ? el("table", {}, [
-            el("thead", {}, [el("tr", {}, scoreHead.map((name) => el("th", {}, [name])))]),
-            el("tbody", {}, scoreRows),
-          ])
-        : el("p", { class: "empty" }, ["Film Room has not scored this pick."]),
-    ]),
+    section("Scorecard", scorecardSection(pick)),
     section("Trades", [el("ul", {}, trades)]),
     section("Physical", physicalBits),
     section("Decision log", [el("ol", { class: "events" }, log)]),

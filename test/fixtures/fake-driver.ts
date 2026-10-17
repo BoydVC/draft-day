@@ -1,10 +1,19 @@
 import {
   labelMapForPass,
+  passesHardGates,
+  weightedScore,
   type CandId,
   type NextAction,
   type Pick,
   type ScoutingReport,
 } from "../../src/core/index.ts";
+
+export interface FilmCard {
+  scores: [number, number, number];
+  gates?: { build: "pass" | "fail" | "n/a"; tests: "pass" | "fail" | "n/a"; journey: "pass" | "fail" | "n/a" };
+  cross?: { passed: number; total: number };
+  diff?: { files: number; added: number; removed: number };
+}
 
 export interface Scenario {
   name: string;
@@ -13,6 +22,7 @@ export interface Scenario {
   n: number;
   results: Record<string, Array<"error" | "finish">>;
   scores: Record<string, number>;
+  film?: Record<string, FilmCard>[];
   verdicts: Array<"NOT_VERIFIED" | "INCONCLUSIVE" | "VERIFIED">;
   expect: "drafted" | "failed";
   policy?: boolean;
@@ -98,6 +108,41 @@ export const WALK: Scenario = {
   expect: "drafted",
 };
 
+const CLOSE_DIFF = {
+  c1: { files: 4, added: 80, removed: 40 },
+  c2: { files: 6, added: 200, removed: 71 },
+  c3: { files: 8, added: 10, removed: 10 },
+};
+const CLOSE_CROSS = {
+  c1: { passed: 11, total: 12 },
+  c2: { passed: 10, total: 12 },
+  c3: { passed: 9, total: 12 },
+};
+const JOURNEY_FAIL = { build: "pass" as const, tests: "pass" as const, journey: "fail" as const };
+
+export const CLOSE: Scenario = {
+  name: "close",
+  idea: "Show a close call on the Film Room scorecard",
+  approval: "ask",
+  n: 3,
+  results: { c1: ["finish"], c2: ["finish"], c3: ["finish"] },
+  scores: {},
+  film: [
+    {
+      c1: { scores: [4, 3, 3], cross: CLOSE_CROSS.c1, diff: CLOSE_DIFF.c1 },
+      c2: { scores: [3, 4, 3], cross: CLOSE_CROSS.c2, diff: CLOSE_DIFF.c2 },
+      c3: { scores: [4, 4, 4], gates: JOURNEY_FAIL, cross: CLOSE_CROSS.c3, diff: CLOSE_DIFF.c3 },
+    },
+    {
+      c1: { scores: [4, 4, 4], cross: CLOSE_CROSS.c1, diff: CLOSE_DIFF.c1 },
+      c2: { scores: [3, 3, 2], cross: CLOSE_CROSS.c2, diff: CLOSE_DIFF.c2 },
+      c3: { scores: [4, 4, 4], gates: JOURNEY_FAIL, cross: CLOSE_CROSS.c3, diff: CLOSE_DIFF.c3 },
+    },
+  ],
+  verdicts: ["VERIFIED"],
+  expect: "drafted",
+};
+
 export const POLICY: Scenario = {
   name: "policy",
   idea: "Plan a debt collection workflow",
@@ -113,27 +158,54 @@ export const POLICY: Scenario = {
 function judgement(pick: Pick, pass: number, scenario: Scenario) {
   const finished = pick.candidates.filter((cand) => cand.status === "finished").map((cand) => cand.id);
   const map = labelMapForPass(pick.id, finished, pass);
-  const labelOf = (cand: string) => Object.entries(map.labels).find((entry) => entry[1] === cand)?.[0] ?? "A";
-  const ranked = [...finished].sort((a, b) => (scenario.scores[b] ?? 0) - (scenario.scores[a] ?? 0));
-  const base = ranked[0] ?? "c1";
-  const cards = finished.map((cand) => ({
-    label: labelOf(cand),
-    gates: { build: "pass", tests: "pass", journey: "pass" },
-    crossTests: { passed: 2, total: 2 },
-    scores: (pick.report?.rubric ?? []).map((criterion) => ({
-      criterionId: criterion.id,
-      score: scenario.scores[cand] ?? 1,
-      evidence: `${cand} ${criterion.id} output`,
-    })),
-  }));
-  const loser = ranked[ranked.length - 1];
-  const trades = loser && loser !== base
-    ? [{ from: labelOf(loser), what: "Keep the smaller status helper", pointers: ["src/ui/app.js"], why: "One place to render a chip" }]
+  const labelOf = (cand: string): "A" | "B" | "C" | "D" | "E" => {
+    const found = Object.entries(map.labels).find((entry) => entry[1] === cand)?.[0];
+    if (found === "A" || found === "B" || found === "C" || found === "D" || found === "E") return found;
+    return "A";
+  };
+  const plan = scenario.film?.[pass - 1];
+  const rubric = pick.report?.rubric ?? [];
+  const cards = finished.map((cand) => {
+    const spec = plan?.[cand];
+    const scores = spec
+      ? rubric.map((criterion, index) => ({
+          criterionId: criterion.id,
+          score: (spec.scores[index] ?? 0) as 0 | 1 | 2 | 3 | 4,
+          evidence: `${criterion.name} held up in the run`,
+        }))
+      : rubric.map((criterion) => ({
+          criterionId: criterion.id,
+          score: (scenario.scores[cand] ?? 1) as 0 | 1 | 2 | 3 | 4,
+          evidence: `${criterion.name} held up in the run`,
+        }));
+    return {
+      label: labelOf(cand),
+      gates: spec?.gates ?? { build: "pass" as const, tests: "pass" as const, journey: "pass" as const },
+      crossTests: spec?.cross ?? { passed: 2, total: 2 },
+      ...(spec?.diff ? { diff: spec.diff } : {}),
+      scores,
+    };
+  });
+  const rubricRef = pick.report?.rubric ?? [];
+  let best: { cand: string; score: number } | null = null;
+  for (const card of cards) {
+    if (!passesHardGates(card)) continue;
+    const cand = map.labels[card.label as "A"];
+    if (!cand) continue;
+    const score = weightedScore(card, rubricRef);
+    if (!best || score > best.score + 1e-9 || (Math.abs(score - best.score) < 1e-9 && cand < best.cand)) {
+      best = { cand, score };
+    }
+  }
+  const base = best?.cand ?? finished[0] ?? "c1";
+  const runner = finished.filter((cand) => cand !== base && cards.some((card) => map.labels[card.label as "A"] === cand && passesHardGates(card)));
+  const trades = runner[0]
+    ? [{ from: labelOf(runner[0]), what: "Keep the smaller status helper", pointers: ["src/ui/app.js"], why: "One place to render a chip" }]
     : [];
   return {
     passes: [{ order: finished.map((cand) => labelOf(cand)), cards }],
     base: labelOf(base),
-    runnerUps: ranked.slice(1).map((cand) => labelOf(cand)),
+    runnerUps: runner.map((cand) => labelOf(cand)),
     trades,
     swapConsistent: null,
   };

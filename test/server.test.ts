@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { promisify } from "node:util";
+import { filmRoom, type Pick } from "../src/core/index.ts";
 import { startServer } from "../src/server/http.ts";
 
 const exec = promisify(execFile);
@@ -16,7 +17,7 @@ async function dd(args: string[]) {
     cwd: root,
     env: { ...process.env, NODE_NO_WARNINGS: "1" },
   });
-  return JSON.parse(stdout) as { pickId: string; status: string };
+  return JSON.parse(stdout) as { pickId: string; status: string; picks?: { pickId: string }[]; filmRoom?: unknown; eventCount?: number; labels?: Record<string, string> };
 }
 
 function text(res: IncomingMessage): Promise<string> {
@@ -139,5 +140,120 @@ test("A11 default bind is 127.0.0.1:4420", async () => {
   } finally {
     child.kill("SIGTERM");
     await new Promise((resolve) => child.once("exit", resolve));
+  }
+});
+
+test("F13 pick API carries filmRoom", async () => {
+  const data = await mkdtemp(join(tmpdir(), "dd-f13-"));
+  const seeded = await exec(process.execPath, ["--experimental-strip-types", "src/cli/dd.ts", "selftest", "--keep", "--data", data], {
+    cwd: root,
+    env: { ...process.env, NODE_NO_WARNINGS: "1" },
+  });
+  assert.match(seeded.stdout, /close /);
+  const board = await dd(["board", "--data", data, "--json"]);
+  const server = await startServer({
+    host: "127.0.0.1",
+    port: 0,
+    dataDir: data,
+    configPath: join(root, "draftday.config.json"),
+    targetsPath: join(root, "targets.json"),
+  });
+  try {
+    assert.ok((board.picks?.length ?? 0) >= 4);
+    for (const row of board.picks ?? []) {
+      const shown = await dd(["show", row.pickId, "--data", data, "--json"]);
+      const { filmRoom: reported, eventCount, ...pick } = shown;
+      void eventCount;
+      assert.deepEqual(reported, filmRoom(pick as unknown as Pick));
+      const api = await fetch(`${server.url}/api/picks/${row.pickId}`).then((res) => res.json()) as { filmRoom: unknown };
+      assert.deepEqual(api.filmRoom, filmRoom(pick as unknown as Pick));
+    }
+  } finally {
+    await server.close();
+  }
+});
+
+test("F15 judge disagreement is on the pick API", async () => {
+  const data = await mkdtemp(join(tmpdir(), "dd-f15-"));
+  const { writeFile } = await import("node:fs/promises");
+  const created = await dd(["intake", "--idea", "Show who the board picked", "--source", "chat", "--target", "BoydVC/draft-day", "--n", "2", "--data", data, "--json"]) as { pickId: string };
+  const report = {
+    restatement: "You want the board to keep its own base.",
+    acceptance: [{ id: "show", when: "the pick is open", shall: "show the scorecard" }],
+    rubric: [
+      { id: "clarity", name: "Clarity", weight: 3, howToGrade: "read it" },
+      { id: "safety", name: "Safety", weight: 2, howToGrade: "check it" },
+      { id: "tests", name: "Tests", weight: 1, howToGrade: "run it" },
+    ],
+    designSketch: "A scorecard.",
+    verifyPlan: ["Open the pick."],
+    safetyFact: "The judge's base cannot change the base.",
+    angles: ["simplest thing that passes", "extensibility first"],
+    forbidden: ["Do not merge."],
+  };
+  const reportPath = join(data, "report.json");
+  await writeFile(reportPath, JSON.stringify(report));
+  await dd(["record", created.pickId, "scouting_report_written", "--file", reportPath, "--data", data, "--json"]);
+  await dd(["record", created.pickId, "scouting_approved", "--data", data, "--json"]);
+  for (const [cand, sha] of [["c1", "a".repeat(40)], ["c2", "b".repeat(40)]] as const) {
+    const path = join(data, `${cand}.json`);
+    await writeFile(path, JSON.stringify({
+      branch: `dd/${created.pickId}/${cand}`,
+      headSha: sha,
+      summary: cand,
+      commands: [{ cmd: "npm test", exit: 0 }],
+      tests: { added: 1, passing: true },
+      screenshots: [],
+      risks: [],
+    }));
+    await dd(["record", created.pickId, "candidate_finished", "--cand", cand, "--file", path, "--data", data, "--json"]);
+  }
+  await dd(["record", created.pickId, "judge_launched", "--data", data, "--json"]);
+  const shown = await dd(["show", created.pickId, "--data", data, "--json"]);
+  const labelOf = (cand: string) => Object.entries(shown.labels ?? {}).find((entry) => entry[1] === cand)?.[0];
+  const winner = labelOf("c1");
+  const loser = labelOf("c2");
+  assert.ok(winner && loser);
+  const judgement = {
+    passes: [{
+      order: [winner, loser],
+      cards: [winner, loser].map((label) => ({
+        label,
+        gates: { build: "pass", tests: "pass", journey: "pass" },
+        crossTests: { passed: 4, total: 4 },
+        scores: ["clarity", "safety", "tests"].map((criterionId) => ({
+          criterionId,
+          score: label === winner ? 4 : 1,
+          evidence: `${label} ${criterionId} is on the board`,
+        })),
+      })),
+    }],
+    base: loser,
+    runnerUps: [winner],
+    trades: [],
+    swapConsistent: null,
+  };
+  const judgementPath = join(data, "judgement.json");
+  await writeFile(judgementPath, JSON.stringify(judgement));
+  await dd(["record", created.pickId, "judgement_recorded", "--file", judgementPath, "--second-read", "disagree", "--note", "The label pick loses on the rubric.", "--data", data, "--json"]);
+  const server = await startServer({
+    host: "127.0.0.1",
+    port: 0,
+    dataDir: data,
+    configPath: join(root, "draftday.config.json"),
+    targetsPath: join(root, "targets.json"),
+  });
+  try {
+    const api = await fetch(`${server.url}/api/picks/${created.pickId}`).then((res) => res.json()) as {
+      filmRoom: { base: string; judgeDisagrees: boolean; secondRead: string; note: string; passes: { judgeBase: string; winner: string }[] };
+    };
+    assert.equal(api.filmRoom.judgeDisagrees, true);
+    assert.equal(api.filmRoom.secondRead, "disagree");
+    assert.equal(api.filmRoom.note, "The label pick loses on the rubric.");
+    assert.equal(api.filmRoom.base, "c1");
+    assert.equal(api.filmRoom.passes[0]?.judgeBase, "c2");
+    assert.notEqual(api.filmRoom.base, api.filmRoom.passes[0]?.judgeBase);
+  } finally {
+    await server.close();
   }
 });

@@ -109,9 +109,13 @@ export function candidateBrief(pick: Pick, cand: Candidate, relaunch: boolean): 
 export function judgeBrief(pick: Pick, pass: number): string {
   const finished = pick.candidates.filter((cand) => cand.status === "finished").map((cand) => cand.id);
   const map = labelMapForPass(pick.id, finished, pass);
-  const labels = Object.entries(map.labels)
-    .filter((entry) => entry[1])
-    .map(([label]) => `- Label ${label}`)
+  const labelOf = new Map(Object.entries(map.labels).flatMap(([label, cand]) => (cand ? [[cand, label] as const] : [])));
+  const labels = map.order
+    .map((candId) => {
+      const label = labelOf.get(candId) ?? "";
+      const sha = pick.candidates.find((cand) => cand.id === candId)?.report?.headSha ?? "";
+      return `- Label ${label} ${sha}`;
+    })
     .join("\n");
   return fill("judge", {
     goal: `Score pick ${pick.id} in the Film Room. Pass ${pass}${pass === 2 ? " reverses the previous order." : "."}`,

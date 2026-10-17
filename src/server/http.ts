@@ -5,6 +5,7 @@ import { dirname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   assertCandidateCount,
+  filmRoom,
   isPickId,
   loadConfig,
   loadTargets,
@@ -100,6 +101,7 @@ function pickView(pick: Pick, events: DraftEvent[]) {
     report: pick.report ?? null,
     candidates: pick.candidates,
     judgement: pick.judgement ?? null,
+    filmRoom: filmRoom(pick),
     labels: pick.labels,
     graft: pick.graft ?? null,
     physical: pick.physical ?? null,

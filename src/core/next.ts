@@ -1,7 +1,8 @@
 import { budgetBlock, DEFAULT_LIMITS, effectiveCap, type Limits } from "./budget.ts";
 import { branchFor } from "./ids.ts";
 import { screenIdea } from "./policy.ts";
-import { passesHardGates, topTwoWithinTen } from "./score.ts";
+import { filmRoom } from "./filmroom.ts";
+import { passesHardGates } from "./score.ts";
 import {
   candidateBrief,
   fixBrief,
@@ -16,7 +17,6 @@ import {
   type Config,
   type NextAction,
   type Pick,
-  type Scorecard,
 } from "./types.ts";
 
 export interface NextContext {
@@ -27,15 +27,6 @@ export interface NextContext {
 
 function none(pick: Pick, reason: string): NextAction {
   return { kind: "none", pickId: pick.id, reason };
-}
-
-function cardMap(pick: Pick): Map<CandId, Scorecard> {
-  const map = new Map<CandId, Scorecard>();
-  for (const card of pick.latestScorecards) {
-    const cand = pick.labels[card.label];
-    if (cand) map.set(cand, card);
-  }
-  return map;
 }
 
 function announce(pick: Pick): NextAction {
@@ -142,11 +133,12 @@ function judging(pick: Pick, config: Config, limits: Limits): NextAction {
     return none(pick, "reframe");
   }
   if (passes === 0) return launchJudge(pick);
-  if (passes < limits.maxJudgePasses && topTwoWithinTen(cardMap(pick), pick.report?.rubric ?? [])) {
+  const close = filmRoom(pick)?.closeCall === true;
+  if (passes < limits.maxJudgePasses && close) {
     if (budgetBlock("judge", pick, config, limits)) return none(pick, "budget");
     return launchJudge(pick);
   }
-  if (passes < 2 && topTwoWithinTen(cardMap(pick), pick.report?.rubric ?? []) && pick.judgeLaunches >= limits.maxJudgePasses) {
+  if (passes < 2 && close && pick.judgeLaunches >= limits.maxJudgePasses) {
     return none(pick, "budget");
   }
   return launchGraft(pick);

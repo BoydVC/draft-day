@@ -70,11 +70,18 @@ export interface Candidate {
 
 export type Gate = "pass" | "fail" | "n/a";
 
+export interface DiffStat {
+  files: number;
+  added: number;
+  removed: number;
+}
+
 export interface Scorecard {
   label: Label;
   gates: { build: Gate; tests: Gate; journey: Gate };
   crossTests: { passed: number; total: number };
   scores: { criterionId: string; score: 0 | 1 | 2 | 3 | 4; evidence: string }[];
+  diff?: DiffStat;
 }
 
 export interface Trade {
@@ -85,9 +92,63 @@ export interface Trade {
 }
 
 export interface JudgePass {
+  pass: number;
+  reversed: boolean;
   order: string[];
   judgeModel?: string;
   cards: Scorecard[];
+  labels: Partial<Record<Label, CandId>>;
+  judgeBase?: CandId;
+  proposedTrades?: { from: string; what: string; pointers: string[]; why: string }[];
+}
+
+export type SwapState = "single" | "consistent" | "flipped";
+export type TieKey = "diff_lines" | "files" | "risks" | "cand_id";
+
+export interface CriterionCell {
+  criterionId: string;
+  name: string;
+  weight: 1 | 2 | 3;
+  score: 0 | 1 | 2 | 3 | 4 | null;
+  evidence: string;
+}
+
+export interface CandidateLine {
+  cand: CandId;
+  label: Label;
+  angle: string;
+  gates: Scorecard["gates"];
+  gatePass: boolean;
+  cross: { passed: number; total: number; rate: number | null };
+  contender: boolean;
+  cells: CriterionCell[];
+  weighted: number;
+  diff?: DiffStat;
+  risks: number;
+  rank: number | null;
+}
+
+export interface PassView {
+  pass: number;
+  reversed: boolean;
+  lines: CandidateLine[];
+  winner: CandId | null;
+  judgeBase: CandId | null;
+}
+
+export interface FilmRoom {
+  passes: PassView[];
+  base: CandId | null;
+  runnerUps: CandId[];
+  closeCall: boolean;
+  swap: SwapState;
+  tieRule: { between: [CandId, CandId]; winner: CandId; deciding: TieKey } | null;
+  unstable: string[];
+  judgeDisagrees: boolean;
+  secondRead: "agree" | "disagree" | null;
+  note: string;
+  reason: string;
+  trades: Trade[];
 }
 
 export interface Judgement {

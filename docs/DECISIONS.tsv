@@ -5,8 +5,13 @@ ts	phase	decision	why	evidence	result
 2026-10-16T16:40:00Z	state	scouting is an alias of intake inside next()	The glossary names both, and only intake is event-sourced before the report	src/core/next.ts	open
 2026-10-16T16:40:00Z	state	Exactly one finished candidate skips Film Room and Trade	ARCHITECTURE 3.3 calls that a walkover; zero finished fails the pick	src/core/next.ts	open
 2026-10-16T16:40:00Z	score	Second judge pass when the top two weighted means are within 10 percent	A8; weighted mean is sum(score*weight)/sum(weight)	src/core/score.ts	open
-2026-10-16T16:40:00Z	score	Disagreeing passes use fewer risks, then fewer commands, then lower cand id	Arena tie rule needs a deterministic smaller-and-cleaner pick	src/core/score.ts	open
+2026-10-16T16:40:00Z	score	Disagreeing passes use fewer risks, then fewer commands, then lower cand id	Arena tie rule needs a deterministic smaller-and-cleaner pick	src/core/score.ts	replaced
 2026-10-16T16:40:00Z	store	Same event type plus key is a no-op	A revival that fires twice must not double-launch	src/store/eventlog.ts	open
 2026-10-16T16:40:00Z	policy	The War Room appends inbox rows and never writes pick events	A11; dd intake --from-inbox is the only pick writer	src/server/http.ts	open
 2026-10-16T16:40:00Z	budget	Hard caps live in code: N 5, one relaunch, two fix loops, two judge passes	A10; config cannot raise them	src/core/budget.ts	open
 2026-10-16T17:12:00Z	verify	npm test, tsc --noEmit, and selftest are green; War Room New pick and the drafted pick page were driven in a browser	SPEC 001 VERIFY steps	/opt/cursor/artifacts/war-room/big-board.png	tests green
+2026-10-17T14:00:00Z	film-room	Film Room selection is an ordered ranker registry and the tie rule is an ordered key registry in src/core/filmroom.ts	One table decides the base; reason text and the deciding key are generated from those registries	src/core/filmroom.ts	open
+2026-10-17T14:00:00Z	film-room	The judge's own base is advisory; swap and the base come from the box-computed pass winners	SPEC 002 F5 F7 F8 replace the judge-declared base shortcut	src/core/filmroom.ts	open
+2026-10-17T14:00:00Z	film-room	Ties break on fewer diff lines, then fewer files, then fewer risks, then lower cand id; a missing diff loses	Replaces the risks-then-commands rule from SPEC 001	src/core/filmroom.ts	open
+2026-10-17T14:00:00Z	film-room	Weighted score divides by every rubric weight and counts a missing criterion as 0	A skipped criterion must not outscore a bad answer; unknown ids and duplicates add no weight	src/core/score.ts	open
+2026-10-17T14:00:00Z	film-room	tieRule.between is the pass 1 winner, then the pass 2 winner	The board sentence names the passes in that order	src/core/filmroom.ts	open

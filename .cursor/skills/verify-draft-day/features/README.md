@@ -6,7 +6,7 @@ This directory is the maintained source for verifying the War Room. Read the ind
 
 - Launch with `.cursor/skills/verify-draft-day/helpers/control.sh launch`.
 - The server is on `127.0.0.1` at the port in `/tmp/dd-verify/state.env`.
-- `dd selftest --keep` has seeded a drafted pick, a policy refusal, and a walkover in that data directory.
+- `dd selftest --keep` has seeded a happy drafted pick, a policy refusal, a walkover, and a close Film Room pick in that data directory.
 - Run `control.sh doctor` and require a live PID, a 200 from `/api/board`, and five doctor lines.
 - Never drive a War Room this run did not start. Two runs need two ports and two data directories.
 
@@ -30,4 +30,5 @@ This directory is the maintained source for verifying the War Room. Read the ind
 - [Big Board](./big-board.md) lists seeded picks with status chips and run counts.
 - [New pick](./new-pick.md) queues an idea from the form into the inbox and onto the board.
 - [Pick page](./pick-page.md) shows the scouting report, candidates, scorecard, trades, physical, and decision log.
+- [Film Room](./film-room.md) shows the scorecard: base, swap, close call, pass toggles, and a live judgement.
 - [Live updates](./live-updates.md) refresh the open board or pick page when an event or inbox row lands.
