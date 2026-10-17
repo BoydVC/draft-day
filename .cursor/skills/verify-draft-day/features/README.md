@@ -30,6 +30,7 @@ This directory is the maintained source for verifying the War Room. Read the ind
 - [Big Board](./big-board.md) lists seeded picks with status chips and run counts.
 - [Decision log](./timeline.md) reads each pick as stages, runs, and one plain sentence per event.
 - [New pick](./new-pick.md) queues an idea from the form into the inbox and onto the board.
+- [Phone](./phone.md) checks the War Room at phone width in light and dark: no sideways scroll, 44 px targets, readable chips, and a New pick form that keeps its status.
 - [Pick page](./pick-page.md) shows the scouting report, candidates, scorecard, trades, physical, and decision log.
 - [Film Room](./film-room.md) shows the Scorecard: base, swap, pass toggle, and the reason sentence.
 - [Locker Room](./lessons.md) groups repeated findings into lessons and proposes one check for each.

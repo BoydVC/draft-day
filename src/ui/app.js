@@ -36,10 +36,59 @@ function route() {
   return { name: "board" };
 }
 
+const INTAKE_TABLE = [
+  { key: "inflight", phase: "sending", keepIdea: true, sentence: "Sending…" },
+  { key: "ok", phase: "done", keepIdea: false, sentence: "Queued in the inbox. Nothing launches from this page." },
+  { key: "policy", phase: "done", keepIdea: false, sentence: "Queued in the inbox. Policy will refuse it ({policy})." },
+  { key: "error", phase: "failed", keepIdea: true, sentence: "{error}" },
+  { key: "unreachable", phase: "failed", keepIdea: true, sentence: "Could not reach the War Room. Check the Big Board before trying again." },
+];
+
+let intake = { phase: "idle", idea: "", sentence: "" };
+
+function intakeOutcome(answer, thrown) {
+  let key = "unreachable";
+  if (answer && answer.inflight) key = "inflight";
+  else if (thrown || !answer || answer.badjson) key = "unreachable";
+  else if (typeof answer.error === "string") key = "error";
+  else if (typeof answer.policy === "string" && answer.policy) key = "policy";
+  else key = "ok";
+  const row = INTAKE_TABLE.find((item) => item.key === key);
+  let sentence = row.sentence;
+  if (key === "policy") sentence = row.sentence.split("{policy}").join(answer.policy);
+  if (key === "error") sentence = answer.error;
+  return { phase: row.phase, sentence, keepIdea: row.keepIdea };
+}
+
+function paintIntake(form) {
+  const root = form || document.getElementById("new-pick");
+  if (!root) return;
+  const idea = root.querySelector("#idea");
+  const status = root.querySelector('[role="status"]');
+  const add = root.querySelector('button[type="submit"]');
+  if (idea && intake.phase !== "idle") idea.value = intake.idea;
+  if (status) status.textContent = intake.sentence;
+  if (add) add.disabled = intake.phase === "sending";
+}
+
+function applyIntake(next, idea) {
+  intake = { phase: next.phase, idea: next.keepIdea ? idea : "", sentence: next.sentence };
+  paintIntake();
+}
+
 function formPanel() {
   const idea = el("textarea", { id: "idea", name: "idea", required: "true" });
-  const target = el("input", { id: "target", name: "target", value: "BoydVC/draft-day", required: "true" });
-  const n = el("input", { id: "n", name: "n", type: "number", min: "1", max: "5", value: "3" });
+  const target = el("input", {
+    id: "target",
+    name: "target",
+    value: "BoydVC/draft-day",
+    required: "true",
+    autocapitalize: "none",
+    autocorrect: "off",
+    spellcheck: "false",
+    autocomplete: "off",
+  });
+  const n = el("input", { id: "n", name: "n", type: "number", min: "1", max: "5", value: "3", inputmode: "numeric" });
   const status = el("p", { id: "form-status", role: "status" });
   const form = el("form", { id: "new-pick", "aria-label": "New pick" }, [
     el("div", {}, [el("label", { for: "idea" }, ["Idea"]), idea]),
@@ -52,36 +101,54 @@ function formPanel() {
   ]);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    void submitPick(idea, target, n, status);
+    void submitPick();
   });
+  paintIntake(form);
   return el("section", { class: "panel", "aria-label": "New pick" }, [
     el("h2", {}, ["New pick"]),
     form,
   ]);
 }
 
-async function submitPick(idea, target, n, status) {
-  status.textContent = "Sending…";
-  const response = await fetch("/api/intake", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      idea: idea.value,
-      target: target.value,
-      n: Number(n.value),
-      source: "warroom",
-    }),
-  });
-  const body = await response.json();
-  if (!response.ok) {
-    status.textContent = body.error || "Could not queue the pick";
-    return;
+async function submitPick() {
+  if (intake.phase === "sending") return;
+  const ideaNode = document.getElementById("idea");
+  const targetNode = document.getElementById("target");
+  const countNode = document.getElementById("n");
+  if (!ideaNode || !targetNode || !countNode) return;
+  const idea = ideaNode.value;
+  const target = targetNode.value;
+  const n = Number(countNode.value);
+  applyIntake(intakeOutcome({ inflight: true }, null), idea);
+  let answer = null;
+  let thrown = null;
+  try {
+    const response = await fetch("/api/intake", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ idea, target, n, source: "warroom" }),
+    });
+    let body = null;
+    try {
+      body = await response.json();
+    } catch (error) {
+      thrown = error;
+    }
+    if (!thrown) {
+      if (!response.ok) answer = body && typeof body.error === "string" ? { error: body.error } : { badjson: true };
+      else answer = { policy: body && typeof body.policy === "string" ? body.policy : null };
+    }
+  } catch (error) {
+    thrown = error;
   }
-  idea.value = "";
-  status.textContent = body.policy
-    ? `Queued in the inbox. Policy will refuse it (${body.policy}).`
-    : "Queued in the inbox.";
-  await render({ soft: true });
+  const next = intakeOutcome(answer, thrown);
+  applyIntake(next, idea);
+  if (next.phase !== "done") return;
+  try {
+    await render({ soft: true });
+  } catch {
+    paintIntake();
+  }
 }
 
 function boardTable(data) {
