@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import {
+  timeline,
   assertCandidateCount,
   branchFor,
   eventKey,
@@ -21,7 +22,6 @@ import {
   parseTargetRepo,
   parseVerdict,
   reduce,
-  timeline,
   type Config,
   type DraftEvent,
   type EventType,
