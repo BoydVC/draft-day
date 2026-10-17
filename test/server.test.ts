@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, writeFile } from "node:fs/promises";
 import { request, type IncomingMessage } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { promisify } from "node:util";
+import { filmRoom, type CandId, type Pick } from "../src/core/index.ts";
 import { startServer } from "../src/server/http.ts";
 
 const exec = promisify(execFile);
@@ -139,5 +140,119 @@ test("A11 default bind is 127.0.0.1:4420", async () => {
   } finally {
     child.kill("SIGTERM");
     await new Promise((resolve) => child.once("exit", resolve));
+  }
+});
+
+const serverRubric = [
+  { id: "clarity", name: "Clarity", weight: 3, howToGrade: "read" },
+  { id: "safety", name: "Safety", weight: 2, howToGrade: "prove" },
+  { id: "tests", name: "Tests", weight: 1, howToGrade: "run" },
+];
+
+async function judgedPick(data: string, judgeBase: "winner" | "loser", note?: string) {
+  const created = await dd(["intake", "--idea", "Serve the scorecard", "--source", "chat", "--target", "BoydVC/draft-day", "--n", "2", "--approval", "ask", "--data", data, "--json"]) as { pickId: string };
+  const id = created.pickId;
+  const reportPath = join(data, "report.json");
+  await writeFile(reportPath, JSON.stringify({
+    restatement: "You want the scorecard on the pick page.",
+    acceptance: [{ id: "show", when: "the pick is open", shall: "show the scorecard" }],
+    rubric: serverRubric,
+    designSketch: "A scorecard.",
+    verifyPlan: ["Open the pick."],
+    safetyFact: "A gate failure cannot become the base.",
+    angles: ["simplest thing that passes", "extensibility first"],
+    forbidden: ["Do not merge."],
+  }));
+  await dd(["record", id, "scouting_report_written", "--file", reportPath, "--data", data]);
+  await dd(["record", id, "scouting_approved", "--data", data]);
+  for (const cand of ["c1", "c2"] as const) {
+    await dd(["record", id, "candidate_launched", "--cand", cand, "--data", data]);
+    const path = join(data, `${cand}.json`);
+    await writeFile(path, JSON.stringify({
+      branch: `dd/${id}/${cand}`,
+      headSha: cand === "c1" ? "c".repeat(40) : "d".repeat(40),
+      summary: cand,
+      commands: [{ cmd: "npm test", exit: 0 }],
+      tests: { added: 1, passing: true },
+      screenshots: [],
+      risks: [],
+    }));
+    await dd(["record", id, "candidate_finished", "--cand", cand, "--file", path, "--data", data]);
+  }
+  await dd(["record", id, "judge_launched", "--data", data]);
+  const shown = await dd(["show", id, "--json", "--data", data]) as unknown as { labels: Record<string, CandId> };
+  const labelOf = (cand: CandId) => Object.entries(shown.labels).find((entry) => entry[1] === cand)?.[0] ?? "A";
+  const winner = labelOf("c1");
+  const loser = labelOf("c2");
+  const body = {
+    passes: [{
+      order: [winner, loser],
+      cards: [winner, loser].map((label) => ({
+        label,
+        gates: { build: "pass", tests: "pass", journey: "pass" },
+        crossTests: { passed: 4, total: 4 },
+        scores: serverRubric.map((criterion) => ({
+          criterionId: criterion.id,
+          score: label === winner ? 4 : 1,
+          evidence: `${criterion.name} holds`,
+        })),
+      })),
+    }],
+    base: judgeBase === "winner" ? winner : loser,
+    runnerUps: [judgeBase === "winner" ? loser : winner],
+    trades: [],
+    swapConsistent: null,
+  };
+  const judgementPath = join(data, "judgement.json");
+  await writeFile(judgementPath, JSON.stringify(body));
+  const args = ["record", id, "judgement_recorded", "--file", judgementPath, "--data", data];
+  if (note) args.push("--second-read", "disagree", "--note", note);
+  await dd(args);
+  return id;
+}
+
+test("F13 pick API carries filmRoom", async () => {
+  const data = await mkdtemp(join(tmpdir(), "dd-f13-"));
+  const id = await judgedPick(data, "winner");
+  const shown = await dd(["show", id, "--json", "--data", data]) as unknown as Pick & { filmRoom: ReturnType<typeof filmRoom> };
+  assert.ok(shown.filmRoom);
+  assert.deepEqual(shown.filmRoom, JSON.parse(JSON.stringify(filmRoom(shown))));
+  const server = await startServer({
+    host: "127.0.0.1",
+    port: 0,
+    dataDir: data,
+    configPath: join(root, "draftday.config.json"),
+    targetsPath: join(root, "targets.json"),
+  });
+  try {
+    const body = await fetch(`${server.url}/api/picks/${id}`).then((res) => res.json()) as { filmRoom: unknown };
+    assert.deepEqual(body.filmRoom, shown.filmRoom);
+  } finally {
+    await server.close();
+  }
+});
+
+test("F15 judge disagreement is on the pick API", async () => {
+  const data = await mkdtemp(join(tmpdir(), "dd-f15-"));
+  const note = "The judge's label loses to the board.";
+  const id = await judgedPick(data, "loser", note);
+  const server = await startServer({
+    host: "127.0.0.1",
+    port: 0,
+    dataDir: data,
+    configPath: join(root, "draftday.config.json"),
+    targetsPath: join(root, "targets.json"),
+  });
+  try {
+    const body = await fetch(`${server.url}/api/picks/${id}`).then((res) => res.json()) as {
+      filmRoom: { judgeDisagrees: boolean; secondRead: string; note: string; base: string; passes: { judgeBase: string | null; winner: string | null }[] };
+    };
+    assert.equal(body.filmRoom.judgeDisagrees, true);
+    assert.equal(body.filmRoom.secondRead, "disagree");
+    assert.equal(body.filmRoom.note, note);
+    assert.notEqual(body.filmRoom.base, body.filmRoom.passes[0]?.judgeBase);
+    assert.equal(body.filmRoom.passes[0]?.winner, body.filmRoom.base);
+  } finally {
+    await server.close();
   }
 });

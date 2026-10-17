@@ -5,11 +5,20 @@ ts	phase	decision	why	evidence	result
 2026-10-16T16:40:00Z	state	scouting is an alias of intake inside next()	The glossary names both, and only intake is event-sourced before the report	src/core/next.ts	open
 2026-10-16T16:40:00Z	state	Exactly one finished candidate skips Film Room and Trade	ARCHITECTURE 3.3 calls that a walkover; zero finished fails the pick	src/core/next.ts	open
 2026-10-16T16:40:00Z	score	Second judge pass when the top two weighted means are within 10 percent	A8; weighted mean is sum(score*weight)/sum(weight)	src/core/score.ts	open
-2026-10-16T16:40:00Z	score	Disagreeing passes use fewer risks, then fewer commands, then lower cand id	Arena tie rule needs a deterministic smaller-and-cleaner pick	src/core/score.ts	open
+2026-10-16T16:40:00Z	score	Disagreeing passes use fewer risks, then fewer commands, then lower cand id	Arena tie rule needs a deterministic smaller-and-cleaner pick	src/core/score.ts	replaced
+2026-10-17T14:10:00Z	score	Tie rule is fewer diff lines, then fewer files, then fewer reported risks, then the lower cand id; a missing diff loses to a present one	SPEC 002 F9 replaces the old risks-then-commands order; the judge's own base is advisory	src/core/filmroom.ts	open
+2026-10-17T14:10:00Z	score	A missing rubric score counts as 0 and the denominator is every rubric weight	A card that skips a criterion must not outscore one that answers it badly	src/core/score.ts	open
+2026-10-17T14:10:00Z	score	Cross-pass tie uses each winner's diff from the latest pass that scored them	The later measurement is the one the board can still see	src/core/filmroom.ts	open
+2026-10-17T14:10:00Z	ui	The Scorecard leads the pick page; at 390px the columns stack and the base column leads	Boyd reads who won from his phone before the scouting report	src/ui/app.js	open
 2026-10-16T16:40:00Z	store	Same event type plus key is a no-op	A revival that fires twice must not double-launch	src/store/eventlog.ts	open
 2026-10-16T16:40:00Z	policy	The War Room appends inbox rows and never writes pick events	A11; dd intake --from-inbox is the only pick writer	src/server/http.ts	open
 2026-10-16T16:40:00Z	budget	Hard caps live in code: N 5, one relaunch, two fix loops, two judge passes	A10; config cannot raise them	src/core/budget.ts	open
 2026-10-16T17:12:00Z	verify	npm test, tsc --noEmit, and selftest are green; War Room New pick and the drafted pick page were driven in a browser	SPEC 001 VERIFY steps	/opt/cursor/artifacts/war-room/big-board.png	tests green
+2026-10-17T18:24:00Z	graft	Base is c3 War Room first, dd/p1-film-room-c at efa65eb	The box ranked c3 first at weighted 3.07: phone scorecard stacks at 390px, and F9 has one test per tie key	docs/SPEC-002-film-room.md	open
+2026-10-17T18:24:00Z	graft	Tie rule is c2's ordered TIE_KEYS list; the reason sentence still uses c3's detail text	F9 is one ordered list, and the War Room sentence stays the one c3 already shows	src/core/filmroom.ts	open
+2026-10-17T18:24:00Z	graft	F2 bad judgements are one table row per clause, from c2, asserted with c3's messages	A row per clause stays auditable. Unknown criterion still adds a score, because c3 reports a missing id before an unknown one	test/film-room.test.ts	open
+2026-10-17T18:24:00Z	graft	Close selftest also checks deciding diff_lines, pass 2 reversed, and closeCall	c1 proved more of F16. The DATA_DIR line stays	src/cli/dd.ts	open
+2026-10-17T18:24:00Z	graft	Rejected c2's selection-ranker registry, c1's CLI validation, and dropping the selftest DATA_DIR line	Those swap the architecture, put validation in the wrong layer, or change unrelated output	docs/SPEC-002-film-room.md	open
 2026-10-17T14:20:00Z	timeline	Each entry replays reduce() on the prefix at that entry's effective time and the sentence names the stage change	The decision log has to stay in agreement with the reducer, which is the only status source	src/core/timeline.ts	open
 2026-10-17T14:20:00Z	timeline	A run opens only when the replayed pick's runs count increases	counts.total has to equal reduce().runs, and that count is the run-opening events	src/core/timeline.ts	open
 2026-10-17T14:20:00Z	timeline	Effective time is the previous time when a timestamp is earlier or will not parse	Durations are differences of those times, so none go negative	src/core/timeline.ts	open

@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { branchFor } from "../core/ids.ts";
 import { labelMapForPass } from "../core/score.ts";
-import type { Candidate, Pick } from "../core/types.ts";
+import { LABELS, type Candidate, type Pick } from "../core/types.ts";
 
 const DIR = dirname(fileURLToPath(import.meta.url));
 
@@ -109,9 +109,14 @@ export function candidateBrief(pick: Pick, cand: Candidate, relaunch: boolean): 
 export function judgeBrief(pick: Pick, pass: number): string {
   const finished = pick.candidates.filter((cand) => cand.status === "finished").map((cand) => cand.id);
   const map = labelMapForPass(pick.id, finished, pass);
-  const labels = Object.entries(map.labels)
-    .filter((entry) => entry[1])
-    .map(([label]) => `- Label ${label}`)
+  const labels = map.order
+    .map((cand, index) => {
+      const label = LABELS[index];
+      if (!label) return "";
+      const sha = pick.candidates.find((item) => item.id === cand)?.report?.headSha ?? "";
+      return `- Label ${label}: ${sha}`;
+    })
+    .filter(Boolean)
     .join("\n");
   return fill("judge", {
     goal: `Score pick ${pick.id} in the Film Room. Pass ${pass}${pass === 2 ? " reverses the previous order." : "."}`,

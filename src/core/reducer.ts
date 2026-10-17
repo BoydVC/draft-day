@@ -1,6 +1,6 @@
 import type { DraftEvent } from "./events.ts";
 import { asPickId, isCandId } from "./ids.ts";
-import { assembleJudgement } from "./score.ts";
+import { assembleJudgement } from "./filmroom.ts";
 import { brandStoredTarget } from "./target.ts";
 import { GO_TIMEOUT_MS, stampPending } from "./transitions.ts";
 import {
@@ -62,7 +62,7 @@ export function reduce(events: readonly DraftEvent[], now = Date.now()): Pick | 
   const dropped = new Set<CandId>();
   const finished = new Map<CandId, CandidateReport>();
   const agents = new Map<CandId, { agentId?: string; branch?: string; model?: string }>();
-  const judgeLaunches: { pass: number; labels: Partial<Record<Label, CandId>>; order: string[] }[] = [];
+  const judgeLaunches: { pass: number; labels: Partial<Record<Label, CandId>>; order: string[]; reversed: boolean }[] = [];
   const rawPasses: Parameters<typeof assembleJudgement>[0][number][] = [];
   let graftLaunched = false;
   let graftRecorded = false;
@@ -125,10 +125,12 @@ export function reduce(events: readonly DraftEvent[], now = Date.now()): Pick | 
             }
           }
         }
+        const pass = num(payload.pass, judgeLaunches.length + 1);
         judgeLaunches.push({
-          pass: num(payload.pass, judgeLaunches.length + 1),
+          pass,
           labels,
           order: Array.isArray(payload.order) ? payload.order.map(String) : [],
+          reversed: payload.reversed === true || pass >= 2,
         });
         break;
       }
@@ -136,6 +138,8 @@ export function reduce(events: readonly DraftEvent[], now = Date.now()): Pick | 
         const passNumber = num(payload.pass, rawPasses.length + 1);
         const launch = judgeLaunches.find((item) => item.pass === passNumber) ?? judgeLaunches[rawPasses.length];
         rawPasses.push({
+          pass: passNumber,
+          reversed: launch?.reversed ?? passNumber >= 2,
           order: Array.isArray(payload.order) ? payload.order.map(String) : launch?.order ?? [],
           judgeModel: text(payload.judgeModel) || undefined,
           cards: (payload.cards as Scorecard[]) ?? [],
@@ -144,7 +148,7 @@ export function reduce(events: readonly DraftEvent[], now = Date.now()): Pick | 
           trades: Array.isArray(payload.trades)
             ? (payload.trades as { from: string; what: string; pointers: string[]; why: string }[])
             : [],
-          secondRead: payload.secondRead === "disagree" ? "disagree" : "agree",
+          secondRead: payload.secondRead === "disagree" ? "disagree" : payload.secondRead === "agree" ? "agree" : undefined,
           note: text(payload.note),
           labels: launch?.labels,
         });
