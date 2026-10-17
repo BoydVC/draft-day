@@ -31,6 +31,11 @@ function route() {
       until: until && day.test(until) ? until : null,
     };
   }
+  const replay = hash.match(/^\/picks\/(p-\d{8}-\d{2})\/replay(?:\?(.*))?$/);
+  if (replay) {
+    const params = new URLSearchParams(replay[2] || "");
+    return { name: "replay", id: replay[1], at: params.get("at"), play: params.get("play") };
+  }
   const match = hash.match(/^\/picks\/(p-\d{8}-\d{2})$/);
   if (match) return { name: "pick", id: match[1] };
   return { name: "board" };
@@ -371,10 +376,11 @@ function pickView(pick) {
 
   return el("article", { "data-pick-id": pick.id }, [
     el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]),
-    el("div", { class: "status-line" }, [
+      el("div", { class: "status-line" }, [
       el("h2", { id: "pick-title" }, [pick.id]),
       chip(pick.status),
       el("span", { class: "meta" }, [pick.stage]),
+      el("a", { href: `#/picks/${pick.id}/replay` }, ["Replay"]),
     ]),
     el("p", {}, [pick.idea]),
     pick.failReason ? el("p", { class: "meta" }, [`Reason: ${pick.failReason}`]) : el("span"),
@@ -397,6 +403,7 @@ async function render(options) {
   drawing = true;
   try {
     const where = route();
+    globalThis.draftDayReplay.leave(where);
     const typing = document.activeElement && document.getElementById("new-pick")?.contains(document.activeElement);
     if (where.name === "board" && options?.soft && typing && document.getElementById("big-board")) {
       const data = await fetch("/api/board").then((response) => response.json());
@@ -420,6 +427,15 @@ async function render(options) {
       app.replaceChildren();
       app.append(el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]));
       app.append(globalThis.draftDayLessons(report, el));
+      return;
+    }
+    if (where.name === "replay") {
+      const response = await fetch(`/api/picks/${where.id}`);
+      if (!response.ok) {
+        globalThis.draftDayReplay.missing();
+        return;
+      }
+      globalThis.draftDayReplay.show(where, await response.json(), options);
       return;
     }
     app.replaceChildren();
