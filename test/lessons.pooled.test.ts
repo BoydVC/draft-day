@@ -20,6 +20,7 @@ import {
   reduce,
   stageLabel,
   type DraftEvent,
+  type LessonsReport,
 } from "../src/core/index.ts";
 import { startServer } from "../src/server/http.ts";
 
@@ -756,7 +757,7 @@ test("L11 dd lessons", async () => {
   assert.equal(json.code, 0, json.stderr);
   assert.equal(hasControl(printed(json.stdout)), false);
   assert.deepEqual(JSON.parse(json.stdout), reportOf(weekLogs()));
-  assert.equal(printed(lessonsText(reportOf(weekLogs()))), EXPECTED_LINES.join("\n"));
+  assert.equal(printed(lessonsText(reportOf(weekLogs()) as unknown as LessonsReport)), EXPECTED_LINES.join("\n"));
 
   const badSince = await dd(["lessons", "--data", dir, "--since", "2026-02-30"]);
   assert.equal(badSince.code, 2);
@@ -839,7 +840,7 @@ test("L14 terminal-safe text", async () => {
     lessonLog("p-20261201-01", ["\u001b[2Jwipe"], "2026-12-01T13:00:00.000Z"),
     lessonLog("p-20261201-02", ["\u001b[2jWIPE\u0007"], "2026-12-01T13:00:00.000Z"),
   ];
-  const text = lessonsText(reportOf(logs));
+  const text = lessonsText(reportOf(logs) as unknown as LessonsReport);
   assert.equal(printed(text), [
     "0 lessons from 2 picks · 2 findings · 2 one-offs",
     "one-offs",
@@ -852,7 +853,7 @@ test("L14 terminal-safe text", async () => {
     lessonLog("p-20261202-01", ["\u0000bell\u007f\u009f\nring"], "2026-12-02T13:00:00.000Z"),
     lessonLog("p-20261202-02", ["\u0000BELL\u007f\u009f\nRING"], "2026-12-02T13:00:00.000Z"),
   ];
-  const hostileText = printed(lessonsText(reportOf(hostile)));
+  const hostileText = printed(lessonsText(reportOf(hostile) as unknown as LessonsReport));
   for (const line of hostileText.split("\n")) assert.equal(hasControl(line), false, JSON.stringify(line));
   assert.match(hostileText, /Boyd names the engine check for "\?bell\?\? ring"/);
   assert.match(hostileText, /lesson:\?bell\?\? ring/);

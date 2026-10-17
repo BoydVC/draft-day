@@ -40,3 +40,4 @@ ts	phase	decision	why	evidence	result
 2026-10-17T19:30:00Z	graft	Clear is a submit button that sets the hash to #/lessons	An anchor to #/lessons would be an href the L18 harness rejects	src/ui/lessons.js	open
 2026-10-17T19:30:00Z	graft	loadLogs inlines the log shape and does not import PickLog	The touch map allows only the loadLogs function in eventlog.ts	src/store/eventlog.ts	open
 2026-10-17T19:30:00Z	graft	Rejected c2 findings exports, c3 closed receipt details, and taking c3's python summary check	Those add a second public pipeline, hide evidence behind a second click, or replace the base helper	docs/SPEC-004-lessons.md	open
+2026-10-17T19:40:00Z	graft	The pooled test casts ReportLike back to LessonsReport at the three lessonsText calls	The judge file types gardener's result as ReportLike, and that string kind does not satisfy lessonsText's LessonsReport parameter, so tsc --noEmit failed	test/lessons.pooled.test.ts	open
