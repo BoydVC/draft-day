@@ -1,0 +1,54 @@
+.dd-lessons {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dd-lessons h2 {
+  margin-bottom: 8px;
+}
+
+.dd-lessons h3 {
+  margin: 12px 0 4px;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.dd-lessons p,
+.dd-lessons li,
+.dd-lessons a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.dd-lessons ul {
+  margin: 8px 0 0;
+  padding-left: 1.1em;
+  min-width: 0;
+}
+
+.dd-lessons li {
+  margin: 0.35em 0;
+}
+
+.dd-level {
+  display: inline-block;
+  margin: 0 0 4px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font: 700 12px/1.4 ui-sans-serif, system-ui, sans-serif;
+  background: #24364a;
+  color: var(--blue);
+}
+
+.dd-lessons input[type="date"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 700px) {
+  #lesson-window {
+    grid-template-columns: minmax(0, 12rem) minmax(0, 12rem) auto;
+    align-items: end;
+  }
+}

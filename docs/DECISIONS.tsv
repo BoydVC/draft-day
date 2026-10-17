@@ -30,3 +30,8 @@ ts	phase	decision	why	evidence	result
 2026-10-17T14:50:00Z	graft	The title switch ends in a never default	Adding an EVENT_TYPES member must fail tsc, while a string outside the list still titles as Unrecognized event	src/core/timeline.ts	open
 2026-10-17T14:50:00Z	graft	The Decision log takes app.js el instead of declaring its own	Two global function el declarations would shadow each other	src/ui/timeline.js	open
 2026-10-17T14:50:00Z	graft	Rejected the run-bar strip, the RULES registry, and the first-report timeout	Those are a feature, an architecture swap, or a second timeout derivation; openings stay on reduce().runs	docs/SPEC-003-pick-timeline.md	open
+2026-10-17T18:10:00Z	lessons	One Record of FindingKind rows, checked with satisfies, owns event, extractor, level, stage, where, and check	A new finding kind has to fail tsc until that row is complete	src/core/lessons.ts	open
+2026-10-17T18:10:00Z	lessons	Label lookup copies reduce() pass fallback and does not read pick.judgement	Film Room drops the cards when no base resolves, and the gardener still has to report them	src/core/lessons.ts	open
+2026-10-17T18:10:00Z	lessons	loadLogs stores events null when readEvents throws	One malformed line must not abort the whole pass	src/store/eventlog.ts	open
+2026-10-17T18:10:00Z	lessons	A receipt is a link only when the pick id matches p-YYYYMMDD-NN	Payload text stays text, and the only hrefs are this War Room's pick pages	src/ui/lessons.js	open
+2026-10-17T18:10:00Z	lessons	A soft update skips the Locker Room while focus is inside the Window form	Typing a date has to survive the live event stream	src/ui/app.js	open
