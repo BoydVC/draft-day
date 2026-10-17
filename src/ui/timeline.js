@@ -1,23 +1,10 @@
-function el(tag, attrs, children) {
-  const node = document.createElement(tag);
-  for (const [key, value] of Object.entries(attrs || {})) {
-    if (value === undefined || value === null) continue;
-    if (key === "class") node.className = value;
-    else node.setAttribute(key, String(value));
-  }
-  for (const child of children || []) {
-    node.append(child instanceof Node ? child : document.createTextNode(String(child)));
-  }
-  return node;
-}
-
 function startedClock(iso) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 
-function agentCell(run) {
+function agentCell(run, el) {
   if (run.agentUrl) {
     return el("a", {
       href: run.agentUrl,
@@ -38,7 +25,7 @@ function stageGroups(entries) {
   return groups;
 }
 
-function eventItem(entry) {
+function eventItem(entry, el) {
   const children = [el("span", { class: "dd-when" }, [`+${entry.sinceStartText}`]), ` ${entry.title}`];
   for (const link of entry.links || []) {
     children.push(" ");
@@ -51,7 +38,7 @@ function eventItem(entry) {
   return el("li", { class: "dd-event" }, children);
 }
 
-function draftDayTimeline(view) {
+function draftDayTimeline(view, el) {
   if (!view) return el("p", { class: "empty" }, ["No events."]);
   const stageItems = (view.stages || []).map((span) => {
     const terminal = !view.live && span.to === null;
@@ -60,14 +47,14 @@ function draftDayTimeline(view) {
   const columns = ["Run", "Agent", "Started", "Duration", "Outcome"];
   const rows = (view.runs || []).map((run) => el("tr", {}, [
     el("td", {}, [run.label]),
-    el("td", {}, [agentCell(run)]),
+    el("td", {}, [agentCell(run, el)]),
     el("td", {}, [startedClock(run.startedAt)]),
     el("td", {}, [run.durationText]),
     el("td", {}, [run.outcome]),
   ]));
   const events = stageGroups(view.entries || []).map((group) => el("li", {}, [
     el("h3", { class: "dd-stage-name" }, [group.stage]),
-    el("ul", { class: "dd-stage-events" }, group.entries.map(eventItem)),
+    el("ul", { class: "dd-stage-events" }, group.entries.map((entry) => eventItem(entry, el))),
   ]));
   return el("div", { class: "dd-log" }, [
     el("p", { class: "dd-summary" }, [view.summary]),

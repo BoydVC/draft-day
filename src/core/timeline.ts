@@ -181,7 +181,7 @@ function verdictOutcome(verdict: string | undefined): RunOutcome {
   if (verdict === "VERIFIED") return "verified";
   if (verdict === "NOT_VERIFIED") return "not_verified";
   if (verdict === "INCONCLUSIVE") return "inconclusive";
-  return "finished";
+  return "inconclusive";
 }
 
 function verdictText(after: Pick | null, event: DraftEvent): string | undefined {
@@ -330,11 +330,15 @@ function acceptanceCount(after: Pick | null): number | undefined {
   return Array.isArray(acceptance) ? acceptance.length : undefined;
 }
 
-function namedJudge(history: readonly DraftEvent[], payload: Record<string, unknown>): string | undefined {
+function namedJudge(
+  history: readonly DraftEvent[],
+  payload: Record<string, unknown>,
+  closed: OpenRun | null,
+): string | undefined {
   const base = text(payload.base);
   if (!base) return undefined;
   if (isCandId(base)) return base;
-  const pass = payloadNumber(payload, "pass");
+  const pass = payloadNumber(payload, "pass") ?? (closed?.role === "judge" ? closed.attempt : undefined);
   if (pass === undefined) return undefined;
   const launch = history.find((event) => event.type === "judge_launched" && payloadNumber(event.payload, "pass") === pass);
   const labels = record(launch?.payload.labels);
@@ -427,7 +431,7 @@ function titleFor(
     case "judgement_recorded": {
       const pass = payloadNumber(payload, "pass");
       const cards = Array.isArray(payload.cards) ? payload.cards.length : undefined;
-      const named = namedJudge(history, payload);
+      const named = namedJudge(history, payload, closed);
       body = pass === undefined ? "The judge scored" : `Film Room pass ${pass} scored`;
       if (cards !== undefined) body += ` ${cards} cards`;
       if (named) body += ` and the judge named ${named}`;
@@ -481,8 +485,10 @@ function titleFor(
       else body = "A lesson was recorded";
       break;
     }
-    default:
-      body = "Unrecognized event";
+    default: {
+      const neverType: never = event.type;
+      return neverType;
+    }
   }
   return oneSentence(body, before, after);
 }
@@ -647,7 +653,7 @@ export function timeline(events: readonly DraftEvent[], now: number): Timeline |
     if (!isEventType(event.type)) entry.type = event.type as EventType;
     if (cand && isCandId(cand)) entry.cand = cand;
     else if (event.type === "judgement_recorded") {
-      const named = namedJudge(history, event.payload);
+      const named = namedJudge(history, event.payload, closed);
       if (named && isCandId(named)) entry.cand = named;
     }
     entries.push(entry);

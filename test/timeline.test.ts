@@ -229,13 +229,22 @@ test("T5 run pairing", () => {
 
   const judges = assertAgrees([
     created(),
-    ev(2, "2026-10-16T12:00:00.000Z", "judge_launched", { pass: 1 }),
-    ev(3, "2026-10-16T12:05:00.000Z", "judge_launched", { pass: 2 }),
-    ev(4, "2026-10-16T12:10:00.000Z", "judgement_recorded", { cards: [{ label: "A" }] }),
+    ev(2, "2026-10-16T12:00:00.000Z", "judge_launched", { pass: 1, labels: { A: "c2", B: "c1", C: "c3" } }),
+    ev(3, "2026-10-16T12:05:00.000Z", "judge_launched", { pass: 2, labels: { A: "c1", B: "c3", C: "c2" } }),
+    ev(4, "2026-10-16T12:10:00.000Z", "judgement_recorded", { cards: [{ label: "A" }, { label: "B" }, { label: "C" }], base: "A" }),
   ], now);
   assert.equal(judges.runs.find((run) => run.id === "judge#1")?.outcome, "scored");
   assert.equal(judges.runs.find((run) => run.id === "judge#1")?.endSeq, 4);
   assert.equal(judges.runs.find((run) => run.id === "judge#2")?.outcome, "running");
+  const unnamedPass = judges.entries.find((entry) => entry.type === "judgement_recorded");
+  assert.equal(unnamedPass?.title.includes("judge named c2"), true, unnamedPass?.title);
+
+  const missingVerdict = assertAgrees([
+    created(),
+    ev(2, "2026-10-16T11:00:00.000Z", "physical_launched", { attempt: 1 }),
+    ev(3, "2026-10-16T11:10:00.000Z", "verdict_recorded", { attempt: 1, physical: { prNumber: 7 } }),
+  ], now);
+  assert.equal(missingVerdict.runs.find((run) => run.id === "physical#1")?.outcome, "inconclusive");
 
   const orphan = [
     created(),

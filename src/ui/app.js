@@ -163,7 +163,7 @@ function pickView(pick) {
     physicalBits.push(el("p", { class: "empty" }, ["Physical has not run."]));
   }
 
-  const log = globalThis.draftDayTimeline(pick.timeline);
+  const log = globalThis.draftDayTimeline(pick.timeline, el);
 
   const swap = pick.judgement
     ? `Base ${pick.judgement.base}. swapConsistent ${String(pick.judgement.swapConsistent)}.`

@@ -15,3 +15,9 @@ ts	phase	decision	why	evidence	result
 2026-10-17T14:20:00Z	timeline	Effective time is the previous time when a timestamp is earlier or will not parse	Durations are differences of those times, so none go negative	src/core/timeline.ts	open
 2026-10-17T14:20:00Z	timeline	Agent links are emitted only for a bc- uuid; other ids stay text	Selftest ids and hostile payloads must not become links	src/core/timeline.ts	open
 2026-10-17T14:20:00Z	timeline	The Decision log is built with createTextNode on a 390 px layout	Payload text can contain markup and has to stay literal on a phone	src/ui/timeline.js	open
+2026-10-17T14:50:00Z	graft	Base the Pick 2 graft on dd/p2-timeline-c, the snapshot story	Film Room pass 1 was a single-pass close call and ranked c3 first; run openings stay derived from reduce().runs	docs/SPEC-003-pick-timeline.md	open
+2026-10-17T14:50:00Z	graft	An unknown or missing physical verdict closes the run as inconclusive	The pairing table only names verified, not_verified, and inconclusive for physical and fix	src/core/timeline.ts	open
+2026-10-17T14:50:00Z	graft	A judgement with no pass names the cand from the closed judge run	T5(c) closes the earliest open judge, and that run's pass still resolves the base label	src/core/timeline.ts	open
+2026-10-17T14:50:00Z	graft	The title switch ends in a never default	Adding an EVENT_TYPES member must fail tsc, while a string outside the list still titles as Unrecognized event	src/core/timeline.ts	open
+2026-10-17T14:50:00Z	graft	The Decision log takes app.js el instead of declaring its own	Two global function el declarations would shadow each other	src/ui/timeline.js	open
+2026-10-17T14:50:00Z	graft	Rejected the run-bar strip, the RULES registry, and the first-report timeout	Those are a feature, an architecture swap, or a second timeout derivation; openings stay on reduce().runs	docs/SPEC-003-pick-timeline.md	open
