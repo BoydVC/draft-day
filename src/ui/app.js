@@ -36,23 +36,68 @@ function route() {
   return { name: "board" };
 }
 
+const INTAKE_UNREACHABLE = "Could not reach the War Room. Check the Big Board before trying again.";
+
+const intake = {
+  pending: false,
+  idea: "",
+  target: "BoydVC/draft-day",
+  n: "3",
+  status: "",
+};
+
+function paintIntake() {
+  const statusNode = document.getElementById("form-status");
+  if (statusNode) statusNode.textContent = intake.status;
+  const ideaNode = document.getElementById("idea");
+  if (ideaNode) ideaNode.value = intake.idea;
+  const add = document.getElementById("add-pick");
+  if (add) add.disabled = intake.pending;
+}
+
 function formPanel() {
   const idea = el("textarea", { id: "idea", name: "idea", required: "true" });
-  const target = el("input", { id: "target", name: "target", value: "BoydVC/draft-day", required: "true" });
-  const n = el("input", { id: "n", name: "n", type: "number", min: "1", max: "5", value: "3" });
+  idea.value = intake.idea;
+  const target = el("input", {
+    id: "target",
+    name: "target",
+    value: intake.target,
+    required: "true",
+    autocapitalize: "none",
+    autocorrect: "off",
+    spellcheck: "false",
+    autocomplete: "off",
+  });
+  const n = el("input", {
+    id: "n",
+    name: "n",
+    type: "number",
+    min: "1",
+    max: "5",
+    value: intake.n,
+    inputmode: "numeric",
+  });
   const status = el("p", { id: "form-status", role: "status" });
+  status.textContent = intake.status;
   const form = el("form", { id: "new-pick", "aria-label": "New pick" }, [
     el("div", {}, [el("label", { for: "idea" }, ["Idea"]), idea]),
     el("div", { class: "row" }, [
       el("div", {}, [el("label", { for: "target" }, ["Target"]), target]),
       el("div", {}, [el("label", { for: "n" }, ["Candidates"]), n]),
     ]),
-    el("button", { type: "submit" }, ["Add pick"]),
+    el("button", { id: "add-pick", type: "submit", disabled: intake.pending ? "" : null }, ["Add pick"]),
     status,
   ]);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    void submitPick(idea, target, n, status);
+    if (intake.pending) return;
+    intake.pending = true;
+    intake.idea = idea.value;
+    intake.target = target.value;
+    intake.n = n.value;
+    intake.status = "Sending…";
+    paintIntake();
+    void submitPick();
   });
   return el("section", { class: "panel", "aria-label": "New pick" }, [
     el("h2", {}, ["New pick"]),
@@ -60,28 +105,46 @@ function formPanel() {
   ]);
 }
 
-async function submitPick(idea, target, n, status) {
-  status.textContent = "Sending…";
-  const response = await fetch("/api/intake", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      idea: idea.value,
-      target: target.value,
-      n: Number(n.value),
-      source: "warroom",
-    }),
-  });
-  const body = await response.json();
-  if (!response.ok) {
-    status.textContent = body.error || "Could not queue the pick";
-    return;
+async function submitPick() {
+  let queued = false;
+  try {
+    const response = await fetch("/api/intake", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        idea: intake.idea,
+        target: intake.target,
+        n: Number(intake.n),
+        source: "warroom",
+      }),
+    });
+    let body = null;
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+    if (!response.ok || !body || typeof body !== "object") {
+      intake.status = body && typeof body.error === "string" ? body.error : INTAKE_UNREACHABLE;
+    } else {
+      queued = true;
+      intake.idea = "";
+      intake.status = body.policy
+        ? `Queued in the inbox. Policy will refuse it (${body.policy}).`
+        : "Queued in the inbox. Nothing launches from this page.";
+    }
+  } catch {
+    intake.status = INTAKE_UNREACHABLE;
   }
-  idea.value = "";
-  status.textContent = body.policy
-    ? `Queued in the inbox. Policy will refuse it (${body.policy}).`
-    : "Queued in the inbox.";
-  await render({ soft: true });
+  intake.pending = false;
+  paintIntake();
+  if (queued) {
+    try {
+      await render({ soft: true });
+    } catch {
+      paintIntake();
+    }
+  }
 }
 
 function boardTable(data) {
