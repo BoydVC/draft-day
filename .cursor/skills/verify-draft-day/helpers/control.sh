@@ -119,6 +119,29 @@ EOF
     fi
     echo "seeded lessons week"
     ;;
+  seed-replay)
+    load_state
+    for id in p-20261017-93 p-20261017-94 p-20261017-98 p-20261017-99; do
+      mkdir -p "$DATA/picks/$id"
+      cp "$ROOT/test/fixtures/replay/${id}.events.jsonl" "$DATA/picks/$id/events.jsonl"
+    done
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/picks/p-20261017-94")"
+    summary="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["timeline"]["summary"])' "$body")"
+    if [[ "$code" != "200" || "$summary" != "drafted · 3h 41m · 7 runs" ]]; then
+      echo "seed-replay: p-20261017-94 ${code} ${summary}" >&2
+      rm -f "$body"
+      exit 1
+    fi
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/picks/p-20261017-93")"
+    summary="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["timeline"]["summary"])' "$body")"
+    rm -f "$body"
+    if [[ "$code" != "200" || "$summary" != "drafted · 5h 41m · 8 runs" ]]; then
+      echo "seed-replay: p-20261017-93 ${code} ${summary}" >&2
+      exit 1
+    fi
+    echo "seeded replay"
+    ;;
   cleanup)
     load_state
     if kill -0 "$PID" 2>/dev/null; then
@@ -138,7 +161,7 @@ EOF
     echo "cleaned pid ${PID:-?} data ${DATA:-?}"
     ;;
   *)
-    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|cleanup" >&2
+    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|cleanup" >&2
     exit 2
     ;;
 esac
