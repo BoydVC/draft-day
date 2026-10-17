@@ -10,3 +10,7 @@ ts	phase	decision	why	evidence	result
 2026-10-16T16:40:00Z	policy	The War Room appends inbox rows and never writes pick events	A11; dd intake --from-inbox is the only pick writer	src/server/http.ts	open
 2026-10-16T16:40:00Z	budget	Hard caps live in code: N 5, one relaunch, two fix loops, two judge passes	A10; config cannot raise them	src/core/budget.ts	open
 2026-10-16T17:12:00Z	verify	npm test, tsc --noEmit, and selftest are green; War Room New pick and the drafted pick page were driven in a browser	SPEC 001 VERIFY steps	/opt/cursor/artifacts/war-room/big-board.png	tests green
+2026-10-17T14:20:00Z	timeline	One Record of event rules, checked with satisfies, is the only title and link table	A new event type has to name whether it opens or closes a run or tsc fails	src/core/timeline.ts	open
+2026-10-17T14:20:00Z	timeline	Status and stage come from reduce() and stageLabel at each event's effective time	The 48h go timeout and every other status stay in the reducer	src/core/timeline.ts	open
+2026-10-17T14:20:00Z	timeline	Clock skew clamps each event to the previous effective time	A bad or earlier ts cannot make a duration negative	src/core/timeline.ts	open
+2026-10-17T14:20:00Z	timeline	Agent links require a bc- uuid; every other agent id stays text	Selftest ids are not Cursor agent pages, and payload text is not a URL	src/core/timeline.ts	open

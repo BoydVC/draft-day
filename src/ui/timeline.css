@@ -1,0 +1,38 @@
+.timeline-summary,
+.timeline-stages,
+.timeline-events,
+.timeline-runs td,
+.timeline-runs th {
+  overflow-wrap: anywhere;
+}
+
+.timeline-stages,
+.timeline-events {
+  margin: 8px 0;
+  padding-left: 18px;
+}
+
+.timeline-events ul {
+  margin: 0 0 8px;
+  padding-left: 18px;
+}
+
+.timeline-events h3 {
+  margin: 8px 0 4px;
+  font-size: 16px;
+}
+
+.timeline-runs {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.timeline-runs table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.timeline-runs a {
+  white-space: nowrap;
+}

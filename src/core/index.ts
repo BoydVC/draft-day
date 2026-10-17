@@ -31,6 +31,18 @@ export type {
 export { EVENT_TYPES, eventKey, isEventType } from "./events.ts";
 export type { DraftEvent, EventType } from "./events.ts";
 
+export { agentUrl, formatDuration, timeline } from "./timeline.ts";
+export type {
+  RunCounts,
+  RunOutcome,
+  RunRole,
+  StageSpan,
+  Timeline,
+  TimelineEntry,
+  TimelineLink,
+  TimelineRun,
+} from "./timeline.ts";
+
 export { asPickId, branchFor, formatPickId, isCandId, isPickId, pickIdPrefix } from "./ids.ts";
 
 export { brandStoredTarget, loadTargets, parseTargetRepo } from "./target.ts";
