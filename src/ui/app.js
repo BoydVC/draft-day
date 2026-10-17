@@ -36,23 +36,65 @@ function route() {
   return { name: "board" };
 }
 
+const INTAKE_UNREACHABLE = "Could not reach the War Room. Check the Big Board before trying again.";
+
+let intakePending = false;
+let intakeStatus = "";
+let intakeIdea = "";
+
+function paintIntake() {
+  const form = document.getElementById("new-pick");
+  if (!form) return;
+  const idea = document.getElementById("idea");
+  const status = document.getElementById("form-status");
+  const button = form.querySelector("button");
+  if (idea) idea.value = intakeIdea;
+  if (status) status.textContent = intakeStatus;
+  if (button) button.disabled = intakePending;
+  form.setAttribute("aria-busy", intakePending ? "true" : "false");
+}
+
 function formPanel() {
   const idea = el("textarea", { id: "idea", name: "idea", required: "true" });
-  const target = el("input", { id: "target", name: "target", value: "BoydVC/draft-day", required: "true" });
-  const n = el("input", { id: "n", name: "n", type: "number", min: "1", max: "5", value: "3" });
-  const status = el("p", { id: "form-status", role: "status" });
-  const form = el("form", { id: "new-pick", "aria-label": "New pick" }, [
+  idea.value = intakeIdea;
+  const target = el("input", {
+    id: "target",
+    name: "target",
+    value: "BoydVC/draft-day",
+    required: "true",
+    autocapitalize: "none",
+    autocorrect: "off",
+    spellcheck: "false",
+    autocomplete: "off",
+  });
+  const n = el("input", {
+    id: "n",
+    name: "n",
+    type: "number",
+    min: "1",
+    max: "5",
+    value: "3",
+    inputmode: "numeric",
+  });
+  const status = el("p", { id: "form-status", role: "status" }, intakeStatus ? [intakeStatus] : []);
+  const submit = el("button", { type: "submit" }, ["Add pick"]);
+  submit.disabled = intakePending;
+  const form = el("form", {
+    id: "new-pick",
+    "aria-label": "New pick",
+    "aria-busy": intakePending ? "true" : "false",
+  }, [
     el("div", {}, [el("label", { for: "idea" }, ["Idea"]), idea]),
     el("div", { class: "row" }, [
       el("div", {}, [el("label", { for: "target" }, ["Target"]), target]),
       el("div", {}, [el("label", { for: "n" }, ["Candidates"]), n]),
     ]),
-    el("button", { type: "submit" }, ["Add pick"]),
+    submit,
     status,
   ]);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    void submitPick(idea, target, n, status);
+    void submitPick(idea, target, n);
   });
   return el("section", { class: "panel", "aria-label": "New pick" }, [
     el("h2", {}, ["New pick"]),
@@ -60,55 +102,85 @@ function formPanel() {
   ]);
 }
 
-async function submitPick(idea, target, n, status) {
-  status.textContent = "Sending…";
-  const response = await fetch("/api/intake", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      idea: idea.value,
-      target: target.value,
-      n: Number(n.value),
-      source: "warroom",
-    }),
-  });
-  const body = await response.json();
-  if (!response.ok) {
-    status.textContent = body.error || "Could not queue the pick";
-    return;
+async function submitPick(idea, target, n) {
+  if (intakePending) return;
+  const submittedIdea = idea.value;
+  intakePending = true;
+  intakeIdea = submittedIdea;
+  intakeStatus = "Sending…";
+  paintIntake();
+  let succeeded = false;
+  try {
+    const response = await fetch("/api/intake", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        idea: submittedIdea,
+        target: target.value,
+        n: Number(n.value),
+        source: "warroom",
+      }),
+    });
+    let body = null;
+    try {
+      body = await response.json();
+    } catch {
+      body = null;
+    }
+    if (!body || typeof body !== "object") {
+      intakeStatus = INTAKE_UNREACHABLE;
+      intakeIdea = submittedIdea;
+    } else if (!response.ok) {
+      intakeStatus = typeof body.error === "string" ? body.error : INTAKE_UNREACHABLE;
+      intakeIdea = submittedIdea;
+    } else {
+      intakeIdea = "";
+      intakeStatus = body.policy
+        ? `Queued in the inbox. Policy will refuse it (${body.policy}).`
+        : "Queued in the inbox. Nothing launches from this page.";
+      succeeded = true;
+    }
+  } catch {
+    intakeStatus = INTAKE_UNREACHABLE;
+    intakeIdea = submittedIdea;
+  } finally {
+    intakePending = false;
+    paintIntake();
   }
-  idea.value = "";
-  status.textContent = body.policy
-    ? `Queued in the inbox. Policy will refuse it (${body.policy}).`
-    : "Queued in the inbox.";
-  await render({ soft: true });
+  if (succeeded) {
+    try {
+      await render({ soft: true });
+    } catch {
+      paintIntake();
+    }
+  }
 }
 
 function boardTable(data) {
   const rows = [];
   for (const pick of data.picks) {
     rows.push(el("tr", { "data-pick-id": pick.id }, [
-      el("td", {}, [el("a", { href: `#/picks/${pick.id}` }, [pick.id])]),
-      el("td", {}, [pick.idea]),
-      el("td", {}, [pick.stage]),
-      el("td", {}, [chip(pick.status)]),
-      el("td", {}, [String(pick.runs)]),
+      el("td", { "data-field": "pick", "data-label": "Pick" }, [el("a", { href: `#/picks/${pick.id}` }, [pick.id])]),
+      el("td", { "data-field": "idea", "data-label": "Idea" }, [pick.idea]),
+      el("td", { "data-field": "stage", "data-label": "Stage" }, [pick.stage]),
+      el("td", { "data-field": "status", "data-label": "Status" }, [chip(pick.status)]),
+      el("td", { "data-field": "runs", "data-label": "Runs" }, [String(pick.runs)]),
     ]));
   }
   for (const item of data.inbox) {
     rows.push(el("tr", { "data-inbox": String(item.offset) }, [
-      el("td", {}, ["queued"]),
-      el("td", {}, [item.idea]),
-      el("td", {}, [item.stage]),
-      el("td", {}, [chip(item.status)]),
-      el("td", {}, ["0"]),
+      el("td", { "data-field": "pick", "data-label": "Pick" }, ["queued"]),
+      el("td", { "data-field": "idea", "data-label": "Idea" }, [item.idea]),
+      el("td", { "data-field": "stage", "data-label": "Stage" }, [item.stage]),
+      el("td", { "data-field": "status", "data-label": "Status" }, [chip(item.status)]),
+      el("td", { "data-field": "runs", "data-label": "Runs" }, ["0"]),
     ]));
   }
   const body = rows.length
     ? rows
     : [el("tr", {}, [el("td", { colspan: "5", class: "empty" }, ["No picks yet. Add one from the form or from chat."])])];
   return el("table", {}, [
-    el("thead", {}, [el("tr", {}, ["Pick", "Idea", "Stage", "Status", "Runs"].map((name) => el("th", {}, [name])))]),
+    el("thead", {}, [el("tr", {}, ["Pick", "Idea", "Stage", "Status", "Runs"].map((name) => el("th", { scope: "col" }, [name])))]),
     el("tbody", { id: "board-body" }, body),
   ]);
 }
