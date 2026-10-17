@@ -59,6 +59,7 @@ export {
   REPEAT_PICKS,
   gardener,
   lessonWindow,
+  lessonsJson,
   lessonsText,
   type CorrectionLevel,
   type Finding,

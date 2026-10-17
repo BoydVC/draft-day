@@ -579,6 +579,10 @@ function safeLine(line: string): string {
   return line.replace(/[\u0000-\u001F\u007F-\u009F]/g, "?");
 }
 
+export function lessonsJson(report: LessonsReport): string {
+  return JSON.stringify(report).replace(/[\u007F-\u009F]/g, (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`);
+}
+
 export function lessonsText(report: LessonsReport): string {
   const lines = [report.summary];
   for (const lesson of report.lessons) {

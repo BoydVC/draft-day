@@ -8,6 +8,7 @@ import {
   gardener,
   isPickId,
   lessonWindow,
+  lessonsJson,
   loadConfig,
   loadTargets,
   parseTargetRepo,
@@ -261,7 +262,9 @@ export async function startServer(options: ServerOptions): Promise<{
         send(res, 400, { error: parsed.error });
         return;
       }
-      send(res, 200, gardener(await loadLogs(options.dataDir), parsed.value));
+      const payload = `${lessonsJson(gardener(await loadLogs(options.dataDir), parsed.value))}\n`;
+      res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+      res.end(payload);
       return;
     }
 

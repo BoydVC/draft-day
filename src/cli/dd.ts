@@ -15,6 +15,7 @@ import {
   isPickId,
   labelMapForPass,
   lessonWindow,
+  lessonsJson,
   lessonsText,
   loadConfig,
   timeline,
@@ -417,7 +418,8 @@ async function lessons(paths: Paths, flags: Flags): Promise<number> {
   const parsed = lessonWindow(flags.since, flags.until);
   if (!parsed.ok) throw new Exit(parsed.error);
   const report = gardener(await loadLogs(paths.dataDir), parsed.value);
-  emit(paths, report, lessonsText(report));
+  if (paths.json) console.log(lessonsJson(report));
+  else console.log(lessonsText(report));
   return 0;
 }
 

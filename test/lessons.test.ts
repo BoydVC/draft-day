@@ -484,6 +484,42 @@ test("L14 terminal-safe text", async () => {
   assert.match(json.stdout, /\\u001b/);
   const parsed = JSON.parse(json.stdout) as LessonsReport;
   assert.deepEqual(parsed.oneOffs.map((item) => item.key), ["lesson:\u001b[2jwipe", "lesson:\u001b[2jwipe\u0007"]);
+
+  const c1Dir = join(tmpdir(), `dd-l14-c1-${Date.now()}`);
+  await mkdir(c1Dir, { recursive: true });
+  const made = await dd(["intake", "--data", c1Dir, "--idea", "c1 lesson", "--target", "BoydVC/draft-day", "--n", "1", "--json"]);
+  assert.equal(made.code, 0, made.stderr);
+  const pickId = (JSON.parse(made.stdout) as { pickId: string }).pickId;
+  const topic = "del\u007fnel\u0085apc\u009f";
+  const payload = "payload\u007f\u0085\u009f";
+  const recorded = await dd(["record", pickId, "lesson_recorded", "--data", c1Dir, "--topic", topic, "--text", payload]);
+  assert.equal(recorded.code, 0, recorded.stderr);
+  const c1 = await dd(["lessons", "--data", c1Dir, "--json"]);
+  assert.equal(c1.code, 0, c1.stderr);
+  assert.equal(/[\u007F-\u009F]/.test(c1.stdout), false);
+  assert.equal(/[\u0000-\u001F\u007F-\u009F]/.test(c1.stdout.trimEnd()), false);
+  assert.match(c1.stdout, /\\u007f/);
+  assert.match(c1.stdout, /\\u0085/);
+  assert.match(c1.stdout, /\\u009f/);
+  const roundTrip = JSON.parse(c1.stdout) as LessonsReport;
+  const finding = roundTrip.oneOffs.flatMap((item) => item.findings).find((item) => item.detail === payload);
+  assert.ok(finding);
+  assert.equal(finding.subject, topic);
+  assert.equal(finding.detail, payload);
+  const server = await startServer({
+    host: "127.0.0.1",
+    port: 0,
+    dataDir: c1Dir,
+    configPath: join(root, "draftday.config.json"),
+    targetsPath: join(root, "targets.json"),
+  });
+  try {
+    const response = await fetch(`${server.url}/api/lessons`);
+    assert.equal(response.status, 200);
+    assert.equal(await response.text(), c1.stdout);
+  } finally {
+    await server.close();
+  }
 });
 
 interface RecNode {
