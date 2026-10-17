@@ -35,3 +35,8 @@ ts	phase	decision	why	evidence	result
 2026-10-17T18:10:00Z	lessons	loadLogs stores events null when readEvents throws	One malformed line must not abort the whole pass	src/store/eventlog.ts	open
 2026-10-17T18:10:00Z	lessons	A receipt is a link only when the pick id matches p-YYYYMMDD-NN	Payload text stays text, and the only hrefs are this War Room's pick pages	src/ui/lessons.js	open
 2026-10-17T18:10:00Z	lessons	A soft update skips the Locker Room while focus is inside the Window form	Typing a date has to survive the live event stream	src/ui/app.js	open
+2026-10-17T19:30:00Z	graft	Base the Pick 3 graft on dd/p3-lessons-a, the kind registry	Pass 2 flipped the winner; the tie rule chose fewer diff lines, 1635 against 1771	docs/SPEC-004-lessons.md	open
+2026-10-17T19:30:00Z	graft	Rank 1 is a gold card whose first receipt sits above the rest of that lesson and is not listed again under Receipts	The Sunday pass should see the first fix, its level, and its first receipt; pass 1 rejected showing that link twice	src/ui/lessons.js	open
+2026-10-17T19:30:00Z	graft	Clear is a submit button that sets the hash to #/lessons	An anchor to #/lessons would be an href the L18 harness rejects	src/ui/lessons.js	open
+2026-10-17T19:30:00Z	graft	loadLogs inlines the log shape and does not import PickLog	The touch map allows only the loadLogs function in eventlog.ts	src/store/eventlog.ts	open
+2026-10-17T19:30:00Z	graft	Rejected c2 findings exports, c3 closed receipt details, and taking c3's python summary check	Those add a second public pipeline, hide evidence behind a second click, or replace the base helper	docs/SPEC-004-lessons.md	open

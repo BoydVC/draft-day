@@ -2,7 +2,6 @@ import { mkdir, open, readdir, readFile, stat, unlink, appendFile } from "node:f
 import { dirname, join } from "node:path";
 import type { DraftEvent } from "../core/events.ts";
 import { formatPickId, isPickId, pickIdPrefix } from "../core/ids.ts";
-import type { PickLog } from "../core/lessons.ts";
 import { followUpEvents, reduce } from "../core/reducer.ts";
 import type { PickId } from "../core/types.ts";
 
@@ -82,9 +81,9 @@ export async function loadPicks(dataDir: string, now = Date.now()) {
   return picks;
 }
 
-export async function loadLogs(dataDir: string): Promise<PickLog[]> {
+export async function loadLogs(dataDir: string): Promise<{ pickId: string; events: readonly DraftEvent[] | null }[]> {
   const ids = await listPickIds(dataDir);
-  const logs: PickLog[] = [];
+  const logs: { pickId: string; events: readonly DraftEvent[] | null }[] = [];
   for (const id of ids) {
     try {
       logs.push({ pickId: id, events: await readEvents(dataDir, id) });

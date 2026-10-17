@@ -1,8 +1,11 @@
-function receiptLine(finding, el) {
+function receiptHead(finding, el) {
   const name = `${finding.pickId} #${finding.seq}`;
-  const head = /^p-\d{8}-\d{2}$/.test(String(finding.pickId))
+  return /^p-\d{8}-\d{2}$/.test(String(finding.pickId))
     ? el("a", { href: `#/picks/${finding.pickId}` }, [name])
     : name;
+}
+
+function receiptChildren(finding, el) {
   const bits = [];
   if (finding.pass != null) {
     bits.push(`pass ${finding.pass}`);
@@ -10,21 +13,30 @@ function receiptLine(finding, el) {
     else if (finding.label) bits.push(`label ${finding.label}`);
   }
   if (finding.detail) bits.push(String(finding.detail));
-  const tail = bits.length ? ` ${bits.join(" ")}` : "";
-  return el("li", {}, tail ? [head, tail] : [head]);
+  const head = receiptHead(finding, el);
+  return bits.length ? [head, ` ${bits.join(" ")}`] : [head];
+}
+
+function receiptLine(finding, el) {
+  return el("li", {}, receiptChildren(finding, el));
 }
 
 function lessonItem(group, el) {
   const proposal = group.proposal;
   const counts = `${group.pickCount} picks · ${group.count} findings`;
-  return el("li", {}, [
+  const prominent = group.rank === 1;
+  const findings = Array.isArray(group.findings) ? group.findings : [];
+  const children = [
     el("h3", {}, [`${group.rank}. ${group.key}`]),
     el("span", { class: "dd-level" }, [group.level]),
-    el("p", { class: "meta" }, [group.stage ? `${counts} · ${group.stage}` : counts]),
-    el("p", {}, [proposal.check]),
-    el("p", { class: "meta" }, [`where ${proposal.where}`]),
-    el("ul", { "aria-label": "Receipts" }, group.findings.map((finding) => receiptLine(finding, el))),
-  ]);
+    el("p", { class: "meta dd-counts" }, [group.stage ? `${counts} · ${group.stage}` : counts]),
+    el("p", { class: "dd-check" }, [proposal.check]),
+    el("p", { class: "meta dd-where" }, [`where ${proposal.where}`]),
+  ];
+  if (prominent && findings[0]) children.push(el("p", { class: "dd-top-receipt" }, receiptChildren(findings[0], el)));
+  const listed = prominent ? findings.slice(1) : findings;
+  children.push(el("ul", { "aria-label": "Receipts" }, listed.map((finding) => receiptLine(finding, el))));
+  return el("li", prominent ? { class: "dd-first" } : {}, children);
 }
 
 function oneOffItem(group, el) {
@@ -49,13 +61,26 @@ function draftDayLessons(report, el) {
     type: "date",
     value: bounds.until || "",
   });
+  const clear = el("button", { type: "submit", class: "dd-clear", name: "clear" }, ["Clear"]);
+  let dropWindow = false;
+  clear.addEventListener("click", () => {
+    dropWindow = true;
+  });
   const form = el("form", { id: "lesson-window", "aria-label": "Window" }, [
     el("div", {}, [el("label", { for: "since" }, ["Since"]), since]),
     el("div", {}, [el("label", { for: "until" }, ["Until"]), until]),
-    el("button", { type: "submit" }, ["Show"]),
+    el("div", { class: "dd-window-actions" }, [
+      el("button", { type: "submit" }, ["Show"]),
+      clear,
+    ]),
   ]);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (dropWindow || (event.submitter && event.submitter.name === "clear")) {
+      dropWindow = false;
+      location.hash = "#/lessons";
+      return;
+    }
     const params = new URLSearchParams();
     if (since.value) params.set("since", since.value);
     if (until.value) params.set("until", until.value);
@@ -65,8 +90,11 @@ function draftDayLessons(report, el) {
   const children = [
     el("h2", {}, ["Locker Room"]),
     el("p", {}, [report && typeof report.summary === "string" ? report.summary : ""]),
-    form,
   ];
+  if (report && Array.isArray(report.lessons) && report.lessons.length) {
+    children.push(el("p", { class: "dd-lead" }, ["Fix the first one before the rest."]));
+  }
+  children.push(form);
   if (report && report.error && !Array.isArray(report.lessons)) {
     children.push(el("p", {}, [String(report.error)]));
   } else if (!report || !report.findings) {
