@@ -12,6 +12,7 @@ import {
   reduce,
   screenIdea,
   stageLabel,
+  timeline,
   type Config,
   type Pick,
 } from "../core/index.ts";
@@ -55,35 +56,7 @@ async function readBody(req: IncomingMessage): Promise<string> {
   return Buffer.concat(chunks).toString("utf8");
 }
 
-function summarizeEvent(event: DraftEvent): { seq: number; ts: string; type: string; by: string; summary: string } {
-  const cand = typeof event.payload.cand === "string" ? event.payload.cand : "";
-  const reason = typeof event.payload.reason === "string" ? event.payload.reason : "";
-  let summary: string = event.type;
-  if (event.type === "pick_created") summary = "Pick created";
-  if (event.type === "scouting_report_written") summary = "Scouting report written";
-  if (event.type === "scouting_approved") summary = "Scouting approved";
-  if (event.type === "candidate_launched") summary = `Launched ${cand}`;
-  if (event.type === "candidate_finished") summary = `${cand} finished`;
-  if (event.type === "candidate_failed") summary = `${cand} errored`;
-  if (event.type === "candidate_dropped") summary = `${cand} dropped`;
-  if (event.type === "judge_launched") summary = `Film Room pass ${String(event.payload.pass ?? "")}`;
-  if (event.type === "judgement_recorded") summary = "Scorecard recorded";
-  if (event.type === "graft_launched") summary = "Trade started";
-  if (event.type === "graft_recorded") summary = `Draft PR #${String(event.payload.prNumber ?? "")}`;
-  if (event.type === "physical_launched") summary = event.payload.walkover === true ? "Physical started (walkover)" : "Physical started";
-  if (event.type === "verdict_recorded") {
-    const physical = event.payload.physical as { verdict?: string } | undefined;
-    summary = `Verdict ${physical?.verdict ?? ""}`;
-  }
-  if (event.type === "fix_requested") summary = `Fix ${String(event.payload.loop ?? "")} requested`;
-  if (event.type === "draft_pr_confirmed") summary = "Draft PR confirmed";
-  if (event.type === "pick_failed") summary = `Failed (${reason})`;
-  if (event.type === "pick_cancelled") summary = "Cancelled";
-  if (event.type === "lesson_recorded") summary = `Lesson: ${String(event.payload.topic ?? "")}`;
-  return { seq: event.seq, ts: event.ts, type: event.type, by: event.by, summary };
-}
-
-function pickView(pick: Pick, events: DraftEvent[]) {
+function pickView(pick: Pick, events: DraftEvent[], now: number) {
   return {
     id: pick.id,
     idea: pick.idea,
@@ -107,7 +80,7 @@ function pickView(pick: Pick, events: DraftEvent[]) {
     walkover: pick.walkover,
     fixLoops: pick.fixLoops,
     lessons: pick.lessons,
-    events: events.map(summarizeEvent),
+    timeline: timeline(events, now),
   };
 }
 
@@ -209,13 +182,14 @@ export async function startServer(options: ServerOptions): Promise<{
         send(res, 404, { error: "pick not found" });
         return;
       }
+      const now = Date.now();
       const events = await readEvents(options.dataDir, id);
-      const pick = reduce(events, Date.now());
+      const pick = reduce(events, now);
       if (!pick) {
         send(res, 404, { error: "pick not found" });
         return;
       }
-      send(res, 200, pickView(pick, events));
+      send(res, 200, pickView(pick, events, now));
       return;
     }
 
@@ -277,7 +251,8 @@ export async function startServer(options: ServerOptions): Promise<{
       return;
     }
 
-    if (req.method === "GET" && (path === "/" || path === "/index.html" || path === "/app.js" || path === "/styles.css")) {
+    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css"];
+    if (req.method === "GET" && files.includes(path)) {
       const file = path === "/" || path === "/index.html" ? "index.html" : path.slice(1);
       const full = normalize(join(UI_DIR, file));
       if (!full.startsWith(UI_DIR)) {
