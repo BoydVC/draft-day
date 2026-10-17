@@ -81,6 +81,19 @@ export async function loadPicks(dataDir: string, now = Date.now()) {
   return picks;
 }
 
+export async function loadLogs(dataDir: string): Promise<{ pickId: string; events: DraftEvent[] | null }[]> {
+  const ids = await listPickIds(dataDir);
+  const logs: { pickId: string; events: DraftEvent[] | null }[] = [];
+  for (const pickId of ids) {
+    try {
+      logs.push({ pickId, events: await readEvents(dataDir, pickId) });
+    } catch {
+      logs.push({ pickId, events: null });
+    }
+  }
+  return logs;
+}
+
 export async function allocatePickId(dataDir: string, now = new Date()): Promise<PickId> {
   await mkdir(dataDir, { recursive: true });
   return withLock(join(dataDir, "alloc.lock"), async () => {

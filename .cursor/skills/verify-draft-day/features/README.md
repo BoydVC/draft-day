@@ -32,4 +32,5 @@ This directory is the maintained source for verifying the War Room. Read the ind
 - [New pick](./new-pick.md) queues an idea from the form into the inbox and onto the board.
 - [Pick page](./pick-page.md) shows the scouting report, candidates, scorecard, trades, physical, and decision log.
 - [Film Room](./film-room.md) shows the Scorecard: base, swap, pass toggle, and the reason sentence.
+- [Locker Room](./lessons.md) groups repeated findings into lessons and proposes one engine change each.
 - [Live updates](./live-updates.md) refresh the open board or pick page when an event or inbox row lands.

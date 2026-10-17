@@ -30,3 +30,7 @@ ts	phase	decision	why	evidence	result
 2026-10-17T14:50:00Z	graft	The title switch ends in a never default	Adding an EVENT_TYPES member must fail tsc, while a string outside the list still titles as Unrecognized event	src/core/timeline.ts	open
 2026-10-17T14:50:00Z	graft	The Decision log takes app.js el instead of declaring its own	Two global function el declarations would shadow each other	src/ui/timeline.js	open
 2026-10-17T14:50:00Z	graft	Rejected the run-bar strip, the RULES registry, and the first-report timeout	Those are a feature, an architecture swap, or a second timeout derivation; openings stay on reduce().runs	docs/SPEC-003-pick-timeline.md	open
+2026-10-17T18:40:00Z	lessons	Stage 1 is findings() and stage 2 is groupFindings()	The repeat rule, rank, and proposal only see a flat Finding list, so each stage can be pinned on its own	src/core/lessons.ts	open
+2026-10-17T18:40:00Z	lessons	Criterion names sit on a WeakMap keyed by the finding	Finding stays the SPEC 004 shape, and stage 2 still reads only findings	src/core/lessons.ts	open
+2026-10-17T18:40:00Z	lessons	Rubric and createdAt come from reduce(); stage names come from stageLabel	Those stay the only sources; the gardener does not re-read the report event or type Film Room or Physical	src/core/lessons.ts	open
+2026-10-17T18:40:00Z	lessons	Receipts are a five-column table whose body is the Receipts list	The Locker Room shows pick, seq, pass, cand, and detail, and the accessible name stays Receipts	src/ui/lessons.js	open

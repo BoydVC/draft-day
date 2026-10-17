@@ -1,0 +1,123 @@
+.locker {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.locker h2,
+.locker h3,
+.locker p,
+.locker li,
+.locker a,
+.locker td,
+.locker th,
+.locker caption {
+  overflow-wrap: anywhere;
+}
+
+.locker-summary {
+  margin: 0 0 12px;
+  font: 600 1.05rem/1.35 ui-sans-serif, system-ui, sans-serif;
+}
+
+form.locker-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 8px 12px;
+  align-items: end;
+  min-width: 0;
+  margin-bottom: 8px;
+}
+
+form.locker-form .window-name {
+  grid-column: 1 / -1;
+  margin: 0;
+  font: 600 13px/1.2 ui-sans-serif, system-ui, sans-serif;
+  color: var(--muted);
+}
+
+form.locker-form input {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.locker-list-title {
+  margin: 16px 0 0;
+  font-size: 16px;
+}
+
+.locker ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.locker li {
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  min-width: 0;
+}
+
+.lesson-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.lesson-head h3 {
+  margin: 0;
+  font-size: 18px;
+  min-width: 0;
+}
+
+.lesson-level {
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.lesson-meta,
+.lesson-check,
+.lesson-where,
+.one-off p {
+  margin: 6px 0;
+}
+
+.lesson-where {
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  color: var(--muted);
+}
+
+.receipts {
+  width: 100%;
+  table-layout: fixed;
+  margin-top: 8px;
+}
+
+.receipts caption {
+  caption-side: top;
+  text-align: left;
+  padding: 0 0 6px;
+  font: 600 13px/1.2 ui-sans-serif, system-ui, sans-serif;
+  color: var(--gold);
+}
+
+.receipts th,
+.receipts td {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.receipts th:nth-child(1),
+.receipts td:nth-child(1) { width: 28%; }
+.receipts th:nth-child(2),
+.receipts td:nth-child(2) { width: 10%; }
+.receipts th:nth-child(3),
+.receipts td:nth-child(3) { width: 14%; }
+.receipts th:nth-child(4),
+.receipts td:nth-child(4) { width: 14%; }
+.receipts th:nth-child(5),
+.receipts td:nth-child(5) { width: 34%; }

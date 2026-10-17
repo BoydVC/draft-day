@@ -10,6 +10,8 @@ import {
   loadTargets,
   parseTargetRepo,
   filmRoom,
+  gardener,
+  lessonWindow,
   reduce,
   screenIdea,
   stageLabel,
@@ -19,7 +21,7 @@ import {
 } from "../core/index.ts";
 import type { DraftEvent } from "../core/events.ts";
 import { appendInbox, inboxCursor, readInbox } from "../store/inbox.ts";
-import { loadPicks, readEvents, signature } from "../store/eventlog.ts";
+import { loadLogs, loadPicks, readEvents, signature } from "../store/eventlog.ts";
 import { forwardIntake } from "./relay.ts";
 
 const UI_DIR = join(dirname(fileURLToPath(import.meta.url)), "../ui");
@@ -253,7 +255,17 @@ export async function startServer(options: ServerOptions): Promise<{
       return;
     }
 
-    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css"];
+    if (req.method === "GET" && path === "/api/lessons") {
+      const parsed = lessonWindow(url.searchParams.get("since"), url.searchParams.get("until"));
+      if (!parsed.ok) {
+        send(res, 400, { error: parsed.error });
+        return;
+      }
+      send(res, 200, gardener(await loadLogs(options.dataDir), parsed.value));
+      return;
+    }
+
+    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css", "/lessons.js", "/lessons.css"];
     if (req.method === "GET" && files.includes(path)) {
       const file = path === "/" || path === "/index.html" ? "index.html" : path.slice(1);
       const full = normalize(join(UI_DIR, file));
