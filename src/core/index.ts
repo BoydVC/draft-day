@@ -53,6 +53,27 @@ export {
   type TimelineRun,
 } from "./timeline.ts";
 
+export {
+  CORRECTION_ORDER,
+  LOW_SCORE,
+  REPEAT_PICKS,
+  gardener,
+  lessonWindow,
+  lessonsText,
+} from "./lessons.ts";
+export type {
+  CorrectionLevel,
+  Finding,
+  FindingKind,
+  LessonGroup,
+  LessonWindow,
+  LessonsReport,
+  PickLog,
+  Proposal,
+  Receipt,
+  SkippedLog,
+} from "./lessons.ts";
+
 export { asPickId, branchFor, formatPickId, isCandId, isPickId, pickIdPrefix } from "./ids.ts";
 
 export { brandStoredTarget, loadTargets, parseTargetRepo } from "./target.ts";

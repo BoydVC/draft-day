@@ -30,3 +30,9 @@ ts	phase	decision	why	evidence	result
 2026-10-17T14:50:00Z	graft	The title switch ends in a never default	Adding an EVENT_TYPES member must fail tsc, while a string outside the list still titles as Unrecognized event	src/core/timeline.ts	open
 2026-10-17T14:50:00Z	graft	The Decision log takes app.js el instead of declaring its own	Two global function el declarations would shadow each other	src/ui/timeline.js	open
 2026-10-17T14:50:00Z	graft	Rejected the run-bar strip, the RULES registry, and the first-report timeout	Those are a feature, an architecture swap, or a second timeout derivation; openings stay on reduce().runs	docs/SPEC-003-pick-timeline.md	open
+2026-10-17T18:05:00Z	lessons	The gardener reads judgement_recorded cards because a pick with no Film Room base keeps judgement null	Film Room drops the cards when no candidate passes the gates, and the Sunday pass still has to see them	src/core/lessons.ts	open
+2026-10-17T18:05:00Z	lessons	A group is a lesson only after the same key is in two picks	One pick that repeats a mistake is still one incident	src/core/lessons.ts	open
+2026-10-17T18:05:00Z	lessons	loadLogs returns events null when a line will not parse	One bad log must not crash the Sunday pass	src/store/eventlog.ts	open
+2026-10-17T18:05:00Z	lessons	Rank 1 shows its level, where, and first receipt at the top of the list; other lessons stay short lines and receipts sit in details	Boyd's Sunday phone check should show the first fix without opening every receipt	src/ui/lessons.js	open
+2026-10-17T18:05:00Z	lessons	Clear drops the hash query and the page does no date math	The window is only the since and until already on the route	src/ui/lessons.js	open
+2026-10-17T18:05:00Z	lessons	Proposals name parse.ts, scout.md, and the verify skill, and this pick does not edit them	The gardener only proposes	src/core/lessons.ts	open

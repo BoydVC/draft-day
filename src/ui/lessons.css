@@ -1,0 +1,150 @@
+.locker {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.locker h2 {
+  margin-bottom: 4px;
+}
+
+.locker-summary {
+  margin: 0 0 8px;
+  font: 600 1.05rem/1.35 ui-sans-serif, system-ui, sans-serif;
+}
+
+.locker-lead {
+  margin: 0 0 12px;
+}
+
+.locker-window {
+  margin-bottom: 16px;
+}
+
+.locker-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+}
+
+.locker-clear {
+  background: transparent;
+  color: var(--gold);
+  border: 0;
+  border-radius: 0;
+  padding: 10px 0;
+  text-decoration: underline;
+  font: 600 15px/1 ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.locker-tasks,
+.locker-oneoffs,
+.locker-receipts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+}
+
+.locker-first {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--gold);
+  border-radius: 14px;
+  padding: 12px;
+  margin: 0 0 10px;
+  background: #24301c;
+}
+
+.locker-first h3 { order: 1; margin: 0 0 6px; font-size: 1.2rem; line-height: 1.3; }
+.locker-first .locker-chip { order: 2; }
+.locker-first .locker-where { order: 3; }
+.locker-first .locker-top-receipt { order: 4; }
+.locker-first .locker-counts { order: 5; }
+.locker-first .locker-check { order: 6; }
+.locker-first details { order: 7; }
+
+.locker-chip {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 0 8px;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  padding: 2px 8px;
+  color: var(--gold);
+  font: 600 12px/1.4 ui-sans-serif, system-ui, sans-serif;
+}
+
+.locker-where,
+.locker-check,
+.locker-counts,
+.locker-top-receipt {
+  margin: 0 0 6px;
+}
+
+.locker-top-receipt a {
+  font: 700 1.05rem/1.35 ui-sans-serif, system-ui, sans-serif;
+  color: var(--gold);
+}
+
+.locker-short {
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+}
+
+.locker-short h3 {
+  display: inline;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.locker-short .locker-chip {
+  margin: 0 0 0 8px;
+}
+
+.locker-short .locker-check,
+.locker-short .locker-where {
+  margin: 2px 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.locker h2,
+.locker h3,
+.locker p,
+.locker a,
+.locker li,
+.locker summary,
+.locker span,
+.locker label,
+.locker input,
+.locker button {
+  overflow-wrap: anywhere;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.locker input[type="date"] {
+  display: block;
+  width: 100%;
+}
+
+.locker details {
+  margin-top: 4px;
+  max-width: 100%;
+}
+
+.locker summary {
+  cursor: pointer;
+  font: 600 14px/1.4 ui-sans-serif, system-ui, sans-serif;
+}
+
+.locker-receipts li {
+  margin: 4px 0;
+}
+
+.locker-empty {
+  margin: 8px 0 0;
+}

@@ -101,6 +101,27 @@ EOF
     fi
     echo "seeded p-20261010-07"
     ;;
+  seed-lessons)
+    load_state
+    node -e 'const fs=require("fs"),p=require("path");for(const l of fs.readFileSync(process.argv[1],"utf8").split("\n")){if(!l.trim())continue;const {pickId,event}=JSON.parse(l);const d=p.join(process.argv[2],"picks",pickId);fs.mkdirSync(d,{recursive:true});fs.appendFileSync(p.join(d,"events.jsonl"),JSON.stringify(event)+"\n")}' "$ROOT/test/fixtures/lessons/lessons-week.jsonl" "$DATA"
+    body="$(curl -sS -w '\n%{http_code}' "${URL}/api/lessons?since=2026-10-11&until=2026-10-16")" || {
+      echo "seed-lessons: GET /api/lessons failed" >&2
+      exit 1
+    }
+    code="${body##*$'\n'}"
+    json="${body%$'\n'*}"
+    if [[ "$code" != "200" ]]; then
+      echo "seed-lessons: GET /api/lessons returned ${code}" >&2
+      printf '%s\n' "$json" >&2
+      exit 1
+    fi
+    summary="$(python3 -c 'import json,sys; print(json.load(sys.stdin)["summary"])' <<<"$json")"
+    if [[ "$summary" != "7 lessons from 5 picks · 27 findings · 6 one-offs" ]]; then
+      echo "seed-lessons: ${summary}" >&2
+      exit 1
+    fi
+    echo "seeded lessons week"
+    ;;
   cleanup)
     load_state
     if kill -0 "$PID" 2>/dev/null; then
@@ -120,7 +141,7 @@ EOF
     echo "cleaned pid ${PID:-?} data ${DATA:-?}"
     ;;
   *)
-    echo "usage: control.sh launch|doctor|seed-timeline|cleanup" >&2
+    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|cleanup" >&2
     exit 2
     ;;
 esac

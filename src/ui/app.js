@@ -21,6 +21,18 @@ function route() {
   const hash = location.hash.replace(/^#/, "");
   const match = hash.match(/^\/picks\/(p-\d{8}-\d{2})$/);
   if (match) return { name: "pick", id: match[1] };
+  const lessons = hash.match(/^\/lessons(?:\?(.*))?$/);
+  if (lessons) {
+    const params = new URLSearchParams(lessons[1] || "");
+    const day = /^\d{4}-\d{2}-\d{2}$/;
+    const since = params.get("since");
+    const until = params.get("until");
+    return {
+      name: "lessons",
+      since: since && day.test(since) ? since : null,
+      until: until && day.test(until) ? until : null,
+    };
+  }
   return { name: "board" };
 }
 
@@ -103,6 +115,7 @@ function boardTable(data) {
 
 function boardView(data) {
   return el("div", {}, [
+    el("p", { class: "back" }, [el("a", { href: "#/lessons" }, ["Locker Room"])]),
     formPanel(),
     el("section", { class: "panel", "aria-label": "Big Board", id: "big-board" }, [
       el("h2", {}, ["Big Board"]),
@@ -312,6 +325,20 @@ async function render(options) {
           boardTable(data),
         ]),
       );
+      return;
+    }
+    if (where.name === "lessons") {
+      const form = document.getElementById("lesson-window");
+      if (options?.soft && form && document.activeElement && form.contains(document.activeElement)) return;
+      const params = new URLSearchParams();
+      if (where.since) params.set("since", where.since);
+      if (where.until) params.set("until", where.until);
+      const query = params.toString();
+      const response = await fetch(query ? `/api/lessons?${query}` : "/api/lessons");
+      const report = await response.json();
+      app.replaceChildren();
+      app.append(el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]));
+      app.append(globalThis.draftDayLessons(report, el));
       return;
     }
     app.replaceChildren();
