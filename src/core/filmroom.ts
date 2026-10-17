@@ -59,45 +59,93 @@ function riskCount(candidates: readonly Candidate[], cand: CandId): number {
   return candidates.find((item) => item.id === cand)?.report?.risks.length ?? 0;
 }
 
+interface TieSide {
+  cand: CandId;
+  diff?: DiffStat;
+  risks: number;
+}
+
+interface TieKeyRule {
+  key: TieKey;
+  label: string;
+  missingLoses: boolean;
+  measure: (side: TieSide) => number | null;
+  text: (side: TieSide) => string;
+}
+
 function diffLines(diff: DiffStat | undefined): number | null {
-  if (!diff) return null;
-  return diff.added + diff.removed;
+  return diff ? diff.added + diff.removed : null;
+}
+
+const TIE_KEYS: readonly TieKeyRule[] = [
+  {
+    key: "diff_lines",
+    label: "fewer diff lines",
+    missingLoses: true,
+    measure: (side) => diffLines(side.diff),
+    text: (side) => {
+      const lines = diffLines(side.diff);
+      return lines === null ? "missing" : String(lines);
+    },
+  },
+  {
+    key: "files",
+    label: "fewer files",
+    missingLoses: true,
+    measure: (side) => (side.diff ? side.diff.files : null),
+    text: (side) => (side.diff ? String(side.diff.files) : "missing"),
+  },
+  {
+    key: "risks",
+    label: "fewer reported risks",
+    missingLoses: false,
+    measure: (side) => side.risks,
+    text: (side) => String(side.risks),
+  },
+  {
+    key: "cand_id",
+    label: "lower cand id",
+    missingLoses: false,
+    measure: () => null,
+    text: (side) => side.cand,
+  },
+];
+
+function compareTie(rule: TieKeyRule, a: TieSide, b: TieSide): number {
+  if (rule.key === "cand_id") {
+    if (a.cand === b.cand) return 0;
+    return a.cand < b.cand ? -1 : 1;
+  }
+  const left = rule.measure(a);
+  const right = rule.measure(b);
+  if (left === null && right === null) return 0;
+  if (left === null || right === null) {
+    if (!rule.missingLoses) return 0;
+    return left === null ? 1 : -1;
+  }
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
+}
+
+function separate(a: TieSide, b: TieSide): { winner: CandId; deciding: TieKey } {
+  for (const rule of TIE_KEYS) {
+    const cmp = compareTie(rule, a, b);
+    if (cmp !== 0) return { winner: cmp < 0 ? a.cand : b.cand, deciding: rule.key };
+  }
+  return { winner: a.cand <= b.cand ? a.cand : b.cand, deciding: "cand_id" };
+}
+
+function lineSide(line: DraftLine): TieSide {
+  return { cand: line.cand, diff: line.diff, risks: line.risks };
 }
 
 function tieCall(left: DraftLine, right: DraftLine): TieCall {
-  const leftLines = diffLines(left.diff);
-  const rightLines = diffLines(right.diff);
-  if (leftLines !== rightLines) {
-    const leftWins = leftLines !== null && (rightLines === null || leftLines < rightLines);
-    const winner = leftWins ? left : right;
-    const loser = leftWins ? right : left;
-    return {
-      winner: winner.cand,
-      loser: loser.cand,
-      deciding: "diff_lines",
-      detail: ` (${diffLines(winner.diff) ?? "missing"} vs ${diffLines(loser.diff) ?? "missing"})`,
-    };
-  }
-  const leftFiles = left.diff ? left.diff.files : null;
-  const rightFiles = right.diff ? right.diff.files : null;
-  if (leftFiles !== rightFiles) {
-    const leftWins = leftFiles !== null && (rightFiles === null || leftFiles < rightFiles);
-    const winner = leftWins ? left : right;
-    const loser = leftWins ? right : left;
-    const winnerFiles = winner.diff ? String(winner.diff.files) : "missing";
-    const loserFiles = loser.diff ? String(loser.diff.files) : "missing";
-    return { winner: winner.cand, loser: loser.cand, deciding: "files", detail: ` (${winnerFiles} vs ${loserFiles})` };
-  }
-  if (left.risks !== right.risks) {
-    const leftWins = left.risks < right.risks;
-    const winner = leftWins ? left : right;
-    const loser = leftWins ? right : left;
-    return { winner: winner.cand, loser: loser.cand, deciding: "risks", detail: ` (${winner.risks} vs ${loser.risks})` };
-  }
-  const leftWins = left.cand < right.cand;
-  const winner = leftWins ? left : right;
-  const loser = leftWins ? right : left;
-  return { winner: winner.cand, loser: loser.cand, deciding: "cand_id", detail: "" };
+  const decision = separate(lineSide(left), lineSide(right));
+  const winner = decision.winner === left.cand ? left : right;
+  const loser = decision.winner === left.cand ? right : left;
+  const rule = TIE_KEYS.find((item) => item.key === decision.deciding);
+  const detail = !rule || decision.deciding === "cand_id" ? "" : ` (${rule.text(lineSide(winner))} vs ${rule.text(lineSide(loser))})`;
+  return { winner: decision.winner, loser: loser.cand, deciding: decision.deciding, detail };
 }
 
 function rankPass(lines: DraftLine[]): void {

@@ -544,9 +544,12 @@ async function selftest(paths: Paths, flags: Flags): Promise<number> {
         if (launches !== 2) problems.push(`judge launches ${launches}`);
         if (room?.swap !== "flipped") problems.push(`swap ${room?.swap ?? "none"}`);
         if (!room?.tieRule || room.base !== room.tieRule.winner) problems.push(`base ${room?.base ?? "none"}`);
+        if (room?.tieRule?.deciding !== "diff_lines") problems.push(`deciding ${String(room?.tieRule?.deciding)}`);
         const failer = room?.passes.at(-1)?.lines.find((line) => line.gatePass === false);
         if (!failer || failer.rank !== null) problems.push(`gate-failer rank ${String(failer?.rank)}`);
         if (room?.base && failer && room.base === failer.cand) problems.push("gate-failer is the base");
+        if (room?.passes[1]?.reversed !== true) problems.push("pass 2 was not reversed");
+        if (room?.closeCall !== true) problems.push("not a close call");
       }
       results.push({ ...result, name: scenario.name, problems });
     }

@@ -14,3 +14,8 @@ ts	phase	decision	why	evidence	result
 2026-10-16T16:40:00Z	policy	The War Room appends inbox rows and never writes pick events	A11; dd intake --from-inbox is the only pick writer	src/server/http.ts	open
 2026-10-16T16:40:00Z	budget	Hard caps live in code: N 5, one relaunch, two fix loops, two judge passes	A10; config cannot raise them	src/core/budget.ts	open
 2026-10-16T17:12:00Z	verify	npm test, tsc --noEmit, and selftest are green; War Room New pick and the drafted pick page were driven in a browser	SPEC 001 VERIFY steps	/opt/cursor/artifacts/war-room/big-board.png	tests green
+2026-10-17T18:24:00Z	graft	Base is c3 War Room first, dd/p1-film-room-c at efa65eb	The box ranked c3 first at weighted 3.07: phone scorecard stacks at 390px, and F9 has one test per tie key	docs/SPEC-002-film-room.md	open
+2026-10-17T18:24:00Z	graft	Tie rule is c2's ordered TIE_KEYS list; the reason sentence still uses c3's detail text	F9 is one ordered list, and the War Room sentence stays the one c3 already shows	src/core/filmroom.ts	open
+2026-10-17T18:24:00Z	graft	F2 bad judgements are one table row per clause, from c2, asserted with c3's messages	A row per clause stays auditable. Unknown criterion still adds a score, because c3 reports a missing id before an unknown one	test/film-room.test.ts	open
+2026-10-17T18:24:00Z	graft	Close selftest also checks deciding diff_lines, pass 2 reversed, and closeCall	c1 proved more of F16. The DATA_DIR line stays	src/cli/dd.ts	open
+2026-10-17T18:24:00Z	graft	Rejected c2's selection-ranker registry, c1's CLI validation, and dropping the selftest DATA_DIR line	Those swap the architecture, put validation in the wrong layer, or change unrelated output	docs/SPEC-002-film-room.md	open

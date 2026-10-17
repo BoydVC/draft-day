@@ -236,7 +236,7 @@ test("F2 bad judgements exit 2 and write nothing", async () => {
   assert.equal(labels.length, 2);
   const eventsPath = join(data, "picks", id, "events.jsonl");
   const before = await readFile(eventsPath, "utf8");
-  const base = {
+  const good = () => ({
     passes: [{
       order: labels,
       cards: labels.map((label) => ({
@@ -246,98 +246,34 @@ test("F2 bad judgements exit 2 and write nothing", async () => {
         scores: scout.rubric.map((criterion) => ({ criterionId: criterion.id, score: 3, evidence: `${criterion.name} holds` })),
       })),
     }],
-    base: labels[0],
+    base: labels[0]!,
     runnerUps: labels.slice(1),
-    trades: [] as { from: string; what: string; pointers: string[]; why: string }[],
-    swapConsistent: null,
-  };
-  const cases: { name: string; body: unknown; phrase: RegExp }[] = [
-    { name: "passes", phrase: /more than one pass/, body: { ...base, passes: [base.passes[0], base.passes[0]] } },
-    {
-      name: "label",
-      phrase: /not in this pass's label map/,
-      body: { ...base, passes: [{ ...base.passes[0], cards: base.passes[0]!.cards.map((item, index) => index === 0 ? { ...item, label: "C" } : item) }] },
-    },
-    {
-      name: "missing card",
-      phrase: /missing card for label/,
-      body: { ...base, passes: [{ ...base.passes[0], cards: base.passes[0]!.cards.slice(0, 1) }] },
-    },
-    {
-      name: "duplicate card",
-      phrase: /duplicate card for label/,
-      body: { ...base, passes: [{ ...base.passes[0], cards: [base.passes[0]!.cards[0], base.passes[0]!.cards[0], base.passes[0]!.cards[1]] }] },
-    },
-    {
-      name: "missing criterion",
-      phrase: /missing criterionId/,
-      body: {
-        ...base,
-        passes: [{
-          ...base.passes[0],
-          cards: base.passes[0]!.cards.map((item, index) => index === 0 ? { ...item, scores: item.scores.slice(1) } : item),
-        }],
-      },
-    },
-    {
-      name: "duplicate criterion",
-      phrase: /duplicate criterionId/,
-      body: {
-        ...base,
-        passes: [{
-          ...base.passes[0],
-          cards: base.passes[0]!.cards.map((item, index) => index === 0 ? { ...item, scores: [item.scores[0], ...item.scores] } : item),
-        }],
-      },
-    },
-    {
-      name: "unknown criterion",
-      phrase: /unknown criterionId nope/,
-      body: {
-        ...base,
-        passes: [{
-          ...base.passes[0],
-          cards: base.passes[0]!.cards.map((item, index) => index === 0
-            ? { ...item, scores: [...item.scores, { criterionId: "nope", score: 1, evidence: "extra" }] }
-            : item),
-        }],
-      },
-    },
-    {
-      name: "evidence",
-      phrase: /evidence is empty/,
-      body: {
-        ...base,
-        passes: [{
-          ...base.passes[0],
-          cards: base.passes[0]!.cards.map((item, index) => index === 0
-            ? { ...item, scores: item.scores.map((score, scoreIndex) => scoreIndex === 0 ? { ...score, evidence: "" } : score) }
-            : item),
-        }],
-      },
-    },
-    {
-      name: "cross total",
-      phrase: /crossTests\.total is not equal/,
-      body: {
-        ...base,
-        passes: [{
-          ...base.passes[0],
-          cards: base.passes[0]!.cards.map((item, index) => index === 0 ? { ...item, crossTests: { passed: 4, total: 9 } } : item),
-        }],
-      },
-    },
-    { name: "base", phrase: /candidate id c1 in base/, body: { ...base, base: "c1" } },
-    { name: "runnerUps", phrase: /candidate id c2 in runnerUps/, body: { ...base, runnerUps: ["c2"] } },
-    { name: "trade", phrase: /candidate id c1 in trades\.from/, body: { ...base, trades: [{ from: "c1", what: "a play", pointers: ["src/ui/app.js"], why: "clear" }] } },
+    trades: [{ from: labels[1]!, what: "status chip", pointers: ["src/ui/app.js"], why: "one renderer" }],
+    swapConsistent: null as null,
+  });
+  const clauses: { name: string; match: RegExp; tweak: (block: ReturnType<typeof good>) => void }[] = [
+    { name: "more than one pass", match: /more than one pass/, tweak: (block) => { block.passes.push(structuredClone(block.passes[0]!)); } },
+    { name: "label not in map", match: /label E is not in this pass's label map/, tweak: (block) => { block.passes[0]!.cards[0]!.label = "E"; } },
+    { name: "missing card", match: /missing card for label/, tweak: (block) => { block.passes[0]!.cards.pop(); } },
+    { name: "duplicate card", match: /duplicate card for label/, tweak: (block) => { block.passes[0]!.cards.push(structuredClone(block.passes[0]!.cards[0]!)); } },
+    { name: "missing criterion", match: /missing criterionId/, tweak: (block) => { block.passes[0]!.cards[0]!.scores.pop(); } },
+    { name: "duplicate criterion", match: /duplicate criterionId/, tweak: (block) => { block.passes[0]!.cards[0]!.scores.push(structuredClone(block.passes[0]!.cards[0]!.scores[0]!)); } },
+    { name: "unknown criterion", match: /unknown criterionId nope/, tweak: (block) => { block.passes[0]!.cards[0]!.scores.push({ criterionId: "nope", score: 1, evidence: "extra" }); } },
+    { name: "empty evidence", match: /evidence is empty/, tweak: (block) => { block.passes[0]!.cards[0]!.scores[0]!.evidence = ""; } },
+    { name: "unequal totals", match: /crossTests\.total is not equal/, tweak: (block) => { block.passes[0]!.cards[1]!.crossTests = { passed: 1, total: 9 }; } },
+    { name: "cand id base", match: /candidate id c1 in base/, tweak: (block) => { block.base = "c1"; } },
+    { name: "cand id runner", match: /candidate id c2 in runnerUps/, tweak: (block) => { block.runnerUps = ["c2"]; } },
+    { name: "cand id trade", match: /candidate id c1 in trades\.from/, tweak: (block) => { block.trades[0]!.from = "c1"; } },
   ];
-  for (const item of cases) {
-    const path = join(data, `${item.name}.json`);
-    await writeFile(path, JSON.stringify(item.body));
+  for (const clause of clauses) {
+    const block = good();
+    clause.tweak(block);
+    const path = join(data, `${clause.name.replaceAll(" ", "-")}.json`);
+    await writeFile(path, JSON.stringify(block));
     const result = await dd(["record", id, "judgement_recorded", "--file", path, "--data", data]);
-    assert.equal(result.code, 2, `${item.name} ${result.stderr}`);
-    assert.match(result.stderr, item.phrase, item.name);
-    assert.equal(await readFile(eventsPath, "utf8"), before, item.name);
+    assert.equal(result.code, 2, `${clause.name} ${result.stderr}`);
+    assert.match(result.stderr, clause.match, clause.name);
+    assert.equal(await readFile(eventsPath, "utf8"), before, clause.name);
   }
 });
 
