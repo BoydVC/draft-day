@@ -8,6 +8,7 @@ import {
   assertCandidateCount,
   branchFor,
   eventKey,
+  filmRoom,
   isCandId,
   isEventType,
   isPickId,
@@ -21,6 +22,7 @@ import {
   parseTargetRepo,
   parseVerdict,
   reduce,
+  validateJudgementContext,
   type Config,
   type DraftEvent,
   type EventType,
@@ -29,7 +31,7 @@ import {
 import { allocatePickId, commitPick, loadPicks, readEvents } from "../store/eventlog.ts";
 import { inboxCursor, readInbox } from "../store/inbox.ts";
 import { startServer } from "../server/http.ts";
-import { drive, HAPPY, POLICY, WALK, type DriverIo } from "../../test/fixtures/fake-driver.ts";
+import { CLOSE, drive, HAPPY, POLICY, WALK, type DriverIo } from "../../test/fixtures/fake-driver.ts";
 
 class Exit extends Error {
   code: number;
@@ -182,6 +184,8 @@ function normalize(
     const text = typeof raw.fileText === "string" ? raw.fileText : JSON.stringify(raw.judgement ?? raw);
     const parsed = parseJudgement(text);
     if (!parsed.ok) return parsed;
+    const problem = validateJudgementContext(parsed.value, pick.labels, pick.report?.rubric ?? []);
+    if (problem) return { error: problem };
     return {
       payload: {
         pass: pick.judgeLaunches,
@@ -364,7 +368,7 @@ function humanPick(pick: Pick): string {
 async function show(paths: Paths, pickId: string | undefined): Promise<number> {
   if (!pickId) throw new Exit("show needs a pick id");
   const { pick, events } = await loadOne(paths, pickId);
-  emit(paths, { ...pick, eventCount: events.length }, humanPick(pick));
+  emit(paths, { ...pick, filmRoom: filmRoom(pick), eventCount: events.length }, humanPick(pick));
   return 0;
 }
 
@@ -519,7 +523,7 @@ async function selftest(paths: Paths, flags: Flags): Promise<number> {
   });
   const results = [];
   try {
-    for (const scenario of [HAPPY, POLICY, WALK]) {
+    for (const scenario of [HAPPY, POLICY, WALK, CLOSE]) {
       const result = await drive(scenario, io());
       const problems: string[] = [];
       if (result.status !== scenario.expect) problems.push(`status ${result.status} wanted ${scenario.expect}`);
@@ -532,6 +536,17 @@ async function selftest(paths: Paths, flags: Flags): Promise<number> {
       }
       if (scenario.name === "walkover") {
         if (result.events.includes("judge_launched") || result.events.includes("graft_launched")) problems.push("walkover ran the film room or the trade");
+      }
+      if (scenario.name === "close") {
+        const loaded = await loadOne(local, result.pickId);
+        const room = filmRoom(loaded.pick);
+        const launches = result.events.filter((event) => event === "judge_launched").length;
+        if (launches !== 2) problems.push(`judge launches ${launches}`);
+        if (room?.swap !== "flipped") problems.push(`swap ${room?.swap ?? "none"}`);
+        if (!room?.tieRule || room.base !== room.tieRule.winner) problems.push(`base ${room?.base ?? "none"}`);
+        const failer = room?.passes.at(-1)?.lines.find((line) => line.gatePass === false);
+        if (!failer || failer.rank !== null) problems.push(`gate-failer rank ${String(failer?.rank)}`);
+        if (room?.base && failer && room.base === failer.cand) problems.push("gate-failer is the base");
       }
       results.push({ ...result, name: scenario.name, problems });
     }
