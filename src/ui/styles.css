@@ -297,6 +297,10 @@ ol.events li { margin: 6px 0; }
     padding: 16px 18px;
   }
 
+  button:disabled {
+    opacity: 0.45;
+  }
+
   a {
     display: inline-block;
     box-sizing: border-box;
