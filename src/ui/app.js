@@ -163,9 +163,7 @@ function pickView(pick) {
     physicalBits.push(el("p", { class: "empty" }, ["Physical has not run."]));
   }
 
-  const log = pick.events?.length
-    ? pick.events.map((event) => el("li", {}, [`${event.ts} ${event.summary}`]))
-    : [el("li", { class: "empty" }, ["No events."])];
+  const log = renderDecisionLog(pick, el);
 
   const swap = pick.judgement
     ? `Base ${pick.judgement.base}. swapConsistent ${String(pick.judgement.swapConsistent)}.`
@@ -196,7 +194,7 @@ function pickView(pick) {
     ]),
     section("Trades", [el("ul", {}, trades)]),
     section("Physical", physicalBits),
-    section("Decision log", [el("ol", { class: "events" }, log)]),
+    section("Decision log", log),
   ]);
 }
 

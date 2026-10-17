@@ -21,6 +21,7 @@ import {
   parseTargetRepo,
   parseVerdict,
   reduce,
+  timeline,
   type Config,
   type DraftEvent,
   type EventType,
@@ -361,6 +362,22 @@ function humanPick(pick: Pick): string {
   return `${pick.id}  ${pick.status}  runs ${pick.runs}  ${pick.idea}`;
 }
 
+async function timelineCommand(paths: Paths, pickId: string | undefined): Promise<number> {
+  if (!pickId) throw new Exit("timeline needs a pick id");
+  const now = Date.now();
+  const { events } = await loadOne(paths, pickId, now);
+  const view = timeline(events, now);
+  if (!view) throw new Exit(`unknown pick ${pickId}`);
+  const relaunchWord = view.counts.relaunches === 1 ? "relaunch" : "relaunches";
+  const text = [
+    `${view.pickId}  ${view.status}  ${view.elapsedText}  ${view.counts.total} runs`,
+    ...view.entries.map((entry) => `+${entry.sinceStartText}  ${entry.stage}  ${entry.title}`),
+    `runs ${view.counts.total}: candidate ${view.counts.candidate} (${view.counts.relaunches} ${relaunchWord}), judge ${view.counts.judge}, graft ${view.counts.graft}, physical ${view.counts.physical}, fix ${view.counts.fix}`,
+  ].join("\n");
+  emit(paths, view, text);
+  return 0;
+}
+
 async function show(paths: Paths, pickId: string | undefined): Promise<number> {
   if (!pickId) throw new Exit("show needs a pick id");
   const { pick, events } = await loadOne(paths, pickId);
@@ -551,6 +568,7 @@ function help(): string {
     "dd next <pickId>",
     "dd record <pickId> <event> [--file path] [--cand c1] [--agent id]",
     "dd show <pickId>",
+    "dd timeline <pickId>",
     "dd board",
     "dd brief <pickId> <candidate|judge|graft|physical> [cand]",
     "dd lessons",
@@ -579,6 +597,8 @@ export async function main(argv: string[]): Promise<number> {
         return await recordCommand(paths, rest[0], rest[1], flags);
       case "show":
         return await show(paths, rest[0]);
+      case "timeline":
+        return await timelineCommand(paths, rest[0]);
       case "board":
         return await board(paths);
       case "brief":

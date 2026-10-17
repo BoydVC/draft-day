@@ -1,0 +1,156 @@
+.decision-log {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.timeline-summary {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+
+.timeline-kicker,
+.strip-label,
+.event-stage {
+  margin: 14px 0 6px;
+  font: 600 12px/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted, #c3bba6);
+}
+
+.event-stage {
+  margin: 12px 0 4px;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  font-size: 16px;
+  font-family: Georgia, "Iowan Old Style", Palatino, serif;
+  color: var(--ink, #f4f0e4);
+}
+
+.stage-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 0;
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.stage-list li {
+  margin: 0;
+}
+
+.stage-list li + li::before {
+  content: "·";
+  margin: 0 8px;
+  color: var(--muted, #c3bba6);
+}
+
+.runs-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.runs-scroll table {
+  width: max-content;
+  min-width: 100%;
+}
+
+.runs-scroll caption {
+  caption-side: top;
+  text-align: left;
+  font: 600 12px/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted, #c3bba6);
+  margin: 0 0 6px;
+}
+
+.runs-scroll th,
+.runs-scroll td {
+  white-space: nowrap;
+}
+
+.timeline-strip {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 4px;
+}
+
+.stage-strip {
+  display: grid;
+  gap: 2px;
+}
+
+.strip-label {
+  margin: 0;
+}
+
+.stage-track {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.run-lane {
+  position: relative;
+  height: 18px;
+  margin: 1px 0;
+}
+
+.run-bar {
+  position: absolute;
+  top: 1px;
+  left: var(--start, 0%);
+  width: var(--width, 0%);
+  height: 16px;
+  max-width: 100%;
+  box-sizing: border-box;
+  border-radius: 4px;
+  padding: 0 4px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  background: var(--gold, #f0c14a);
+  color: #1b1608;
+  font: 600 10px/16px ui-sans-serif, system-ui, sans-serif;
+}
+
+.run-bar[data-outcome="errored"],
+.run-bar[data-outcome="not_verified"],
+.run-bar[data-outcome="abandoned"] {
+  background: var(--red, #ef7d6a);
+  color: #2a100c;
+}
+
+.run-bar[data-outcome="running"],
+.run-bar[data-outcome="inconclusive"] {
+  background: var(--blue, #8eb6e0);
+  color: #102033;
+}
+
+.run-bar[data-outcome="finished"],
+.run-bar[data-outcome="verified"],
+.run-bar[data-outcome="scored"],
+.run-bar[data-outcome="pr_opened"] {
+  background: var(--green, #8fce6a);
+  color: #10200c;
+}
+
+.event-groups {
+  margin: 0;
+  padding: 0;
+}
+
+.event-item {
+  margin: 4px 0 4px 16px;
+}
+
+.event-item a {
+  margin-left: 4px;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 14px;
+}

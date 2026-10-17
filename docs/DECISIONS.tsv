@@ -10,3 +10,7 @@ ts	phase	decision	why	evidence	result
 2026-10-16T16:40:00Z	policy	The War Room appends inbox rows and never writes pick events	A11; dd intake --from-inbox is the only pick writer	src/server/http.ts	open
 2026-10-16T16:40:00Z	budget	Hard caps live in code: N 5, one relaunch, two fix loops, two judge passes	A10; config cannot raise them	src/core/budget.ts	open
 2026-10-16T17:12:00Z	verify	npm test, tsc --noEmit, and selftest are green; War Room New pick and the drafted pick page were driven in a browser	SPEC 001 VERIFY steps	/opt/cursor/artifacts/war-room/big-board.png	tests green
+2026-10-17T14:20:00Z	timeline	One measure() builds every duration from a closed, open, or terminal interval	Stage spans and run spans are the primary data; entries are points on a span, so the UI never subtracts times	src/core/timeline.ts	open
+2026-10-17T14:20:00Z	timeline	Run bars are startPct and widthPct on each stage span	The War Room sizes the strip with plain CSS and does not redo the clock math	src/ui/timeline.js	open
+2026-10-17T14:20:00Z	timeline	Status comes from reduce at each event's effective time, and stage names from stageLabel	The 48h go timeout and every other status change stay in the reducer	src/core/timeline.ts	open
+2026-10-17T14:20:00Z	timeline	Agent links only for a bc- uuid; other payload text stays text	Event payloads are untrusted and must not become a URL or HTML	src/core/timeline.ts	open

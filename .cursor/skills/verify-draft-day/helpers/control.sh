@@ -90,6 +90,17 @@ EOF
     done
     echo "doctor: pass $URL pid $PID"
     ;;
+  seed-timeline)
+    load_state
+    mkdir -p "$DATA/picks/p-20261010-07"
+    cp "$ROOT/test/fixtures/timeline/p-20261010-07.events.jsonl" "$DATA/picks/p-20261010-07/events.jsonl"
+    code="$(curl -s -o /dev/null -w "%{http_code}" "${URL}/api/picks/p-20261010-07")"
+    if [[ "$code" != "200" ]]; then
+      echo "seed-timeline: GET /api/picks/p-20261010-07 returned ${code}" >&2
+      exit 1
+    fi
+    echo "seeded p-20261010-07"
+    ;;
   cleanup)
     load_state
     if kill -0 "$PID" 2>/dev/null; then
@@ -109,7 +120,7 @@ EOF
     echo "cleaned pid ${PID:-?} data ${DATA:-?}"
     ;;
   *)
-    echo "usage: control.sh launch|doctor|cleanup" >&2
+    echo "usage: control.sh launch|doctor|cleanup|seed-timeline" >&2
     exit 2
     ;;
 esac
