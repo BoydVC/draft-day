@@ -8,6 +8,7 @@ import {
   candidateBrief,
   eventKey,
   followUpEvents,
+  filmRoom,
   judgeBrief,
   lookupTransition,
   nextAction,
@@ -219,10 +220,11 @@ test("A8 a close score asks for a reversed pass and sets swapConsistent", () => 
     ev("judge_launched", { pass: 1, order: ["c1", "c2"], labels: { A: "c1", B: "c2" } }),
     ev("judgement_recorded", { pass: 1, order: ["A", "B"], cards: [card("A", 4), card("B", 4)], base: "c1", runnerUps: ["c2"], trades: [], swapConsistent: null }),
     ev("judge_launched", { pass: 2, order: ["c2", "c1"], labels: { A: "c2", B: "c1" }, reversed: true }),
-    ev("judgement_recorded", { pass: 2, order: ["A", "B"], cards: [card("A", 4), card("B", 4)], base: "c1", runnerUps: ["c2"], trades: [], swapConsistent: null }),
+    ev("judgement_recorded", { pass: 2, order: ["A", "B"], cards: [card("A", 4), card("B", 4)], base: "c2", runnerUps: ["c1"], trades: [], swapConsistent: null }),
   ]);
   assert.equal(agreed.judgement?.swapConsistent, true);
   assert.equal(agreed.judgement?.base, "c1");
+  assert.equal(filmRoom(agreed)?.swap, "consistent");
 
   const split = settle([
     ...scouted(),
@@ -230,12 +232,15 @@ test("A8 a close score asks for a reversed pass and sets swapConsistent", () => 
     ev("candidate_finished", { cand: "c2", attempt: 1, report: finishedReport("c2", ["risk"]) }),
     ev("candidate_dropped", { cand: "c3" }),
     ev("judge_launched", { pass: 1, order: ["c1", "c2"], labels: { A: "c1", B: "c2" } }),
-    ev("judgement_recorded", { pass: 1, order: ["A", "B"], cards: [card("A", 4), card("B", 4)], base: "c1", runnerUps: ["c2"], trades: [], swapConsistent: null }),
+    ev("judgement_recorded", { pass: 1, order: ["A", "B"], cards: [card("A", 4), card("B", 4)], base: "c2", runnerUps: ["c1"], trades: [], swapConsistent: null }),
     ev("judge_launched", { pass: 2, order: ["c2", "c1"], labels: { A: "c2", B: "c1" }, reversed: true }),
-    ev("judgement_recorded", { pass: 2, order: ["A", "B"], cards: [card("A", 4), card("B", 4)], base: "c2", runnerUps: ["c1"], trades: [], swapConsistent: null }),
+    ev("judgement_recorded", { pass: 2, order: ["A", "B"], cards: [card("A", 4), card("B", 1)], base: "c2", runnerUps: ["c1"], trades: [], swapConsistent: null }),
   ]);
   assert.equal(split.judgement?.swapConsistent, false);
   assert.equal(split.judgement?.base, "c1");
+  assert.equal(filmRoom(split)?.swap, "flipped");
+  assert.equal(filmRoom(split)?.tieRule?.deciding, "risks");
+  assert.equal(filmRoom(split)?.tieRule?.winner, "c1");
 });
 
 test("A9 two fix replies then a failed draft stays unconfirmed", () => {

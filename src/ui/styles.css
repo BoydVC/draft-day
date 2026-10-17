@@ -140,3 +140,21 @@ ol.events li { margin: 6px 0; }
 .empty { color: var(--muted); }
 
 .back { font-family: ui-sans-serif, system-ui, sans-serif; }
+
+.score-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+
+.scorecard { overflow-x: auto; }
+
+.scorecard th, .scorecard td {
+  font: 13px/1.35 ui-sans-serif, system-ui, sans-serif;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.scorecard .meta { display: block; font-weight: 400; color: var(--muted); }
+
+.score-tools button[aria-pressed="true"] { box-shadow: inset 0 0 0 2px #1b1608; }
+
+@media (max-width: 700px) {
+  .scorecard th, .scorecard td { padding: 6px 4px; }
+}

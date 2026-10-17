@@ -115,6 +115,86 @@ function section(title, children) {
   return el("section", { class: "panel", "aria-label": title }, [el("h2", {}, [title]), ...children]);
 }
 
+let openPick = "";
+let openPass = 0;
+
+function crossText(cross) {
+  if (cross.rate === null) return `${cross.passed}/${cross.total}`;
+  return `${cross.passed}/${cross.total} (${Math.round(cross.rate * 100)}%)`;
+}
+
+function diffText(diff) {
+  if (!diff) return "—";
+  return `+${diff.added} −${diff.removed}, ${diff.files} files`;
+}
+
+function scorecard(pick) {
+  const room = pick.filmRoom;
+  if (!room || !room.passes?.length) {
+    return [el("p", { class: "empty" }, ["Film Room has not scored this pick."])];
+  }
+  if (openPick !== pick.id) {
+    openPick = pick.id;
+    openPass = room.passes[room.passes.length - 1].pass;
+  }
+  const view = room.passes.find((pass) => pass.pass === openPass) || room.passes[room.passes.length - 1];
+  const lines = [...view.lines].sort((a, b) => (a.cand < b.cand ? -1 : 1));
+  const tools = [el("span", { class: "chip" }, [room.swap === "single" ? "Single pass" : `Swap: ${room.swap}`])];
+  if (room.closeCall) tools.push(el("span", { class: "chip" }, ["Close call"]));
+  if (room.passes.length > 1) {
+    for (const pass of room.passes) {
+      const button = el("button", {
+        type: "button",
+        "aria-pressed": pass.pass === view.pass ? "true" : "false",
+      }, [`Pass ${pass.pass}`]);
+      button.addEventListener("click", () => {
+        openPass = pass.pass;
+        void render();
+      });
+      tools.push(button);
+    }
+  }
+  const head = el("tr", {}, [
+    el("th", {}, [""]),
+    ...lines.map((line) => el("th", {}, [
+      `${line.cand} · ${line.label}${line.cand === room.base ? " BASE" : ""}`,
+      el("span", { class: "meta" }, [line.angle]),
+    ])),
+  ]);
+  const body = [
+    el("tr", {}, [el("th", {}, ["Gates"]), ...lines.map((line) => el("td", {}, [`${line.gates.build} ${line.gates.tests} ${line.gates.journey}`]))]),
+    el("tr", {}, [el("th", {}, ["Cross-tests"]), ...lines.map((line) => el("td", {}, [crossText(line.cross)]))]),
+  ];
+  for (const cell of lines[0]?.cells || []) {
+    body.push(el("tr", {}, [
+      el("th", {}, [`${cell.name} ×${cell.weight}`]),
+      ...lines.map((line) => {
+        const found = line.cells.find((item) => item.criterionId === cell.criterionId);
+        return el("td", {}, [!found || found.score === null ? "—" : `${found.score} ${found.evidence}`]);
+      }),
+    ]));
+  }
+  body.push(
+    el("tr", {}, [el("th", {}, ["Weighted"]), ...lines.map((line) => el("td", {}, [line.weighted.toFixed(2)]))]),
+    el("tr", {}, [el("th", {}, ["Rank"]), ...lines.map((line) => el("td", {}, [line.rank === null ? "—" : String(line.rank)]))]),
+    el("tr", {}, [el("th", {}, ["Diff"]), ...lines.map((line) => el("td", {}, [diffText(line.diff)]))]),
+  );
+  const blocks = [
+    el("div", { class: "score-tools" }, tools),
+    el("div", { class: "scorecard" }, [
+      el("table", {}, [el("thead", {}, [head]), el("tbody", {}, body)]),
+    ]),
+    el("p", {}, [room.reason]),
+  ];
+  if (room.judgeDisagrees || room.secondRead === "disagree") {
+    const off = room.passes.find((pass) => pass.judgeBase && pass.judgeBase !== pass.winner);
+    const judge = off?.judgeBase || room.passes[room.passes.length - 1].judgeBase;
+    blocks.push(el("p", {}, [`Judge picked ${judge}; the board picked ${room.base}.`]));
+    if (room.note) blocks.push(el("p", {}, [room.note]));
+  }
+  return blocks;
+}
+
 function pickView(pick) {
   const report = pick.report;
   const acceptance = report
@@ -129,19 +209,6 @@ function pickView(pick) {
         el("p", { class: "meta" }, [cand.branch || "No branch yet"]),
       ]))
     : [el("p", { class: "empty" }, ["No candidates yet."])];
-
-  const scoreHead = ["Criterion"].concat((pick.judgement?.passes.at(-1)?.cards || []).map((card) => card.label));
-  const rubric = report?.rubric || [];
-  const cardsByLabel = new Map((pick.judgement?.passes.at(-1)?.cards || []).map((card) => [card.label, card]));
-  const scoreRows = rubric.map((criterion) => {
-    const cells = [el("td", {}, [criterion.name])];
-    for (const label of scoreHead.slice(1)) {
-      const card = cardsByLabel.get(label);
-      const score = card?.scores.find((item) => item.criterionId === criterion.id);
-      cells.push(el("td", {}, [score ? `${score.score} — ${score.evidence}` : "—"]));
-    }
-    return el("tr", {}, cells);
-  });
 
   const trades = pick.judgement?.trades?.length
     ? pick.judgement.trades.map((trade) => el("li", {}, [`${trade.from}: ${trade.what} (${trade.pointers.join(", ")}) — ${trade.why}`]))
@@ -167,10 +234,6 @@ function pickView(pick) {
     ? pick.events.map((event) => el("li", {}, [`${event.ts} ${event.summary}`]))
     : [el("li", { class: "empty" }, ["No events."])];
 
-  const swap = pick.judgement
-    ? `Base ${pick.judgement.base}. swapConsistent ${String(pick.judgement.swapConsistent)}.`
-    : "No scorecard yet.";
-
   return el("article", { "data-pick-id": pick.id }, [
     el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]),
     el("div", { class: "status-line" }, [
@@ -185,15 +248,7 @@ function pickView(pick) {
       el("ul", {}, acceptance),
     ]),
     section("Candidates", [el("div", { class: "cards" }, cards)]),
-    section("Scorecard", [
-      el("p", {}, [swap]),
-      scoreRows.length
-        ? el("table", {}, [
-            el("thead", {}, [el("tr", {}, scoreHead.map((name) => el("th", {}, [name])))]),
-            el("tbody", {}, scoreRows),
-          ])
-        : el("p", { class: "empty" }, ["Film Room has not scored this pick."]),
-    ]),
+    section("Scorecard", scorecard(pick)),
     section("Trades", [el("ul", {}, trades)]),
     section("Physical", physicalBits),
     section("Decision log", [el("ol", { class: "events" }, log)]),

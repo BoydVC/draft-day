@@ -107,16 +107,19 @@ export function candidateBrief(pick: Pick, cand: Candidate, relaunch: boolean): 
 }
 
 export function judgeBrief(pick: Pick, pass: number): string {
-  const finished = pick.candidates.filter((cand) => cand.status === "finished").map((cand) => cand.id);
-  const map = labelMapForPass(pick.id, finished, pass);
-  const labels = Object.entries(map.labels)
-    .filter((entry) => entry[1])
-    .map(([label]) => `- Label ${label}`)
+  const finished = pick.candidates.filter((cand) => cand.status === "finished");
+  const map = labelMapForPass(pick.id, finished.map((cand) => cand.id), pass);
+  const labels = map.order
+    .map((cand) => {
+      const label = Object.entries(map.labels).find((entry) => entry[1] === cand)?.[0];
+      const sha = finished.find((item) => item.id === cand)?.report?.headSha ?? "";
+      return `- Label ${label} commit ${sha}`;
+    })
     .join("\n");
   return fill("judge", {
     goal: `Score pick ${pick.id} in the Film Room. Pass ${pass}${pass === 2 ? " reverses the previous order." : "."}`,
     scope: "In: hard gates, the pooled cross-test matrix, and the rubric below. Out: candidate identifiers. Use only labels A through E.",
-    context: [`Anonymized order for this pass:`, labels, "The box keeps the label map on the judge_launched event."].join("\n"),
+    context: ["Anonymized order for this pass:", labels, "Check out each label by the commit SHA above. The box keeps the label map."].join("\n"),
     acceptance: rubric(pick),
     verify: [
       "- Gate each label on build, tests, and journey (pass, fail, or n/a).",

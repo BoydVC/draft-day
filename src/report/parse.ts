@@ -1,5 +1,5 @@
 import { isCandId } from "../core/ids.ts";
-import { LABELS, type Criterion, type Label, type Scorecard } from "../core/types.ts";
+import { LABELS, type Criterion, type DiffStat, type Label, type Scorecard } from "../core/types.ts";
 
 export type ParseResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
@@ -87,20 +87,31 @@ function parseCard(value: unknown): Scorecard | string {
   }
   if (!Array.isArray(value.scores)) return "scorecard scores are required";
   const scores: Scorecard["scores"] = [];
+  const seen = new Set<string>();
   for (const score of value.scores) {
-    if (!isRecord(score) || typeof score.criterionId !== "string" || typeof score.evidence !== "string") {
-      return "each score needs criterionId and evidence";
-    }
+    if (!isRecord(score) || typeof score.criterionId !== "string" || !score.criterionId.trim()) return "missing criterionId";
+    if (typeof score.evidence !== "string" || !score.evidence.trim()) return "empty evidence";
     if (typeof score.score !== "number" || !Number.isInteger(score.score) || score.score < 0 || score.score > 4) {
       return "scores must be integers 0 through 4";
     }
+    if (seen.has(score.criterionId)) return `duplicate criterionId ${score.criterionId}`;
+    seen.add(score.criterionId);
     scores.push({ criterionId: score.criterionId, score: score.score as 0 | 1 | 2 | 3 | 4, evidence: score.evidence });
+  }
+  let diff: DiffStat | undefined;
+  if (value.diff !== undefined) {
+    const raw = value.diff;
+    if (!isRecord(raw) || typeof raw.files !== "number" || typeof raw.added !== "number" || typeof raw.removed !== "number") {
+      return "scorecard diff must be {files, added, removed}";
+    }
+    diff = { files: raw.files, added: raw.added, removed: raw.removed };
   }
   return {
     label: value.label as Label,
     gates: { build: gates.build as Scorecard["gates"]["build"], tests: gates.tests as Scorecard["gates"]["tests"], journey: gates.journey as Scorecard["gates"]["journey"] },
     crossTests: { passed: cross.passed as number, total: cross.total as number },
     scores,
+    ...(diff ? { diff } : {}),
   };
 }
 
@@ -122,14 +133,19 @@ export function parseJudgement(text: string): ParseResult<ParsedJudgement> {
   const value = extracted.value;
   if (!isRecord(value)) return fail("dd-judgement must be an object");
   if (!Array.isArray(value.passes) || value.passes.length < 1) return fail("dd-judgement.passes is required");
-  const pass = value.passes[value.passes.length - 1];
+  if (value.passes.length > 1) return fail("more than one pass");
+  const pass = value.passes[0];
   if (!isRecord(pass) || !Array.isArray(pass.cards) || !Array.isArray(pass.order)) return fail("judgement pass needs order and cards");
   const cards: Scorecard[] = [];
+  const seenLabels = new Set<string>();
   for (const card of pass.cards) {
     const parsed = parseCard(card);
     if (typeof parsed === "string") return fail(parsed);
+    if (seenLabels.has(parsed.label)) return fail(`duplicate card for label ${parsed.label}`);
+    seenLabels.add(parsed.label);
     cards.push(parsed);
   }
+  if (new Set(cards.map((card) => card.crossTests.total)).size > 1) return fail("unequal crossTests.total");
   const tradesIn = Array.isArray(value.trades) ? value.trades : null;
   if (!tradesIn || typeof value.base !== "string" || !Array.isArray(value.runnerUps)) {
     return fail("dd-judgement needs base, runnerUps, and trades");
@@ -145,6 +161,13 @@ export function parseJudgement(text: string): ParseResult<ParsedJudgement> {
     trades.push({ from: trade.from, what: trade.what, pointers, why: trade.why });
   }
   const runnerUps = value.runnerUps.map(String);
+  if (isCandId(value.base)) return fail(`cand id ${value.base} in base`);
+  for (const id of runnerUps) {
+    if (isCandId(id)) return fail(`cand id ${id} in runnerUps`);
+  }
+  for (const trade of trades) {
+    if (isCandId(trade.from)) return fail(`cand id ${trade.from} in trades.from`);
+  }
   return {
     ok: true,
     value: {

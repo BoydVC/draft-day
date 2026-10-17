@@ -9,6 +9,7 @@ import {
   loadConfig,
   loadTargets,
   parseTargetRepo,
+  filmRoom,
   reduce,
   screenIdea,
   stageLabel,
@@ -108,6 +109,7 @@ function pickView(pick: Pick, events: DraftEvent[]) {
     fixLoops: pick.fixLoops,
     lessons: pick.lessons,
     events: events.map(summarizeEvent),
+    filmRoom: filmRoom(pick),
   };
 }
 

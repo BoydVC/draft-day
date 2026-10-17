@@ -10,6 +10,7 @@ import {
   eventKey,
   isCandId,
   isEventType,
+  filmRoom,
   isPickId,
   labelMapForPass,
   loadConfig,
@@ -22,14 +23,16 @@ import {
   parseVerdict,
   reduce,
   type Config,
+  type Criterion,
   type DraftEvent,
   type EventType,
   type Pick,
+  type Scorecard,
 } from "../core/index.ts";
 import { allocatePickId, commitPick, loadPicks, readEvents } from "../store/eventlog.ts";
 import { inboxCursor, readInbox } from "../store/inbox.ts";
 import { startServer } from "../server/http.ts";
-import { drive, HAPPY, POLICY, WALK, type DriverIo } from "../../test/fixtures/fake-driver.ts";
+import { CLOSE, drive, HAPPY, POLICY, WALK, type DriverIo } from "../../test/fixtures/fake-driver.ts";
 
 class Exit extends Error {
   code: number;
@@ -109,6 +112,39 @@ async function loadOne(paths: Paths, pickId: string, now = Date.now()): Promise<
   return { pick, events };
 }
 
+function labelsForPass(events: readonly DraftEvent[], pass: number): Record<string, string> {
+  for (let i = events.length - 1; i >= 0; i -= 1) {
+    const event = events[i]!;
+    if (event.type !== "judge_launched" || Number(event.payload.pass ?? 0) !== pass) continue;
+    const labels = event.payload.labels;
+    if (!labels || typeof labels !== "object" || Array.isArray(labels)) return {};
+    const out: Record<string, string> = {};
+    for (const [label, cand] of Object.entries(labels)) out[label] = String(cand);
+    return out;
+  }
+  return {};
+}
+
+function judgementAgainstPick(cards: readonly Scorecard[], labels: Record<string, string>, rubric: readonly Criterion[]): string | null {
+  const seen = new Set<string>();
+  for (const card of cards) {
+    if (!labels[card.label]) return `label ${card.label} is not in this pass's label map`;
+    if (seen.has(card.label)) return `duplicate card for label ${card.label}`;
+    seen.add(card.label);
+    const ids = new Set(card.scores.map((score) => score.criterionId));
+    for (const criterion of rubric) {
+      if (!ids.has(criterion.id)) return `missing criterionId ${criterion.id}`;
+    }
+    for (const score of card.scores) {
+      if (!rubric.some((criterion) => criterion.id === score.criterionId)) return `unknown criterionId ${score.criterionId}`;
+    }
+  }
+  for (const label of Object.keys(labels)) {
+    if (!seen.has(label)) return `missing card for label ${label}`;
+  }
+  return null;
+}
+
 function countOf(events: readonly DraftEvent[], type: EventType, cand?: string): number {
   return events.filter((event) => event.type === type && (cand === undefined || event.payload.cand === cand)).length;
 }
@@ -182,9 +218,13 @@ function normalize(
     const text = typeof raw.fileText === "string" ? raw.fileText : JSON.stringify(raw.judgement ?? raw);
     const parsed = parseJudgement(text);
     if (!parsed.ok) return parsed;
+    const pass = pick.judgeLaunches;
+    const labels = labelsForPass(events, pass);
+    const problem = judgementAgainstPick(parsed.value.cards, labels, pick.report?.rubric ?? []);
+    if (problem) return { error: problem };
     return {
       payload: {
-        pass: pick.judgeLaunches,
+        pass,
         order: parsed.value.order,
         cards: parsed.value.cards,
         base: parsed.value.base,
@@ -364,7 +404,7 @@ function humanPick(pick: Pick): string {
 async function show(paths: Paths, pickId: string | undefined): Promise<number> {
   if (!pickId) throw new Exit("show needs a pick id");
   const { pick, events } = await loadOne(paths, pickId);
-  emit(paths, { ...pick, eventCount: events.length }, humanPick(pick));
+  emit(paths, { ...pick, filmRoom: filmRoom(pick), eventCount: events.length }, humanPick(pick));
   return 0;
 }
 
@@ -519,8 +559,9 @@ async function selftest(paths: Paths, flags: Flags): Promise<number> {
   });
   const results = [];
   try {
-    for (const scenario of [HAPPY, POLICY, WALK]) {
-      const result = await drive(scenario, io());
+    for (const scenario of [HAPPY, POLICY, WALK, CLOSE]) {
+      const driver = io();
+      const result = await drive(scenario, driver);
       const problems: string[] = [];
       if (result.status !== scenario.expect) problems.push(`status ${result.status} wanted ${scenario.expect}`);
       if (scenario.policy && result.failReason !== "policy") problems.push(`reason ${result.failReason}`);
@@ -533,10 +574,23 @@ async function selftest(paths: Paths, flags: Flags): Promise<number> {
       if (scenario.name === "walkover") {
         if (result.events.includes("judge_launched") || result.events.includes("graft_launched")) problems.push("walkover ran the film room or the trade");
       }
+      if (scenario.name === "close") {
+        const pick = await driver.load(result.pickId);
+        const room = filmRoom(pick);
+        const judges = result.events.filter((type) => type === "judge_launched").length;
+        if (judges !== 2) problems.push(`judge launches ${judges}`);
+        if (room?.swap !== "flipped") problems.push(`swap ${String(room?.swap)}`);
+        if (room?.base !== "c2" || room.base !== room.tieRule?.winner) problems.push(`base ${String(room?.base)}`);
+        if (room?.tieRule?.deciding !== "diff_lines") problems.push(`deciding ${String(room?.tieRule?.deciding)}`);
+        const failer = room?.passes.at(-1)?.lines.find((line) => line.cand === "c3");
+        if (!failer || failer.rank !== null || failer.gates.journey !== "fail") problems.push(`c3 rank ${String(failer?.rank)}`);
+        if (room?.passes[1]?.reversed !== true) problems.push("pass 2 was not reversed");
+        if (room?.closeCall !== true) problems.push("not a close call");
+      }
       results.push({ ...result, name: scenario.name, problems });
     }
     const ok = results.every((result) => result.problems.length === 0);
-    const lines = [`DATA_DIR=${dataDir}`, ...results.map((result) => `${result.name} ${result.pickId} ${result.status}${result.problems.length ? ` FAIL ${result.problems.join("; ")}` : ""}`)];
+    const lines = results.map((result) => `${result.name} ${result.pickId} ${result.status}${result.problems.length ? ` FAIL ${result.problems.join("; ")}` : ""}`);
     emit(local, { ok, dataDir, results }, lines.join("\n"));
     return ok ? 0 : 1;
   } finally {
