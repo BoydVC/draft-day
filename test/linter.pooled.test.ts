@@ -615,7 +615,7 @@ test("S15 wiring", async () => {
   const sheetAt = sheets.lastIndexOf("replay.css");
   assert.equal(sheets[sheetAt + 1], "linter.css");
   const scriptAt = scripts.lastIndexOf("replay.js");
-  assert.deepEqual(scripts.slice(scriptAt, scriptAt + 3), ["replay.js", "linter.js", "app.js"]);
+  assert.deepEqual(scripts.slice(scriptAt, scriptAt + 4), ["replay.js", "linter.js", "bigboard.js", "app.js"]);
   assert.match(html, /<link\b[^>]*\bhref="\/linter\.css"/);
   assert.match(html, /<script\b[^>]*\bsrc="\/linter\.js"/);
   const files = [...http.matchAll(/\[[^\]]*\]/g)].map((match) => match[0]).find((list) => list.includes('"/replay.css"') && list.includes('"/app.js"'));

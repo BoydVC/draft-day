@@ -187,6 +187,52 @@ PY
     fi
     echo "seeded linter"
     ;;
+  seed-bigboard)
+    load_state
+    DATA="$DATA" ROOT="$ROOT" node --input-type=module <<'EOF'
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+const data = process.env.DATA;
+const root = process.env.ROOT;
+const text = readFileSync(join(root, "test/fixtures/bigboard/league.jsonl"), "utf8");
+const logs = new Map();
+for (const line of text.split("\n")) {
+  if (!line.trim()) continue;
+  const row = JSON.parse(line);
+  if (!logs.has(row.pickId)) logs.set(row.pickId, []);
+  logs.get(row.pickId).push(row.event);
+}
+for (const [pickId, events] of logs) {
+  const dir = join(data, "picks", pickId);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "events.jsonl"), events.map((event) => JSON.stringify(event)).join("\n") + "\n");
+}
+EOF
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/stats")"
+    if [[ "$code" != "200" ]]; then
+      echo "seed-bigboard: GET /api/stats returned ${code}" >&2
+      rm -f "$body"
+      exit 1
+    fi
+    if ! python3 - "$body" <<'PY'
+import json, sys
+body = json.load(open(sys.argv[1]))
+summary = body.get("summary")
+selftest = (body.get("excluded") or {}).get("selftest")
+want = "13 picks · 9 drafted · verified 9/10 (2 first try) · 10 trades grafted"
+if summary != want or selftest != 4:
+    print(summary)
+    print("run control.sh cleanup then launch first")
+    raise SystemExit(1)
+PY
+    then
+      rm -f "$body"
+      exit 1
+    fi
+    rm -f "$body"
+    echo "seeded bigboard"
+    ;;
   cleanup)
     load_state
     if kill -0 "$PID" 2>/dev/null; then
@@ -206,7 +252,7 @@ PY
     echo "cleaned pid ${PID:-?} data ${DATA:-?}"
     ;;
   *)
-    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|seed-linter|cleanup" >&2
+    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|seed-linter|seed-bigboard|cleanup" >&2
     exit 2
     ;;
 esac

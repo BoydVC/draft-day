@@ -31,6 +31,18 @@ function route() {
       until: until && day.test(until) ? until : null,
     };
   }
+  const stats = hash.match(/^\/stats(?:\?(.*))?$/);
+  if (stats) {
+    const params = new URLSearchParams(stats[1] || "");
+    const day = /^\d{4}-\d{2}-\d{2}$/;
+    const since = params.get("since");
+    const until = params.get("until");
+    return {
+      name: "stats",
+      since: since && day.test(since) ? since : null,
+      until: until && day.test(until) ? until : null,
+    };
+  }
   const replay = hash.match(/^\/picks\/(p-\d{8}-\d{2})\/replay(?:\?(.*))?$/);
   if (replay) {
     const params = new URLSearchParams(replay[2] || "");
@@ -203,7 +215,10 @@ function boardTable(data) {
 
 function boardView(data) {
   return el("div", {}, [
-    el("p", { class: "back" }, [el("a", { href: "#/lessons" }, ["Locker Room"])]),
+    el("p", { class: "back" }, [
+      el("a", { href: "#/lessons" }, ["Locker Room"]),
+      el("a", { href: "#/stats", class: "dd-stats-link" }, ["Stats"]),
+    ]),
     formPanel(),
     el("section", { class: "panel", "aria-label": "Big Board", id: "big-board" }, [
       el("h2", {}, ["Big Board"]),
@@ -499,6 +514,46 @@ async function render(options) {
       app.replaceChildren();
       app.append(el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]));
       app.append(globalThis.draftDayLessons(report, el));
+      return;
+    }
+    if (where.name === "stats") {
+      const open = document.getElementById("stats-window");
+      if (options?.soft && open && open.contains(document.activeElement)) return;
+      const params = new URLSearchParams();
+      if (where.since) params.set("since", where.since);
+      if (where.until) params.set("until", where.until);
+      const query = params.toString();
+      let response = null;
+      try {
+        response = await fetch(query ? `/api/stats?${query}` : "/api/stats");
+      } catch {
+        response = null;
+      }
+      const fail = () => {
+        app.replaceChildren();
+        app.append(el("section", { class: "panel dd-bigboard", "aria-label": "Big Board stats" }, [
+          el("h2", {}, ["Big Board stats"]),
+          el("p", {}, ["Could not load Big Board stats."]),
+          el("p", { class: "back dd-stats-back" }, [el("a", { href: "#/" }, ["Big Board"])]),
+        ]));
+      };
+      if (!response || !response.ok) {
+        fail();
+        return;
+      }
+      let body = null;
+      try {
+        body = await response.json();
+      } catch {
+        body = null;
+      }
+      if (!body) {
+        fail();
+        return;
+      }
+      app.replaceChildren();
+      app.append(el("p", { class: "back dd-stats-back" }, [el("a", { href: "#/" }, ["Big Board"])]));
+      app.append(globalThis.draftDayBigBoard(body, el));
       return;
     }
     if (where.name === "replay") {

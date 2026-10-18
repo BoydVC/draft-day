@@ -9,6 +9,8 @@ import {
   branchFor,
   eventKey,
   filmRoom,
+  bigBoardStats,
+  bigBoardText,
   gardener,
   isCandId,
   isEventType,
@@ -455,6 +457,15 @@ async function lessons(paths: Paths, flags: Flags): Promise<number> {
   return 0;
 }
 
+async function stats(paths: Paths, flags: Flags): Promise<number> {
+  const parsed = lessonWindow(flags.since, flags.until);
+  if (!parsed.ok) throw new Exit(parsed.error);
+  const report = bigBoardStats(await loadLogs(paths.dataDir), parsed.value);
+  if (paths.json) console.log(JSON.stringify(report));
+  else console.log(bigBoardText(report));
+  return 0;
+}
+
 export function resolveServeOptions(flags: Flags, config: Config): { host: string; port: number } {
   const host = flag(flags, "host") ?? config.host;
   const portFlag = flag(flags, "port");
@@ -619,6 +630,7 @@ function help(): string {
     "dd board",
     "dd brief <pickId> <candidate|judge|graft|physical> [cand]",
     "dd lessons [--since YYYY-MM-DD] [--until YYYY-MM-DD]",
+    "dd stats [--since YYYY-MM-DD] [--until YYYY-MM-DD]",
     "dd lint-scout <file>|--pick <id>",
     "dd serve [--port 4420] [--host 127.0.0.1]",
     "dd doctor",
@@ -653,6 +665,8 @@ export async function main(argv: string[]): Promise<number> {
         return await brief(paths, rest[0], rest[1], rest[2]);
       case "lessons":
         return await lessons(paths, flags);
+      case "stats":
+        return await stats(paths, flags);
       case "lint-scout":
         return await lintScout(paths, rest[0], flags);
       case "serve":
