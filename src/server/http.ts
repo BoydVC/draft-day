@@ -9,7 +9,9 @@ import {
   isPickId,
   lessonWindow,
   lessonsJson,
+  lintScoutingReport,
   loadConfig,
+  parseLintDocument,
   loadTargets,
   parseTargetRepo,
   filmRoom,
@@ -268,7 +270,24 @@ export async function startServer(options: ServerOptions): Promise<{
       return;
     }
 
-    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css", "/lessons.js", "/lessons.css", "/replay.js", "/replay.css"];
+    if (req.method === "POST" && path === "/api/lint-scout") {
+      let body: unknown;
+      try {
+        body = JSON.parse(await readBody(req));
+      } catch (error) {
+        send(res, 400, { error: error instanceof Error ? error.message : "bad json" });
+        return;
+      }
+      const parsed = parseLintDocument(body);
+      if (!parsed.ok) {
+        send(res, 400, { error: parsed.error });
+        return;
+      }
+      send(res, 200, lintScoutingReport(parsed.value));
+      return;
+    }
+
+    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css", "/lessons.js", "/lessons.css", "/replay.js", "/replay.css", "/linter.js", "/linter.css"];
     if (req.method === "GET" && files.includes(path)) {
       const file = path === "/" || path === "/index.html" ? "index.html" : path.slice(1);
       const full = normalize(join(UI_DIR, file));

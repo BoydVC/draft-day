@@ -1,0 +1,73 @@
+{
+  "restatement": "Give Draft Day a gardener that groups repeated judge and verifier findings into lessons and proposes one engine check per lesson.",
+  "acceptance": [
+    {
+      "id": "L1",
+      "when": "gardener runs on the sample week",
+      "shall": "return exactly the seven lessons in the expected table"
+    },
+    {
+      "id": "L11",
+      "when": "dd lessons --data <week> runs",
+      "shall": "print the 36 lines of the text report"
+    },
+    {
+      "id": "L14",
+      "when": "hostile lesson text is shown",
+      "shall": "render it as text with no markup and only War Room pick links"
+    },
+    {
+      "id": "L19",
+      "when": "gardener runs on 500 picks",
+      "shall": "return in under 1000 ms"
+    }
+  ],
+  "rubric": [
+    {
+      "id": "core",
+      "name": "Gardener fidelity",
+      "weight": 3,
+      "howToGrade": "Run L1-L5 against fixtures/lessons/lessons-week.jsonl. 4 = exact lesson table. 2 = one wrong proposal. Evidence: test/lessons.test.ts:L1."
+    },
+    {
+      "id": "cli",
+      "name": "CLI and API parity",
+      "weight": 2,
+      "howToGrade": "dd lessons and GET /api/lessons return the same JSON. Bad --since exits 2. Score 0-4 with evidence from test/lessons.test.ts:L11-L12."
+    },
+    {
+      "id": "safety",
+      "name": "Untrusted text safety",
+      "weight": 2,
+      "howToGrade": "Hostile topics stay text. Every href matches ^#/picks/p-\\d{8}-\\d{2}$. Grep for innerHTML. Any markup = 0. Evidence: test/lessons.test.ts:L14. Score 0-4."
+    },
+    {
+      "id": "stack",
+      "name": "Clean stack, small diff",
+      "weight": 2,
+      "howToGrade": "Touch map only. guards.test.ts byte-identical. Zero runtime deps. Score 0-4 from git diff --name-only START...HEAD."
+    }
+  ],
+  "designSketch": "Boyd opens the Locker Room, sees seven lessons from five picks, taps a receipt into a pick page.",
+  "verifyPlan": [
+    "seed-lessons",
+    "drive features/lessons.md",
+    "safety fact on hostile topics"
+  ],
+  "safetyFact": "No lesson topic or receipt can render as markup or become a link outside this War Room's pick pages.",
+  "angles": [
+    "Kind registry: one Record<FindingKind, KindRule> with satisfies so a new kind fails tsc until its row is complete.",
+    "Flat findings first: extract every finding into one list, then group and rank; Locker Room is a thin renderer of the API lists.",
+    "Weekly to-do: present lessons as Boyd's weekly checklist with the highest correction level first and a copyable check string."
+  ],
+  "forbidden": [
+    "Draft PRs only",
+    "Gardener never edits or launches"
+  ],
+  "checks": {
+    "L1": "test/lessons.test.ts:L1",
+    "L11": "test/lessons.test.ts:L11",
+    "L14": "test/lessons.test.ts:L14",
+    "L19": "test/lessons.test.ts:L19"
+  }
+}

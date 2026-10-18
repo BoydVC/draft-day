@@ -17,7 +17,10 @@ import {
   lessonWindow,
   lessonsJson,
   lessonsText,
+  lintScoutingReport,
+  lintText,
   loadConfig,
+  parseLintDocument,
   timeline,
   loadTargets,
   nextAction,
@@ -576,6 +579,31 @@ async function timelineCommand(paths: Paths, pickId: string | undefined): Promis
   return 0;
 }
 
+async function lintScout(paths: Paths, file: string | undefined, flags: Flags): Promise<number> {
+  const pick = flag(flags, "pick");
+  let doc;
+  if (file) {
+    let text: string;
+    try {
+      text = await readFile(resolve(paths.cwd, file), "utf8");
+    } catch {
+      throw new Exit(`cannot read ${file}`);
+    }
+    const parsed = parseLintDocument(text);
+    if (!parsed.ok) throw new Exit(parsed.error);
+    doc = parsed.value;
+  } else if (pick) {
+    const loaded = await loadOne(paths, pick);
+    if (!loaded.pick.report) throw new Exit(`pick ${pick} has no scouting report`);
+    doc = loaded.pick.report;
+  } else {
+    throw new Exit("lint-scout needs a file or --pick <id>");
+  }
+  const report = lintScoutingReport(doc);
+  emit(paths, report, lintText(report));
+  return report.ok ? 0 : 1;
+}
+
 function help(): string {
   return [
     "dd intake --idea TEXT --source chat --target BoydVC/draft-day [--n 3] [--approval ask]",
@@ -587,6 +615,7 @@ function help(): string {
     "dd board",
     "dd brief <pickId> <candidate|judge|graft|physical> [cand]",
     "dd lessons [--since YYYY-MM-DD] [--until YYYY-MM-DD]",
+    "dd lint-scout <file>|--pick <id>",
     "dd serve [--port 4420] [--host 127.0.0.1]",
     "dd doctor",
     "dd selftest [--keep]",
@@ -620,6 +649,8 @@ export async function main(argv: string[]): Promise<number> {
         return await brief(paths, rest[0], rest[1], rest[2]);
       case "lessons":
         return await lessons(paths, flags);
+      case "lint-scout":
+        return await lintScout(paths, rest[0], flags);
       case "serve":
         return await serve(paths, flags);
       case "doctor":

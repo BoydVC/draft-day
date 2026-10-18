@@ -287,19 +287,27 @@ export function parseScoutingReport(text: string): ParseResult<import("../core/t
     if (weight !== 1 && weight !== 2 && weight !== 3) return fail("criterion weight must be 1, 2, or 3");
     criteria.push({ id: item.id, name: item.name, weight, howToGrade: item.howToGrade });
   }
-  return {
-    ok: true,
-    value: {
-      restatement: value.restatement,
-      acceptance: ears,
-      rubric: criteria,
-      designSketch: value.designSketch,
-      verifyPlan,
-      safetyFact: value.safetyFact,
-      angles,
-      forbidden,
-    },
+  const report: import("../core/types.ts").ScoutingReport = {
+    restatement: value.restatement,
+    acceptance: ears,
+    rubric: criteria,
+    designSketch: value.designSketch,
+    verifyPlan,
+    safetyFact: value.safetyFact,
+    angles,
+    forbidden,
   };
+  const checks = (() => {
+    if (!isRecord(value.checks)) return undefined;
+    const out: Record<string, string> = {};
+    for (const [key, item] of Object.entries(value.checks)) {
+      if (typeof item !== "string") return undefined;
+      out[key] = item;
+    }
+    return out;
+  })();
+  if (checks) report.checks = checks;
+  return { ok: true, value: report };
 }
 
 export function assertCand(value: string): ParseResult<import("../core/types.ts").CandId> {

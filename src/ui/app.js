@@ -36,6 +36,8 @@ function route() {
     const params = new URLSearchParams(replay[2] || "");
     return { name: "replay", id: replay[1], at: params.get("at"), play: params.get("play") };
   }
+  const linter = hash.match(/^\/picks\/(p-\d{8}-\d{2})\/linter$/);
+  if (linter) return { name: "linter", id: linter[1] };
   const match = hash.match(/^\/picks\/(p-\d{8}-\d{2})$/);
   if (match) return { name: "pick", id: match[1] };
   return { name: "board" };
@@ -381,6 +383,7 @@ function pickView(pick) {
       chip(pick.status),
       el("span", { class: "meta" }, [pick.stage]),
       el("a", { href: `#/picks/${pick.id}/replay`, class: "dd-replay-link" }, ["Replay"]),
+      el("a", { href: `#/picks/${pick.id}/linter`, class: "dd-linter-link" }, ["Lint"]),
     ]),
     el("p", {}, [pick.idea]),
     pick.failReason ? el("p", { class: "meta" }, [`Reason: ${pick.failReason}`]) : el("span"),
@@ -436,6 +439,72 @@ async function render(options) {
         return;
       }
       globalThis.draftDayReplay.show(await response.json(), where, options);
+      return;
+    }
+    if (where.name === "linter") {
+      const paste = document.getElementById("linter-paste");
+      if (options && options.soft && paste && paste.contains(document.activeElement)) return;
+      const response = await fetch(`/api/picks/${where.id}`);
+      if (!response.ok) {
+        app.replaceChildren();
+        app.append(section("Pick", [el("p", {}, ["That pick is not on the board."]), el("a", { href: "#/" }, ["Big Board"])]));
+        return;
+      }
+      const pick = await response.json();
+      const paint = async (doc, source) => {
+        const lintResponse = await fetch("/api/lint-scout", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(doc),
+        });
+        const body = await lintResponse.json();
+        const report = lintResponse.ok ? body : {
+          ok: false,
+          summary: "fail · 1 hard",
+          criteria: [],
+          ears: [],
+          angles: [],
+          hard: [{ kind: "criterion", id: "document", why: body.error || "bad document" }],
+          soft: [],
+        };
+        globalThis.draftDayLinter.show({
+          pickId: where.id,
+          report,
+          document: doc && doc.restatement ? doc : null,
+          source: source || "",
+        }, {
+          onLint: (text) => { void submitPaste(text); },
+        });
+      };
+      const submitPaste = async (text) => {
+        const trimmed = String(text || "").trim();
+        if (!trimmed) return;
+        let doc;
+        if (trimmed.charAt(0) === "{" || trimmed.charAt(0) === "[") {
+          try {
+            doc = JSON.parse(trimmed);
+          } catch (error) {
+            globalThis.draftDayLinter.show({
+              pickId: where.id,
+              report: {
+                ok: false,
+                summary: "fail · 1 hard",
+                criteria: [],
+                ears: [],
+                angles: [],
+                hard: [{ kind: "criterion", id: "document", why: "not JSON" }],
+                soft: [],
+              },
+              source: text,
+            }, { onLint: (next) => { void submitPaste(next); } });
+            return;
+          }
+        } else {
+          doc = { markdown: trimmed };
+        }
+        await paint(doc, text);
+      };
+      await paint(pick.report || {}, "");
       return;
     }
     app.replaceChildren();
