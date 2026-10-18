@@ -317,7 +317,7 @@ function flatText(node: Rec): string {
 }
 
 function showsCount(visible: string, wins: number, entries: number): boolean {
-  return new RegExp(`(?:^|\\D)${wins}\\s*/\\s*${entries}(?:\\D|$)`).test(visible);
+  return new RegExp(`${wins}\\s*/\\s*${entries}`).test(visible);
 }
 
 function showsPercent(visible: string, rate: number | null): boolean {
