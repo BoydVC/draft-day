@@ -17,7 +17,10 @@ import {
   lessonWindow,
   lessonsJson,
   lessonsText,
+  lintScoutingReport,
+  lintText,
   loadConfig,
+  parseLintDocument,
   timeline,
   loadTargets,
   nextAction,
@@ -31,6 +34,7 @@ import {
   type Config,
   type DraftEvent,
   type EventType,
+  type LintDocument,
   type Pick,
 } from "../core/index.ts";
 import { allocatePickId, commitPick, loadLogs, loadPicks, readEvents } from "../store/eventlog.ts";
@@ -576,6 +580,30 @@ async function timelineCommand(paths: Paths, pickId: string | undefined): Promis
   return 0;
 }
 
+async function lintScout(paths: Paths, file: string | undefined, flags: Flags): Promise<number> {
+  const pickId = flag(flags, "pick");
+  let doc: LintDocument;
+  if (pickId) {
+    const { pick } = await loadOne(paths, pickId);
+    if (!pick.report) throw new Exit("pick has no scouting report");
+    doc = { ...pick.report, checks: pick.report.checks ?? {} };
+  } else {
+    if (!file) throw new Exit("lint-scout needs a file or --pick");
+    let raw: string;
+    try {
+      raw = await readFile(resolve(file), "utf8");
+    } catch {
+      throw new Exit(`cannot read ${file}`);
+    }
+    const parsed = parseLintDocument(raw);
+    if (!parsed.ok) throw new Exit(parsed.error);
+    doc = parsed.value;
+  }
+  const report = lintScoutingReport(doc);
+  emit(paths, report, lintText(report));
+  return report.ok ? 0 : 1;
+}
+
 function help(): string {
   return [
     "dd intake --idea TEXT --source chat --target BoydVC/draft-day [--n 3] [--approval ask]",
@@ -587,6 +615,7 @@ function help(): string {
     "dd board",
     "dd brief <pickId> <candidate|judge|graft|physical> [cand]",
     "dd lessons [--since YYYY-MM-DD] [--until YYYY-MM-DD]",
+    "dd lint-scout <file>|--pick <id>",
     "dd serve [--port 4420] [--host 127.0.0.1]",
     "dd doctor",
     "dd selftest [--keep]",
@@ -620,6 +649,8 @@ export async function main(argv: string[]): Promise<number> {
         return await brief(paths, rest[0], rest[1], rest[2]);
       case "lessons":
         return await lessons(paths, flags);
+      case "lint-scout":
+        return await lintScout(paths, rest[0], flags);
       case "serve":
         return await serve(paths, flags);
       case "doctor":

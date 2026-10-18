@@ -142,6 +142,39 @@ EOF
     fi
     echo "seeded replay"
     ;;
+  seed-linter)
+    load_state
+    id="p-20261018-06"
+    mkdir -p "$DATA/picks/$id"
+    LINTER_REPORT="$ROOT/test/fixtures/linter/hostile-missing-ears.json" \
+    LINTER_ID="$id" \
+    LINTER_DEST="$DATA/picks/$id/events.jsonl" \
+    node --input-type=module -e '
+      import { readFileSync, writeFileSync } from "node:fs";
+      const report = JSON.parse(readFileSync(process.env.LINTER_REPORT, "utf8"));
+      const id = process.env.LINTER_ID;
+      const events = [
+        { seq: 1, ts: "2026-10-18T12:00:00.000Z", type: "pick_created", by: "seed", key: "pick", payload: { id, idea: "Scout the linter before Combine", source: "seed", target: "BoydVC/draft-day", n: 3, approval: "ask" } },
+        { seq: 2, ts: "2026-10-18T12:00:01.000Z", type: "scouting_report_written", by: "seed", key: "report", payload: { report } },
+      ];
+      writeFileSync(process.env.LINTER_DEST, events.map((event) => JSON.stringify(event)).join("\n") + "\n");
+    '
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" -H "content-type: application/json" --data-binary @"$ROOT/test/fixtures/linter/good-replay.json" "${URL}/api/lint-scout")"
+    ok="$(python3 -c 'import json,sys; data=json.load(open(sys.argv[1])); print("True" if data.get("ok") is True else "False")' "$body")"
+    summary="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("summary",""))' "$body")"
+    rm -f "$body"
+    if [[ "$code" != "200" || "$ok" != "True" || "$summary" != "pass" ]]; then
+      echo "seed-linter: POST /api/lint-scout ${code} ok=${ok} summary=${summary}" >&2
+      exit 1
+    fi
+    pick_code="$(curl -s -o /dev/null -w "%{http_code}" "${URL}/api/picks/${id}")"
+    if [[ "$pick_code" != "200" ]]; then
+      echo "seed-linter: GET /api/picks/${id} returned ${pick_code}" >&2
+      exit 1
+    fi
+    echo "seeded linter"
+    ;;
   cleanup)
     load_state
     if kill -0 "$PID" 2>/dev/null; then
@@ -161,7 +194,7 @@ EOF
     echo "cleaned pid ${PID:-?} data ${DATA:-?}"
     ;;
   *)
-    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|cleanup" >&2
+    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|seed-linter|cleanup" >&2
     exit 2
     ;;
 esac

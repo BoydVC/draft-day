@@ -36,6 +36,8 @@ function route() {
     const params = new URLSearchParams(replay[2] || "");
     return { name: "replay", id: replay[1], at: params.get("at"), play: params.get("play") };
   }
+  const linter = hash.match(/^\/picks\/(p-\d{8}-\d{2})\/linter$/);
+  if (linter) return { name: "linter", id: linter[1] };
   const match = hash.match(/^\/picks\/(p-\d{8}-\d{2})$/);
   if (match) return { name: "pick", id: match[1] };
   return { name: "board" };
@@ -381,6 +383,7 @@ function pickView(pick) {
       chip(pick.status),
       el("span", { class: "meta" }, [pick.stage]),
       el("a", { href: `#/picks/${pick.id}/replay`, class: "dd-replay-link" }, ["Replay"]),
+      el("a", { href: `#/picks/${pick.id}/linter`, class: "dd-linter-link" }, ["Lint"]),
     ]),
     el("p", {}, [pick.idea]),
     pick.failReason ? el("p", { class: "meta" }, [`Reason: ${pick.failReason}`]) : el("span"),
@@ -436,6 +439,51 @@ async function render(options) {
         return;
       }
       globalThis.draftDayReplay.show(await response.json(), where, options);
+      return;
+    }
+    if (where.name === "linter") {
+      if (options && options.soft && document.querySelector('[aria-label="Scouting linter"]')) return;
+      const submit = async (text) => {
+        const trimmed = String(text || "").trim();
+        if (!trimmed) return { error: "Paste a lint document." };
+        let payload;
+        try {
+          payload = JSON.parse(trimmed);
+        } catch {
+          payload = trimmed;
+        }
+        const linted = await fetch("/api/lint-scout", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        let body;
+        try {
+          body = await linted.json();
+        } catch {
+          return { error: "Lint failed." };
+        }
+        if (!linted.ok) return { error: typeof body.error === "string" ? body.error : "Lint failed." };
+        const posted = payload && typeof payload === "object" ? payload : null;
+        return { report: body, document: posted };
+      };
+      const response = await fetch(`/api/picks/${where.id}`);
+      if (!response.ok) {
+        globalThis.draftDayLinter.missing(submit);
+        return;
+      }
+      const pick = await response.json();
+      const doc = pick.report ? Object.assign({}, pick.report, { checks: pick.report.checks || {} }) : null;
+      if (!doc) {
+        globalThis.draftDayLinter.show(where.id, null, null, submit);
+        return;
+      }
+      const first = await submit(JSON.stringify(doc));
+      if (first.error) {
+        globalThis.draftDayLinter.missing(submit);
+        return;
+      }
+      globalThis.draftDayLinter.show(where.id, doc, first.report, submit);
       return;
     }
     app.replaceChildren();

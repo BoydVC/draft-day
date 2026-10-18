@@ -13,11 +13,14 @@ import {
   loadTargets,
   parseTargetRepo,
   filmRoom,
+  lintScoutingReport,
+  parseMarkdownScout,
   reduce,
   screenIdea,
   stageLabel,
   timeline,
   type Config,
+  type LintDocument,
   type Pick,
 } from "../core/index.ts";
 import type { DraftEvent } from "../core/events.ts";
@@ -268,7 +271,28 @@ export async function startServer(options: ServerOptions): Promise<{
       return;
     }
 
-    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css", "/lessons.js", "/lessons.css", "/replay.js", "/replay.css"];
+    if (req.method === "POST" && path === "/api/lint-scout") {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(await readBody(req) || "");
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "invalid JSON";
+        send(res, 400, { error: message === "body too large" ? message : "invalid JSON" });
+        return;
+      }
+      if (typeof parsed === "string") {
+        send(res, 200, lintScoutingReport(parseMarkdownScout(parsed)));
+        return;
+      }
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        send(res, 400, { error: "body must be an object" });
+        return;
+      }
+      send(res, 200, lintScoutingReport(parsed as LintDocument));
+      return;
+    }
+
+    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css", "/lessons.js", "/lessons.css", "/replay.js", "/replay.css", "/linter.js", "/linter.css"];
     if (req.method === "GET" && files.includes(path)) {
       const file = path === "/" || path === "/index.html" ? "index.html" : path.slice(1);
       const full = normalize(join(UI_DIR, file));

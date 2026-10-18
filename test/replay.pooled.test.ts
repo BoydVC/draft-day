@@ -584,8 +584,8 @@ test("R15 wiring", async () => {
   const html = await readFile(join(root, "src/ui/index.html"), "utf8");
   const sheets = [...html.matchAll(/<link\b[^>]*\bhref="\/([^"]+\.css)"/g)].map((match) => match[1]);
   const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="\/([^"]+\.js)"/g)].map((match) => match[1]);
-  assert.deepEqual(sheets, ["styles.css", "timeline.css", "lessons.css", "replay.css"]);
-  assert.deepEqual(scripts, ["timeline.js", "lessons.js", "replay.js", "app.js"]);
+  assert.deepEqual(sheets, ["styles.css", "timeline.css", "lessons.css", "replay.css", "linter.css"]);
+  assert.deepEqual(scripts, ["timeline.js", "lessons.js", "replay.js", "linter.js", "app.js"]);
   const http = await readFile(join(root, "src/server/http.ts"), "utf8");
   const files = [...http.matchAll(/\[[^\]]*\]/g)].map((match) => match[0]).find((list) => list.includes('"/app.js"') && list.includes('"/lessons.css"'));
   assert.ok(files, "static files array");
