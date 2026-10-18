@@ -103,6 +103,24 @@ export type {
   RuleSlice,
 } from "./linter.ts";
 
+export {
+  ANGLE_NAME_MAX,
+  EXCLUDED_SOURCES,
+  STAGE_ORDER,
+  angleKey,
+  angleName,
+  bigBoardStats,
+  bigBoardText,
+  median,
+} from "./bigboard.ts";
+export type {
+  BigBoardStats,
+  Ratio,
+  StageRow,
+  TradeRow,
+  WinRow,
+} from "./bigboard.ts";
+
 export { asPickId, branchFor, formatPickId, isCandId, isPickId, pickIdPrefix } from "./ids.ts";
 
 export { brandStoredTarget, loadTargets, parseTargetRepo } from "./target.ts";

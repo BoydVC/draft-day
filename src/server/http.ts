@@ -5,6 +5,7 @@ import { dirname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   assertCandidateCount,
+  bigBoardStats,
   gardener,
   isPickId,
   lessonWindow,
@@ -270,6 +271,18 @@ export async function startServer(options: ServerOptions): Promise<{
       return;
     }
 
+    if (req.method === "GET" && path === "/api/stats") {
+      const parsed = lessonWindow(url.searchParams.get("since"), url.searchParams.get("until"));
+      if (!parsed.ok) {
+        send(res, 400, { error: parsed.error });
+        return;
+      }
+      const payload = `${JSON.stringify(bigBoardStats(await loadLogs(options.dataDir), parsed.value))}\n`;
+      res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+      res.end(payload);
+      return;
+    }
+
     if (req.method === "POST" && path === "/api/lint-scout") {
       let text = "";
       try {
@@ -287,7 +300,7 @@ export async function startServer(options: ServerOptions): Promise<{
       return;
     }
 
-    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css", "/lessons.js", "/lessons.css", "/replay.js", "/replay.css", "/linter.js", "/linter.css"];
+    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css", "/lessons.js", "/lessons.css", "/replay.js", "/replay.css", "/linter.js", "/linter.css", "/bigboard.js", "/bigboard.css"];
     if (req.method === "GET" && files.includes(path)) {
       const file = path === "/" || path === "/index.html" ? "index.html" : path.slice(1);
       const full = normalize(join(UI_DIR, file));

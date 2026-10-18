@@ -187,6 +187,30 @@ PY
     fi
     echo "seeded linter"
     ;;
+  seed-bigboard)
+    load_state
+    node -e 'const fs=require("fs"),p=require("path");const by=new Map();for(const l of fs.readFileSync(process.argv[1],"utf8").split("\n")){if(!l.trim())continue;const {pickId,event}=JSON.parse(l);if(!by.has(pickId))by.set(pickId,[]);by.get(pickId).push(event)}for(const [pickId,events] of by){const d=p.join(process.argv[2],"picks",pickId);fs.mkdirSync(d,{recursive:true});fs.writeFileSync(p.join(d,"events.jsonl"),events.map((event)=>JSON.stringify(event)).join("\n")+"\n")}' "$ROOT/test/fixtures/bigboard/league.jsonl" "$DATA"
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/stats")"
+    if [[ "$code" != "200" ]]; then
+      echo "seed-bigboard: GET /api/stats returned ${code}" >&2
+      rm -f "$body"
+      exit 1
+    fi
+    python3 - "$body" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+want = "13 picks · 9 drafted · verified 9/10 (2 first try) · 10 trades grafted"
+summary = data.get("summary")
+excluded = (data.get("excluded") or {}).get("selftest")
+if summary != want or excluded != 4:
+    print(f"seed-bigboard: summary was {summary}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add picks)", file=sys.stderr)
+    raise SystemExit(1)
+PY
+    rm -f "$body"
+    echo "seeded bigboard"
+    ;;
   cleanup)
     load_state
     if kill -0 "$PID" 2>/dev/null; then
@@ -206,7 +230,7 @@ PY
     echo "cleaned pid ${PID:-?} data ${DATA:-?}"
     ;;
   *)
-    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|seed-linter|cleanup" >&2
+    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|seed-linter|seed-bigboard|cleanup" >&2
     exit 2
     ;;
 esac
