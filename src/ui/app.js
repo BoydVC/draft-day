@@ -36,6 +36,8 @@ function route() {
     const params = new URLSearchParams(replay[2] || "");
     return { name: "replay", id: replay[1], at: params.get("at"), play: params.get("play") };
   }
+  const linter = hash.match(/^\/picks\/(p-\d{8}-\d{2})\/linter$/);
+  if (linter) return { name: "linter", id: linter[1] };
   const match = hash.match(/^\/picks\/(p-\d{8}-\d{2})$/);
   if (match) return { name: "pick", id: match[1] };
   return { name: "board" };
@@ -381,6 +383,7 @@ function pickView(pick) {
       chip(pick.status),
       el("span", { class: "meta" }, [pick.stage]),
       el("a", { href: `#/picks/${pick.id}/replay`, class: "dd-replay-link" }, ["Replay"]),
+      el("a", { href: `#/picks/${pick.id}/linter`, class: "dd-lint-link" }, ["Lint"]),
     ]),
     el("p", {}, [pick.idea]),
     pick.failReason ? el("p", { class: "meta" }, [`Reason: ${pick.failReason}`]) : el("span"),
@@ -396,6 +399,74 @@ function pickView(pick) {
   ]);
 }
 
+function linterLines(doc) {
+  if (!doc || typeof doc !== "object") return [];
+  const lines = [];
+  if (typeof doc.markdown === "string") lines.push(doc.markdown);
+  if (typeof doc.restatement === "string") lines.push(doc.restatement);
+  for (const angle of Array.isArray(doc.angles) ? doc.angles : []) lines.push(String(angle));
+  for (const line of Array.isArray(doc.acceptance) ? doc.acceptance : []) {
+    if (line && typeof line.when === "string") lines.push(line.when);
+    if (line && typeof line.shall === "string") lines.push(line.shall);
+  }
+  for (const item of Array.isArray(doc.forbidden) ? doc.forbidden : []) lines.push(String(item));
+  return lines;
+}
+
+function linterFailure(why) {
+  return {
+    ok: false,
+    summary: "fail · 1 hard",
+    criteria: [],
+    ears: [],
+    angles: [],
+    hard: [{ kind: "criterion", id: "document", why: String(why) }],
+    soft: [],
+  };
+}
+
+async function showLinter(pickId, doc) {
+  let payload = doc;
+  if (typeof doc === "string") {
+    const trimmed = doc.trim();
+    if (trimmed.startsWith("{")) {
+      try {
+        payload = JSON.parse(trimmed);
+      } catch (error) {
+        app.replaceChildren();
+        app.append(globalThis.draftDayLinter(linterFailure(error instanceof Error ? error.message : "lint document is not JSON"), {
+          pickId,
+          onPaste: (text) => { void showLinter(pickId, text); },
+        }));
+        return;
+      }
+    } else payload = { markdown: doc };
+  }
+  const lines = linterLines(payload);
+  const again = (text) => { void showLinter(pickId, text); };
+  let response;
+  try {
+    response = await fetch("/api/lint-scout", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    app.replaceChildren();
+    app.append(globalThis.draftDayLinter(linterFailure("Could not reach the War Room."), { pickId, lines, onPaste: again }));
+    return;
+  }
+  let body = null;
+  try {
+    body = await response.json();
+  } catch {
+    body = null;
+  }
+  app.replaceChildren();
+  const view = response.ok && body && typeof body.ok === "boolean" ? body : linterFailure(body && body.error ? body.error : "lint failed");
+  app.append(globalThis.draftDayLinter(view, { pickId, lines, onPaste: again }));
+}
+
 let drawing = false;
 
 async function render(options) {
@@ -404,6 +475,7 @@ async function render(options) {
   try {
     const where = route();
     globalThis.draftDayReplay.stop(where);
+    if (globalThis.draftDayLinter) globalThis.draftDayLinter.stop();
     const typing = document.activeElement && document.getElementById("new-pick")?.contains(document.activeElement);
     if (where.name === "board" && options?.soft && typing && document.getElementById("big-board")) {
       const data = await fetch("/api/board").then((response) => response.json());
@@ -436,6 +508,23 @@ async function render(options) {
         return;
       }
       globalThis.draftDayReplay.show(await response.json(), where, options);
+      return;
+    }
+    if (where.name === "linter") {
+      const box = document.querySelector('[aria-label="Lint document"]');
+      if (options && options.soft && box && document.activeElement === box) return;
+      const response = await fetch(`/api/picks/${where.id}`);
+      if (!response.ok) {
+        app.replaceChildren();
+        app.append(section("Scouting linter", [
+          el("p", {}, ["That pick is not on the board."]),
+          el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]),
+        ]));
+        return;
+      }
+      const pick = await response.json();
+      const report = pick.report || {};
+      await showLinter(where.id, Object.assign({}, report, { checks: report.checks ?? {} }));
       return;
     }
     app.replaceChildren();
