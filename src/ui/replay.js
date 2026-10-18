@@ -70,15 +70,15 @@ function mounted(id) {
 
 function disarm() {
   if (playback.timer != null) {
-    clearTimeout(playback.timer);
+    globalThis.clearTimeout(playback.timer);
     playback.timer = null;
   }
   playback.playing = false;
 }
 
 function arm() {
-  if (playback.timer != null) clearTimeout(playback.timer);
-  playback.timer = setTimeout(onStep, REPLAY_STEP_MS);
+  if (playback.timer != null) return;
+  playback.timer = globalThis.setTimeout(onStep, REPLAY_STEP_MS);
 }
 
 function onStep() {
@@ -92,7 +92,7 @@ function onStep() {
   }
   playback.index += 1;
   if (playback.index >= last) playback.playing = false;
-  else playback.timer = setTimeout(onStep, REPLAY_STEP_MS);
+  else arm();
   paint();
 }
 
@@ -221,21 +221,23 @@ function mount(pick) {
       el("a", { href: `#/picks/${pick.id}` }, ["Pick page"]),
       el("a", { href: "#/" }, ["Big Board"]),
     ]),
-    el("h2", {}, [`Replay \u00b7 ${pick.id}`]),
-    el("p", { class: "dd-replay-idea" }, [pick.idea]),
+    el("div", { class: "dd-replay-ident" }, [
+      el("h2", {}, [`Replay \u00b7 ${pick.id}`]),
+      el("p", { class: "dd-replay-idea" }, [pick.idea]),
+    ]),
     el("div", { class: "dd-replay-now" }, [clock, status, stage, counter]),
     caption,
     el("div", { class: "dd-replay-controls", role: "group", "aria-label": "Replay controls" }, [
       slider, first, prev, play, next, last,
     ]),
     el("div", { class: "dd-replay-columns" }, [
-      el("section", { class: "panel", "aria-label": "Runs and stages" }, [
+      el("section", { class: "panel dd-replay-field", "aria-label": "Runs and stages" }, [
         el("h3", {}, ["Runs so far"]),
         runs,
         el("h3", {}, ["Stages so far"]),
         stages,
       ]),
-      el("section", { class: "panel", "aria-label": "Film" }, [
+      el("section", { class: "panel dd-replay-log", "aria-label": "Film" }, [
         el("h3", {}, ["Play by play"]),
         plays,
       ]),
