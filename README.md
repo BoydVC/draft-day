@@ -42,7 +42,7 @@ A brand-new pick rests in `intake` until the scouting report is recorded. `scout
 
 ## Commands
 
-`intake`, `next`, `record`, `show`, `board`, `brief`, `lessons`, `serve`, `doctor`, `selftest`.
+`intake`, `next`, `record`, `show`, `timeline`, `board`, `brief`, `lessons`, `serve`, `doctor`, `selftest`.
 
 Pass `--json` for a JSON payload. Pass `--data`, `--config`, and `--targets` to point at other files.
 

@@ -21,7 +21,7 @@ Preconditions:
 - **Inbox update.** With the Big Board open, submit `New pick` with idea `Show the run count in the page title`. Within two seconds the table shows that idea and the document did not reload.
 - **Event update.** Open the drafted pick. In another terminal, record a lesson:
   `node --experimental-strip-types src/cli/dd.ts record <pickId> lesson_recorded --topic board --text "status chips need a legend" --data "$DATA"`.
-  Within two seconds the decision log on the open page includes that lesson.
+  Within two seconds the Decision log on the open page includes that lesson as one plain sentence.
 - **Proof.** The inbox half is the same screenshot as New pick. For the event half, screenshot `/opt/cursor/artifacts/war-room/pick-page-after-lesson.png` if you drive it. A run that only drives New pick must say the lesson path was not driven.
 
 ## Gotchas
