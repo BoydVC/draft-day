@@ -9,10 +9,14 @@ import {
   branchFor,
   eventKey,
   filmRoom,
+  gardener,
   isCandId,
   isEventType,
   isPickId,
   labelMapForPass,
+  lessonWindow,
+  lessonsJson,
+  lessonsText,
   loadConfig,
   timeline,
   loadTargets,
@@ -29,7 +33,7 @@ import {
   type EventType,
   type Pick,
 } from "../core/index.ts";
-import { allocatePickId, commitPick, loadPicks, readEvents } from "../store/eventlog.ts";
+import { allocatePickId, commitPick, loadLogs, loadPicks, readEvents } from "../store/eventlog.ts";
 import { inboxCursor, readInbox } from "../store/inbox.ts";
 import { startServer } from "../server/http.ts";
 import { CLOSE, drive, HAPPY, POLICY, WALK, type DriverIo } from "../../test/fixtures/fake-driver.ts";
@@ -410,19 +414,12 @@ async function brief(paths: Paths, pickId: string | undefined, role: string | un
   return 0;
 }
 
-async function lessons(paths: Paths): Promise<number> {
-  const picks = await loadPicks(paths.dataDir);
-  const groups = new Map<string, { topic: string; count: number; texts: string[] }>();
-  for (const pick of picks) {
-    for (const lesson of pick.lessons) {
-      const group = groups.get(lesson.topic) ?? { topic: lesson.topic, count: 0, texts: [] };
-      group.count += 1;
-      group.texts.push(lesson.text);
-      groups.set(lesson.topic, group);
-    }
-  }
-  const lessonsOut = [...groups.values()];
-  emit(paths, { lessons: lessonsOut }, lessonsOut.map((group) => `${group.topic} (${group.count})`).join("\n") || "no lessons");
+async function lessons(paths: Paths, flags: Flags): Promise<number> {
+  const parsed = lessonWindow(flags.since, flags.until);
+  if (!parsed.ok) throw new Exit(parsed.error);
+  const report = gardener(await loadLogs(paths.dataDir), parsed.value);
+  if (paths.json) console.log(lessonsJson(report));
+  else console.log(lessonsText(report));
   return 0;
 }
 
@@ -589,7 +586,7 @@ function help(): string {
     "dd timeline <pickId>",
     "dd board",
     "dd brief <pickId> <candidate|judge|graft|physical> [cand]",
-    "dd lessons",
+    "dd lessons [--since YYYY-MM-DD] [--until YYYY-MM-DD]",
     "dd serve [--port 4420] [--host 127.0.0.1]",
     "dd doctor",
     "dd selftest [--keep]",
@@ -622,7 +619,7 @@ export async function main(argv: string[]): Promise<number> {
       case "brief":
         return await brief(paths, rest[0], rest[1], rest[2]);
       case "lessons":
-        return await lessons(paths);
+        return await lessons(paths, flags);
       case "serve":
         return await serve(paths, flags);
       case "doctor":

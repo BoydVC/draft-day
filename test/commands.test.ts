@@ -48,6 +48,14 @@ test("lessons and board accept --json", async () => {
   const board = await dd(["board", "--data", data, "--json"]);
   assert.equal(lessons.code, 0);
   assert.equal(board.code, 0);
-  assert.deepEqual(JSON.parse(lessons.stdout), { lessons: [] });
+  assert.deepEqual(JSON.parse(lessons.stdout), {
+    window: { since: null, until: null },
+    picks: 0,
+    findings: 0,
+    lessons: [],
+    oneOffs: [],
+    skipped: [],
+    summary: "0 lessons from 0 picks · 0 findings · 0 one-offs",
+  });
   assert.deepEqual(JSON.parse(board.stdout), { picks: [] });
 });
