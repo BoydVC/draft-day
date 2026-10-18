@@ -280,9 +280,25 @@ function foldSummary(book: Book): string {
   return `${countWord(picks.total, "pick")} · ${picks.drafted} drafted · verified ${verify.final.num}/${verify.final.den} (${verify.firstTry.num} first try) · ${countWord(trades.total, "trade")} grafted`;
 }
 
+function walkPhrase(count: number): string {
+  if (count === 0) return "0";
+  if (count === 1) return "1 (+1 walkover)";
+  return `${count} (+${count} walkovers)`;
+}
+
 function winLine(row: WinRow): string {
-  const walk = row.walkovers === 0 ? "" : ` (+${row.walkovers} walkover${row.walkovers === 1 ? "" : "s"})`;
-  return `${row.name} ${row.wins}/${row.entries} ${percentText(row.rate)}${walk}`;
+  return `${row.name} ${row.wins}/${row.entries} ${percentText(row.rate)}  Walkovers ${walkPhrase(row.walkovers)}`;
+}
+
+function leadLines(stats: BigBoardStats): string[] {
+  const best = stats.angles[0];
+  return [
+    best
+      ? `best angle  ${best.name}  ${best.wins}/${best.entries}  ${percentText(best.rate)}`
+      : `best angle  ${EMPTY}`,
+    `trades per pick  ${stats.trades.mean === null ? EMPTY : String(stats.trades.mean)}`,
+    `first try  ${stats.verify.firstTry.num}/${stats.verify.firstTry.den}  ${percentText(stats.verify.firstTry.rate)}`,
+  ];
 }
 
 function textLogs(stats: BigBoardStats): string {
@@ -371,7 +387,7 @@ export function bigBoardStats(logs: readonly PickLog[], window?: LessonWindow | 
 }
 
 export function bigBoardText(stats: BigBoardStats): string {
-  const lines = [LEDGER.summary.text(stats)];
+  const lines = [LEDGER.summary.text(stats), ...leadLines(stats)];
   for (const id of METRIC_IDS) {
     if (id === "summary") continue;
     const line = LEDGER[id].text(stats);

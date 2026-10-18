@@ -523,9 +523,22 @@ async function render(options) {
       if (where.since) params.set("since", where.since);
       if (where.until) params.set("until", where.until);
       const query = params.toString();
-      const response = await fetch(query ? `/api/stats?${query}` : "/api/stats");
-      app.replaceChildren();
-      app.append(el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]));
+      const statsError = (message) => {
+        app.replaceChildren();
+        app.append(el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]));
+        app.append(el("section", { class: "panel", "aria-label": "Big Board stats" }, [
+          el("h2", {}, ["Big Board stats"]),
+          el("p", {}, [message]),
+          el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]),
+        ]));
+      };
+      let response = null;
+      try {
+        response = await fetch(query ? `/api/stats?${query}` : "/api/stats");
+      } catch {
+        statsError("Could not load Big Board stats.");
+        return;
+      }
       if (!response.ok) {
         let message = "Could not load Big Board stats.";
         try {
@@ -534,14 +547,22 @@ async function render(options) {
         } catch {
           message = "Could not load Big Board stats.";
         }
-        app.append(el("section", { class: "panel", "aria-label": "Big Board stats" }, [
-          el("h2", {}, ["Big Board stats"]),
-          el("p", {}, [message]),
-          el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]),
-        ]));
+        statsError(message);
         return;
       }
-      app.append(globalThis.draftDayBigBoard(await response.json(), el));
+      let body = null;
+      try {
+        body = await response.json();
+      } catch {
+        body = null;
+      }
+      if (!body) {
+        statsError("Could not load Big Board stats.");
+        return;
+      }
+      app.replaceChildren();
+      app.append(el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]));
+      app.append(globalThis.draftDayBigBoard(body, el));
       return;
     }
     if (where.name === "replay") {

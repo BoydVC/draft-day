@@ -2,13 +2,26 @@ function percentText(rate) {
   return rate === null || rate === undefined ? "\u2014" : `${Math.round(rate * 100)}%`;
 }
 
+function count(value) {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function walkNote(row) {
+  const n = Number(row && row.walkovers) || 0;
+  if (n === 0) return "0";
+  if (n === 1) return "1 (+1 walkover)";
+  return `${n} (+${n} walkovers)`;
+}
+
 function winText(row) {
-  const walk = row.walkovers ? ` (+${row.walkovers} walkover${row.walkovers === 1 ? "" : "s"})` : "";
-  return `${row.name} ${row.wins}/${row.entries} ${percentText(row.rate)}${walk}`;
+  return `${row.name} ${row.wins}/${row.entries} ${percentText(row.rate)}`;
 }
 
 function winRow(row, el, attr) {
-  const children = [winText(row)];
+  const children = [
+    el("span", { class: "dd-win-main" }, [winText(row)]),
+    el("span", { class: "dd-walk", "data-label": "Walkovers" }, [`Walkovers ${walkNote(row)}`]),
+  ];
   if (row.entries) {
     children.push(el("meter", {
       min: "0",
@@ -22,6 +35,43 @@ function winRow(row, el, attr) {
     "data-entries": row.entries,
     "data-walkovers": row.walkovers,
   }, children);
+}
+
+function tileMeter(el, rate) {
+  return el("meter", {
+    class: "dd-meter",
+    min: "0",
+    max: "1",
+    value: rate === null || rate === undefined ? "0" : String(rate),
+    "aria-hidden": "true",
+  });
+}
+
+function leaders(stats, el) {
+  const angles = Array.isArray(stats && stats.angles) ? stats.angles : [];
+  const best = angles[0];
+  const trades = (stats && stats.trades) || {};
+  const first = (stats && stats.verify && stats.verify.firstTry) || {};
+  const mean = trades.mean === null || trades.mean === undefined ? "\u2014" : String(trades.mean);
+  return el("div", { class: "dd-leaders" }, [
+    el("article", { class: "dd-tile", "data-leader": "angle" }, [
+      el("p", { class: "dd-kicker" }, ["Best angle"]),
+      el("strong", {}, [best ? String(best.name) : "\u2014"]),
+      el("p", { class: "dd-record" }, [best ? `${count(best.wins)}/${count(best.entries)} \u00b7 ${percentText(best.rate)}` : "\u2014"]),
+      tileMeter(el, best ? best.rate : 0),
+    ]),
+    el("article", { class: "dd-tile", "data-leader": "trades" }, [
+      el("p", { class: "dd-kicker" }, ["Trades per pick"]),
+      el("strong", {}, [mean]),
+      el("p", { class: "dd-record" }, [`${count(trades.total)} grafted`]),
+    ]),
+    el("article", { class: "dd-tile", "data-leader": "verify" }, [
+      el("p", { class: "dd-kicker" }, ["First-try verify"]),
+      el("strong", {}, [percentText(first.rate)]),
+      el("p", { class: "dd-record" }, [`${count(first.num)}/${count(first.den)}`]),
+      tileMeter(el, first.rate),
+    ]),
+  ]);
 }
 
 function pickHref(id) {
@@ -72,6 +122,7 @@ function draftDayBigBoard(stats, el) {
     const noun = selftest === 1 ? "pick" : "picks";
     children.push(el("p", { class: "meta" }, [`${selftest} selftest ${noun} not counted`]));
   }
+  children.push(leaders(body, el));
   children.push(windowForm(body, el));
   children.push(el("div", { class: "dd-stats-grid" }, [
     el("section", { class: "dd-stat" }, [
