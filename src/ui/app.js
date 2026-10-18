@@ -31,6 +31,18 @@ function route() {
       until: until && day.test(until) ? until : null,
     };
   }
+  const stats = hash.match(/^\/stats(?:\?(.*))?$/);
+  if (stats) {
+    const params = new URLSearchParams(stats[1] || "");
+    const day = /^\d{4}-\d{2}-\d{2}$/;
+    const since = params.get("since");
+    const until = params.get("until");
+    return {
+      name: "stats",
+      since: since && day.test(since) ? since : null,
+      until: until && day.test(until) ? until : null,
+    };
+  }
   const replay = hash.match(/^\/picks\/(p-\d{8}-\d{2})\/replay(?:\?(.*))?$/);
   if (replay) {
     const params = new URLSearchParams(replay[2] || "");
@@ -203,7 +215,10 @@ function boardTable(data) {
 
 function boardView(data) {
   return el("div", {}, [
-    el("p", { class: "back" }, [el("a", { href: "#/lessons" }, ["Locker Room"])]),
+    el("p", { class: "back" }, [
+      el("a", { href: "#/lessons" }, ["Locker Room"]),
+      el("a", { href: "#/stats" }, ["Stats"]),
+    ]),
     formPanel(),
     el("section", { class: "panel", "aria-label": "Big Board", id: "big-board" }, [
       el("h2", {}, ["Big Board"]),
@@ -499,6 +514,34 @@ async function render(options) {
       app.replaceChildren();
       app.append(el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]));
       app.append(globalThis.draftDayLessons(report, el));
+      return;
+    }
+    if (where.name === "stats") {
+      const open = document.getElementById("stats-window");
+      if (options?.soft && open && open.contains(document.activeElement)) return;
+      const params = new URLSearchParams();
+      if (where.since) params.set("since", where.since);
+      if (where.until) params.set("until", where.until);
+      const query = params.toString();
+      const response = await fetch(query ? `/api/stats?${query}` : "/api/stats");
+      app.replaceChildren();
+      app.append(el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]));
+      if (!response.ok) {
+        let message = "Could not load Big Board stats.";
+        try {
+          const body = await response.json();
+          if (body && typeof body.error === "string" && body.error) message = body.error;
+        } catch {
+          message = "Could not load Big Board stats.";
+        }
+        app.append(el("section", { class: "panel", "aria-label": "Big Board stats" }, [
+          el("h2", {}, ["Big Board stats"]),
+          el("p", {}, [message]),
+          el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]),
+        ]));
+        return;
+      }
+      app.append(globalThis.draftDayBigBoard(await response.json(), el));
       return;
     }
     if (where.name === "replay") {
