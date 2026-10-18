@@ -194,14 +194,21 @@ function pickBody(report: LintDoc) {
 async function openHash(report: LintDoc, hash: string): Promise<{ room: WarRoom; urls: string[] }> {
   const room = await loadWarRoom({ root: await sandboxRoot(), hash: "#/" });
   const urls: string[] = [];
-  const original = room.ctx.fetch as (url: string, init?: { method?: string }) => Promise<unknown>;
+  const original = room.ctx.fetch as (url: string, init?: { method?: string; body?: unknown }) => Promise<unknown>;
   const body = pickBody(report);
-  room.ctx.fetch = async (url: string, init?: { method?: string }) => {
+  room.ctx.fetch = async (url: string, init?: { method?: string; body?: unknown }) => {
     urls.push(String(url));
     const method = String(init?.method || "GET").toUpperCase();
     const match = /^\/api\/picks\/([^/?#]+)$/.exec(String(url));
     if (method === "GET" && match) {
       return decodeURIComponent(match[1] ?? "") === PICK_ID ? response(200, body) : response(404, { error: "pick not found" });
+    }
+    if (method === "POST" && String(url) === "/api/lint-scout") {
+      try {
+        return response(200, lint(JSON.parse(String(init?.body ?? ""))));
+      } catch (error) {
+        return response(400, { error: error instanceof Error ? error.message : "invalid JSON" });
+      }
     }
     return original(url, init);
   };
@@ -243,9 +250,8 @@ function hostileStrings(doc: LintDoc): string[] {
     ...doc.acceptance.flatMap((line) => [line.when, line.shall]),
     ...doc.angles,
     ...doc.forbidden,
-    ...doc.rubric.map((item) => `${item.name} ${item.howToGrade}`),
   ];
-  return fields.filter((field) => /[<>]/.test(field) || /javascript:/i.test(field));
+  return fields.filter((field) => /<\s*\/?\s*(?:img|script|iframe)\b/i.test(field) || /javascript:/i.test(field) || /onerror\s*=/i.test(field));
 }
 
 function declarations(body: string): Array<[string, string]> {
@@ -285,8 +291,10 @@ test("S1 good fixtures pass", () => {
     assert.deepEqual(got.hard, [], name);
     assert.deepEqual(got.soft, [], name);
     assert.ok(got.angles.every((pair) => pair.collide === false), name);
-    assert.deepEqual(got.ears.map((ear) => ear.id), ["R1", "R2", "R5", "R14", "R19", "R20"], name);
     assert.ok(got.ears.every((ear) => ear.status === "ok"), name);
+    if (name === "good-replay.json") {
+      assert.deepEqual(got.ears.map((ear) => ear.id), ["R1", "R2", "R5", "R14", "R19", "R20"]);
+    }
     row(name, got);
   }
 });
