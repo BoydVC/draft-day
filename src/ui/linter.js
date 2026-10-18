@@ -31,8 +31,17 @@ function draftDayLinter(report, options) {
   const status = ok ? (soft.length ? "awaiting_go" : "drafted") : "failed";
   const textarea = el("textarea", { "aria-label": "Lint document" });
   const button = el("button", { type: "button" }, ["Lint"]);
-  button.addEventListener("click", () => {
+  const form = el("form", { id: "linter-paste", class: "dd-linter-paste", "aria-label": "Paste a scout" }, [
+    textarea,
+    button,
+  ]);
+  const lintPaste = () => {
     if (typeof opts.onPaste === "function") opts.onPaste(textarea.value);
+  };
+  button.addEventListener("click", lintPaste);
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    lintPaste();
   });
   const nav = [el("a", { href: "#/" }, ["Big Board"])];
   if (/^p-\d{8}-\d{2}$/.test(pickId)) nav.push(el("a", { href: `#/picks/${pickId}` }, ["Pick page"]));
@@ -46,6 +55,7 @@ function draftDayLinter(report, options) {
     el("h2", {}, ["Scouting linter"]),
     el("p", { class: "dd-linter-id" }, [pickId]),
     el("p", { class: "chip dd-linter-summary", "data-linter": "summary", "data-status": status }, [summary]),
+    form,
     el("div", { class: "dd-linter-columns" }, [
       el("section", { class: "panel" }, [
         el("h3", {}, ["Rubric gradeability"]),
@@ -78,10 +88,6 @@ function draftDayLinter(report, options) {
       el("ul", { "aria-label": "Soft warnings" }, soft.map((row) => el("li", {}, [`${row.kind}:${row.id} ${row.why}`]))),
     ]),
     lines.length ? el("ul", { "aria-label": "Report text" }, lines.map((line) => el("li", {}, [String(line)]))) : null,
-    el("div", { class: "dd-linter-paste" }, [
-      textarea,
-      button,
-    ]),
   ].filter(Boolean));
   return root;
 }
