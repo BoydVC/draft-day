@@ -31,6 +31,7 @@ This directory is the maintained source for verifying the War Room. Read the ind
 - [Decision log](./timeline.md) reads each pick as stages, runs, and one plain sentence per event.
 - [New pick](./new-pick.md) queues an idea from the form into the inbox and onto the board.
 - [Phone](./phone.md) lays the War Room out on a phone in light and dark, with tap targets, chips, and a New pick form that keeps its status.
+- [Replay](./replay.md) plays a pick's Decision log one event at a time, with a clock, a status chip, and the runs and stages so far.
 - [Pick page](./pick-page.md) shows the scouting report, candidates, scorecard, trades, physical, and decision log.
 - [Film Room](./film-room.md) shows the Scorecard: base, swap, pass toggle, and the reason sentence.
 - [Locker Room](./lessons.md) groups repeated findings into lessons and proposes one check for each.

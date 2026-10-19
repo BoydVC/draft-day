@@ -247,10 +247,12 @@ test("W5 no color literals", () => {
   const hex = /#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b/;
   const fn = /(?:rgba?|hsla?|hwb|lab|lch|oklab|oklch|color)\(/i;
   const colorProp = /^(?:color|background|background-color|border|border-color|border-top|border-right|border-bottom|border-left|outline|outline-color|box-shadow|fill|stroke|caret-color|text-decoration-color|column-rule-color)$/i;
+  const replayCss = readFileSync(join(root, "src/ui/replay.css"), "utf8");
   const files: Array<[string, string]> = [
     ["styles.css", rest],
     ["timeline.css", timelineCss],
     ["lessons.css", lessonsCss],
+    ["replay.css", replayCss],
   ];
   for (const [name, css] of files) {
     const clean = css.replace(/\/\*[\s\S]*?\*\//g, "");
