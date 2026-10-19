@@ -124,6 +124,39 @@ export type {
   WinRow,
 } from "./bigboard.ts";
 
+export {
+  DOCS_PREFIX,
+  FILES_MAX,
+  LEDGER_KINDS,
+  LEDGER_STATUSES,
+  MERGE_SAFE,
+  NOTE_MAX,
+  NUMBER_MAX,
+  PATH_MAX,
+  RERUN,
+  TITLE_MAX,
+  isLedgerAt,
+  ledgerJson,
+  ledgerLine,
+  ledgerText,
+  parseLedgerEntry,
+  prEntriesFromPulls,
+  readLedger,
+  seasonLedger,
+} from "./ledger.ts";
+export type {
+  DriftEntry,
+  LedgerBook,
+  LedgerEntry,
+  LedgerKind,
+  LedgerRow,
+  LedgerStatus,
+  LedgerVerdictRef,
+  PrEntry,
+  SeasonLedger,
+  VerdictEntry,
+} from "./ledger.ts";
+
 export { asPickId, branchFor, formatPickId, isCandId, isPickId, pickIdPrefix } from "./ids.ts";
 
 export { brandStoredTarget, loadTargets, parseTargetRepo } from "./target.ts";

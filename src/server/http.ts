@@ -26,6 +26,7 @@ import {
 import type { DraftEvent } from "../core/events.ts";
 import { appendInbox, inboxCursor, readInbox } from "../store/inbox.ts";
 import { loadLogs, loadPicks, readEvents, signature } from "../store/eventlog.ts";
+import { ledgerJson, readLedgerFile, seasonLedger } from "../store/ledger.ts";
 import { forwardIntake } from "./relay.ts";
 
 const UI_DIR = join(dirname(fileURLToPath(import.meta.url)), "../ui");
@@ -283,6 +284,16 @@ export async function startServer(options: ServerOptions): Promise<{
       return;
     }
 
+    if (req.method === "GET" && path === "/api/ledger") {
+      const targets = await loadTargets(options.targetsPath);
+      if (targets.length === 0) throw new Error("no targets");
+      const repo = targets[0] ?? "";
+      const ledger = seasonLedger(await loadLogs(options.dataDir), await readLedgerFile(options.dataDir, targets), repo, Date.now());
+      res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+      res.end(`${ledgerJson(ledger)}\n`);
+      return;
+    }
+
     if (req.method === "POST" && path === "/api/lint-scout") {
       let text = "";
       try {
@@ -300,7 +311,7 @@ export async function startServer(options: ServerOptions): Promise<{
       return;
     }
 
-    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css", "/lessons.js", "/lessons.css", "/replay.js", "/replay.css", "/linter.js", "/linter.css", "/bigboard.js", "/bigboard.css"];
+    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css", "/lessons.js", "/lessons.css", "/replay.js", "/replay.css", "/linter.js", "/linter.css", "/bigboard.js", "/bigboard.css", "/ledger.js", "/ledger.css"];
     if (req.method === "GET" && files.includes(path)) {
       const file = path === "/" || path === "/index.html" ? "index.html" : path.slice(1);
       const full = normalize(join(UI_DIR, file));

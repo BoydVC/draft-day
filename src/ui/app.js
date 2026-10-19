@@ -43,6 +43,7 @@ function route() {
       until: until && day.test(until) ? until : null,
     };
   }
+  if (hash === "/ledger") return { name: "ledger" };
   const replay = hash.match(/^\/picks\/(p-\d{8}-\d{2})\/replay(?:\?(.*))?$/);
   if (replay) {
     const params = new URLSearchParams(replay[2] || "");
@@ -218,6 +219,7 @@ function boardView(data) {
     el("p", { class: "back" }, [
       el("a", { href: "#/lessons" }, ["Locker Room"]),
       el("a", { href: "#/stats" }, ["Stats"]),
+      el("a", { href: "#/ledger" }, ["Ledger"]),
     ]),
     formPanel(),
     el("section", { class: "panel", "aria-label": "Big Board", id: "big-board" }, [
@@ -563,6 +565,49 @@ async function render(options) {
       app.replaceChildren();
       app.append(el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]));
       app.append(globalThis.draftDayBigBoard(body, el));
+      return;
+    }
+    if (where.name === "ledger") {
+      const ledgerError = (message) => {
+        app.replaceChildren();
+        app.append(el("p", { class: "back ledger-back" }, [el("a", { href: "#/" }, ["Big Board"])]));
+        app.append(el("section", { class: "panel", "aria-label": "Season ledger" }, [
+          el("h2", {}, ["Season ledger"]),
+          el("p", {}, [message]),
+          el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]),
+        ]));
+      };
+      let response = null;
+      try {
+        response = await fetch("/api/ledger");
+      } catch {
+        ledgerError("Could not load the season ledger.");
+        return;
+      }
+      if (!response.ok) {
+        let message = "Could not load the season ledger.";
+        try {
+          const body = await response.json();
+          if (body && typeof body.error === "string" && body.error) message = body.error;
+        } catch {
+          message = "Could not load the season ledger.";
+        }
+        ledgerError(message);
+        return;
+      }
+      let body = null;
+      try {
+        body = await response.json();
+      } catch {
+        body = null;
+      }
+      if (!body) {
+        ledgerError("Could not load the season ledger.");
+        return;
+      }
+      app.replaceChildren();
+      app.append(el("p", { class: "back ledger-back" }, [el("a", { href: "#/" }, ["Big Board"])]));
+      app.append(globalThis.draftDayLedger(body, el));
       return;
     }
     if (where.name === "replay") {

@@ -83,3 +83,8 @@ ts	phase	decision	why	evidence	result
 2026-10-18T23:30:00Z	graft	A thrown stats fetch or unreadable body paints Could not load Big Board stats and a Big Board link	The base only handled a non-OK response; this is the dd/p7-big-board-c error section, and a non-OK body still shows its error string	src/ui/app.js	open
 2026-10-18T23:30:00Z	graft	Rejected c3 status chips	They push the tiles down at 390 and the summary already carries drafted	docs/SPEC-008-big-board.md	open
 2026-10-18T23:30:00Z	graft	Rejected a second walkover suffix beside the Walkovers cell	c1's suffix stays only when the walkover trade is that same one display, not a suffix plus a cell	src/ui/bigboard.js	open
+2026-10-19T14:20:00Z	ledger	Pick facts come only from reduce() after the four gardener gates	A second walk of verdict_recorded would drift from the physical the board already shows	src/core/ledger.ts	open
+2026-10-19T14:20:00Z	ledger	data/ledger.jsonl is append-only under the ledger lock and no HTTP route writes it	A verdict belongs to a head SHA; a correction is a new line, and the War Room only reads	src/store/ledger.ts	open
+2026-10-19T14:20:00Z	ledger	The phone view leads with the merge call and the re-run sentence, then a vertical rail	Boyd decides what to merge before he reads the machine summary	src/ui/ledger.js	open
+2026-10-19T14:20:00Z	ledger	Status color reuses the chip tokens; motion stays inside prefers-reduced-motion	Pick 4 owns the palette, and a reduced-motion pass must not animate the rail	src/ui/ledger.css	open
+2026-10-19T14:20:00Z	ledger	Row notes are kept on the fold and painted as text below the rail	Hostile notes have to stay text without pushing the first three cards under the fold	src/ui/ledger.js	open
