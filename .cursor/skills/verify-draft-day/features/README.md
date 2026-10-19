@@ -1,0 +1,33 @@
+# Draft Day verification map
+
+This directory is the maintained source for verifying the War Room. Read the index, then use the matching feature file.
+
+## Baseline preconditions
+
+- Launch with `.cursor/skills/verify-draft-day/helpers/control.sh launch`.
+- The server is on `127.0.0.1` at the port in `/tmp/dd-verify/state.env`.
+- `dd selftest --keep` has seeded a drafted pick, a policy refusal, and a walkover in that data directory.
+- Run `control.sh doctor` and require a live PID, a 200 from `/api/board`, and five doctor lines.
+- Never drive a War Room this run did not start. Two runs need two ports and two data directories.
+
+## Driving conventions
+
+- Start from the Big Board at `$URL/`.
+- Prefer the accessible names `War Room`, `New pick`, `Idea`, `Target`, `Candidates`, `Add pick`, and `Big Board`.
+- Pick links use the pick id as their name.
+- Do not remove proof screenshots during cleanup.
+
+## Proof and skip reporting
+
+- Capture the action and the state it produced.
+- UI proof is a screenshot with the War Room heading visible.
+- Mutation proof includes `GET /api/board` or the inbox file, not only the toast.
+- Record which feature file you drove.
+- If a path is unreachable, report the command and the missing precondition. Do not count a different path as that proof.
+
+## Features
+
+- [Big Board](./big-board.md) lists seeded picks with status chips and run counts.
+- [New pick](./new-pick.md) queues an idea from the form into the inbox and onto the board.
+- [Pick page](./pick-page.md) shows the scouting report, candidates, scorecard, trades, physical, and decision log.
+- [Live updates](./live-updates.md) refresh the open board or pick page when an event or inbox row lands.
