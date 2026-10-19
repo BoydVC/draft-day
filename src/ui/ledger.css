@@ -122,6 +122,7 @@
 .dd-ledger .dd-status[data-status="stale"] { color: var(--chip-work-ink); }
 .dd-ledger .dd-status[data-status="failed"] { color: var(--chip-stop-ink); }
 .dd-ledger .dd-status[data-status="unverified"] { color: var(--muted); }
+.dd-ledger .dd-status[data-status="unknown"] { color: var(--chip-stop-ink); }
 
 .dd-ledger .dd-why,
 .dd-ledger .dd-title {

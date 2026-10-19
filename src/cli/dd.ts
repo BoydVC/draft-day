@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -47,7 +48,7 @@ import {
   type LintDocument,
   type Pick,
 } from "../core/index.ts";
-import { allocatePickId, commitPick, loadLogs, loadPicks, readEvents } from "../store/eventlog.ts";
+import { allocatePickId, commitPick, loadLogs, loadPicks, readEvents, withLock } from "../store/eventlog.ts";
 import { appendLedger, readLedgerFile } from "../store/ledger.ts";
 import { inboxCursor, readInbox } from "../store/inbox.ts";
 import { startServer } from "../server/http.ts";
@@ -135,6 +136,29 @@ function countOf(events: readonly DraftEvent[], type: EventType, cand?: string):
   return events.filter((event) => event.type === type && (cand === undefined || event.payload.cand === cand)).length;
 }
 
+function lastOf(events: readonly DraftEvent[], types: readonly EventType[], cand?: string): EventType | undefined {
+  let found: EventType | undefined;
+  for (const event of events) {
+    if (!types.includes(event.type)) continue;
+    if (cand !== undefined && event.payload.cand !== cand) continue;
+    found = event.type;
+  }
+  return found;
+}
+
+function explicitSlot(value: unknown): number | undefined | "bad" {
+  if (value === undefined || value === false) return undefined;
+  const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
+  if (!Number.isInteger(n) || n < 1 || n > 99) return "bad";
+  return n;
+}
+
+function slotOrNext(slot: number | undefined, open: boolean, seen: number): number {
+  if (slot !== undefined) return slot;
+  if (open) return Math.max(1, seen);
+  return seen + 1;
+}
+
 async function fileText(flags: Flags): Promise<string | undefined> {
   const path = flag(flags, "file") || flag(flags, "report");
   if (!path) return undefined;
@@ -162,11 +186,17 @@ function normalize(
     const cand = String(raw.cand ?? "");
     if (!isCandId(cand)) return { error: `unknown candidate ${cand}` };
     if (type === "candidate_dropped") return { payload: { cand, reason: String(raw.reason ?? "dropped") } };
-    if (type === "candidate_failed") {
-      return { payload: { cand, attempt: countOf(events, "candidate_failed", cand) + 1 } };
-    }
-    if (type === "candidate_launched") {
-      const attempt = countOf(events, "candidate_launched", cand) + 1;
+    if (type === "candidate_failed" || type === "candidate_launched") {
+      const slot = explicitSlot(raw.attempt);
+      if (slot === "bad") return { error: "bad attempt" };
+      if (type === "candidate_failed") {
+        const seen = countOf(events, "candidate_failed", cand);
+        const open = lastOf(events, ["candidate_launched", "candidate_failed", "candidate_finished"], cand) === "candidate_failed";
+        return { payload: { cand, attempt: slotOrNext(slot, open, seen) } };
+      }
+      const seen = countOf(events, "candidate_launched", cand);
+      const open = lastOf(events, ["candidate_launched", "candidate_failed", "candidate_finished"], cand) === "candidate_launched";
+      const attempt = slotOrNext(slot, open, seen);
       return {
         payload: {
           cand,
@@ -183,7 +213,11 @@ function normalize(
     return { payload: { cand, attempt: countOf(events, "candidate_launched", cand) || 1, report: parsed.value } };
   }
   if (type === "judge_launched") {
-    const pass = pick.judgeLaunches + 1;
+    const slot = explicitSlot(raw.pass ?? raw.attempt);
+    if (slot === "bad") return { error: "bad attempt" };
+    const seen = countOf(events, "judge_launched");
+    const open = lastOf(events, ["judge_launched", "judgement_recorded"]) === "judge_launched";
+    const pass = slotOrNext(slot, open, seen);
     const finished = pick.candidates.filter((cand) => cand.status === "finished").map((cand) => cand.id);
     const map = labelMapForPass(pick.id, finished, pass);
     const labels: Record<string, string> = {};
@@ -238,10 +272,25 @@ function normalize(
     const text = typeof raw.fileText === "string" ? raw.fileText : JSON.stringify(raw.physical ?? raw);
     const parsed = parseVerdict(text);
     if (!parsed.ok) return parsed;
-    const attempt = pick.verdicts.length + 1;
-    return { payload: { attempt, headSha: parsed.value.headSha, physical: parsed.value } };
+    const digest = createHash("sha256").update(text).digest("hex");
+    const slot = explicitSlot(raw.attempt);
+    if (slot === "bad") return { error: "bad attempt" };
+    const sameFile = events.find((event) => event.type === "verdict_recorded" && event.payload.digest === digest);
+    if (sameFile) return { payload: sameFile.payload };
+    if (slot !== undefined) {
+      const sameAttempt = events.find((event) => event.type === "verdict_recorded" && event.payload.attempt === slot);
+      if (sameAttempt) return { payload: sameAttempt.payload };
+    }
+    const attempt = slot ?? pick.verdicts.length + 1;
+    return { payload: { attempt, headSha: parsed.value.headSha, physical: parsed.value, digest } };
   }
-  if (type === "fix_requested") return { payload: { loop: pick.fixLoops + 1, agentId: pick.graftAgentId ?? "" } };
+  if (type === "fix_requested") {
+    const slot = explicitSlot(raw.loop ?? raw.attempt);
+    if (slot === "bad") return { error: "bad attempt" };
+    const seen = countOf(events, "fix_requested");
+    const open = lastOf(events, ["fix_requested", "verdict_recorded"]) === "fix_requested";
+    return { payload: { loop: slotOrNext(slot, open, seen), agentId: pick.graftAgentId ?? "" } };
+  }
   if (type === "draft_pr_confirmed") {
     const prNumber = Number(raw.prNumber ?? pick.physical?.prNumber ?? pick.graft?.prNumber);
     if (!Number.isInteger(prNumber)) return { error: "prNumber is required" };
@@ -319,20 +368,23 @@ async function createPick(
 
 async function intake(paths: Paths, flags: Flags): Promise<number> {
   if (flags["from-inbox"] === true) {
-    const cursor = await inboxCursor(paths.dataDir);
-    const lines = await readInbox(paths.dataDir);
-    const fresh = lines.filter((line) => line.offset > cursor);
-    const created = [];
-    for (const line of fresh) {
-      const pick = await createPick(paths, {
-        idea: line.idea,
-        source: line.source,
-        target: line.target,
-        n: line.n,
-        inboxOffset: line.offset,
-      });
-      created.push({ pickId: pick.id, status: pick.status, inboxOffset: line.offset });
-    }
+    const created = await withLock(join(paths.dataDir, "inbox.lock"), async () => {
+      const cursor = await inboxCursor(paths.dataDir);
+      const lines = await readInbox(paths.dataDir);
+      const fresh = lines.filter((line) => line.offset > cursor);
+      const picks = [];
+      for (const line of fresh) {
+        const pick = await createPick(paths, {
+          idea: line.idea,
+          source: line.source,
+          target: line.target,
+          n: line.n,
+          inboxOffset: line.offset,
+        });
+        picks.push({ pickId: pick.id, status: pick.status, inboxOffset: line.offset });
+      }
+      return picks;
+    });
     emit(paths, { picks: created }, created.map((pick) => `${pick.pickId} ${pick.status}`).join("\n") || "inbox empty");
     return 0;
   }
@@ -375,6 +427,9 @@ async function recordCommand(paths: Paths, pickId: string | undefined, typeName:
     ...(flag(flags, "second-read") ? { secondRead: flag(flags, "second-read") } : {}),
     ...(flag(flags, "note") ? { note: flag(flags, "note") } : {}),
     ...(flag(flags, "model") ? { model: flag(flags, "model") } : {}),
+    ...(flag(flags, "attempt") ? { attempt: flag(flags, "attempt") } : {}),
+    ...(flag(flags, "pass") ? { pass: flag(flags, "pass") } : {}),
+    ...(flag(flags, "loop") ? { loop: flag(flags, "loop") } : {}),
   };
   const { noop, pick } = await recordObject(paths, pickId, typeName, raw, flag(flags, "by") ?? "dd");
   emit(paths, { ok: true, noop, pickId: pick.id, status: pick.status });
@@ -698,7 +753,7 @@ function help(): string {
     "dd intake --idea TEXT --source chat --target BoydVC/draft-day [--n 3] [--approval ask]",
     "dd intake --from-inbox",
     "dd next <pickId>",
-    "dd record <pickId> <event> [--file path] [--cand c1] [--agent id]",
+    "dd record <pickId> <event> [--file path] [--cand c1] [--agent id] [--attempt N]",
     "dd show <pickId>",
     "dd timeline <pickId>",
     "dd board",
