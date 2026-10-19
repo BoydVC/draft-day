@@ -20,11 +20,11 @@ From the repo root, with Node 22+:
 The helper:
 
 1. Makes an empty data directory under `/tmp`.
-2. Runs `node --experimental-strip-types src/cli/dd.ts selftest --keep --data "$DATA"` so the board already has a drafted pick, a policy refusal, and a walkover.
+2. Runs `node --experimental-strip-types src/cli/dd.ts selftest --keep --data "$DATA"` so the board already has a drafted happy pick, a policy refusal, a walkover, and a close Film Room pick.
 3. Starts `node --experimental-strip-types src/cli/dd.ts serve --data "$DATA" --host 127.0.0.1 --port "$PORT"`.
 4. Waits until the log line `War Room listening on http://127.0.0.1:$PORT` appears and `GET /api/board` returns JSON.
 
-Ready means the Big Board lists those three picks. A process that merely accepts a socket is not ready. The helper writes `/tmp/dd-verify/state.env` with `DATA`, `PORT`, `PID`, and `URL`.
+Ready means the Big Board lists those four picks. A process that merely accepts a socket is not ready. The helper writes `/tmp/dd-verify/state.env` with `DATA`, `PORT`, `PID`, and `URL`.
 
 Override the port with `PORT=45921 .cursor/skills/verify-draft-day/helpers/control.sh launch` when 45920 is taken.
 
@@ -59,8 +59,11 @@ Capture the action and the resulting state.
 
 - Screenshot the Big Board after the seeded picks are visible, then again after `Add pick` shows the new row.
 - Screenshot the pick page for the drafted happy-path pick, including the scorecard.
+- Screenshot the close pick's Scorecard at 1280×800 (`film-room-flipped.png`), after Pass 1 (`film-room-pass1.png`), and at 390×844 (`film-room-phone.png`).
+- Screenshot the happy pick's Single pass chip (`film-room-single.png`).
+- Screenshot a scorecard that appears after `judgement_recorded` without a reload (`film-room-live.png`) and one whose judge base loses (`film-room-disagree.png`).
 - Save files under `/opt/cursor/artifacts/war-room/`.
-- A passing board proof shows the seeded picks and the submitted idea. A passing pick proof shows the status chip, the scouting restatement, and the scorecard.
+- A passing board proof shows the seeded picks and the submitted idea. A passing pick proof shows the status chip, the scouting restatement, and the scorecard. A passing Film Room proof shows `BASE`, the swap chip, and the reason sentence.
 - Confirm the side effect: `GET /api/board` includes the inbox row, and `$DATA/intake.jsonl` grew by one line. `POST /api/intake` does not write `events.jsonl`.
 
 ## Cleanup
