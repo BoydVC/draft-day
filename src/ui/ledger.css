@@ -1,0 +1,224 @@
+.dd-ledger {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  overflow-x: clip;
+}
+
+.dd-ledger h2 {
+  margin-bottom: 8px;
+}
+
+.dd-ledger h3 {
+  margin: 0 0 8px;
+  font: 600 13px/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.dd-ledger p,
+.dd-ledger li,
+.dd-ledger span,
+.dd-ledger caption,
+.dd-ledger td,
+.dd-ledger summary {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.dd-ledger .dd-summary {
+  margin: 0 0 12px;
+  font: 600 17px/1.35 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger .dd-kicker {
+  margin: 0 0 6px;
+  color: var(--gold);
+  font: 700 0.68rem/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dd-ledger table {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  margin: 8px 0 16px;
+}
+
+.dd-ledger caption {
+  caption-side: top;
+  text-align: left;
+  padding: 0 0 8px;
+  font: 600 22px/1.2 Georgia, "Iowan Old Style", Palatino, serif;
+  color: var(--ink);
+}
+
+.dd-ledger td {
+  padding: 0;
+  border-bottom: 0;
+}
+
+.dd-ledger details {
+  border-bottom: 1px solid var(--line);
+  max-width: 100%;
+}
+
+.dd-ledger summary {
+  position: relative;
+  padding: 8px 4px 8px 1.25rem;
+  min-height: 44px;
+  box-sizing: border-box;
+  cursor: pointer;
+}
+
+.dd-ledger summary::before {
+  content: "\25b8";
+  position: absolute;
+  left: 0;
+  top: 0.85rem;
+  color: var(--muted);
+}
+
+.dd-ledger details[open] > summary::before {
+  content: "\25be";
+}
+
+.dd-ledger summary:focus-visible,
+.dd-ledger a:focus-visible,
+.ledger-back a:focus-visible,
+a[href="#/ledger"]:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.dd-ledger .dd-status {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: var(--chip-bg);
+  color: var(--chip-ink);
+  font: 700 13px/1.2 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger .dd-status[data-status="fresh"] {
+  background: var(--chip-done-bg);
+  color: var(--chip-done-ink);
+}
+
+.dd-ledger .dd-status[data-status="docs-only"] {
+  background: var(--chip-review-bg);
+  color: var(--chip-review-ink);
+}
+
+.dd-ledger .dd-status[data-status="stale"] {
+  background: var(--chip-work-bg);
+  color: var(--chip-work-ink);
+}
+
+.dd-ledger .dd-status[data-status="failed"] {
+  background: var(--chip-stop-bg);
+  color: var(--chip-stop-ink);
+}
+
+.dd-ledger .dd-audit {
+  padding: 4px 4px 12px 1.25rem;
+}
+
+.dd-ledger .dd-audit ol {
+  margin: 0 0 8px;
+  padding-left: 1.2rem;
+}
+
+.dd-ledger .dd-rerun,
+.dd-ledger .dd-alert {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+}
+
+.dd-ledger a,
+.ledger-back a,
+a[href="#/ledger"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 8px 10px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-2);
+  text-decoration: none;
+}
+
+.ledger-back,
+p.back:has(a[href="#/ledger"]) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+@media (min-width: 601px) {
+  .dd-ledger summary {
+    display: grid;
+    grid-template-columns: 4.5rem minmax(4.5rem, 7rem) 8.75rem minmax(0, 1.6fr) minmax(0, 1fr);
+    column-gap: 8px;
+    row-gap: 4px;
+    align-items: center;
+  }
+}
+
+@media (max-width: 600px) {
+  .dd-ledger table,
+  .dd-ledger tbody,
+  .dd-ledger tr,
+  .dd-ledger td {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .dd-ledger thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  .dd-ledger summary {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .dd-ledger summary [data-label]::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 2px;
+    font: 600 11px/1.2 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+}

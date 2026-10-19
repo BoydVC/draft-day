@@ -505,17 +505,17 @@ test("B16 wiring", () => {
   const html = readFileSync(join(root, "src/ui/index.html"), "utf8");
   const http = readFileSync(join(root, "src/server/http.ts"), "utf8");
   assert.match(html, /<link rel="stylesheet" href="\/linter\.css">\n  <link rel="stylesheet" href="\/bigboard\.css">/);
-  assert.match(html, /<script src="\/linter\.js"><\/script>\n  <script src="\/bigboard\.js"><\/script>\n  <script src="\/app\.js"><\/script>/);
+  assert.match(html, /<script src="\/linter\.js"><\/script>\n  <script src="\/bigboard\.js"><\/script>\n  <script src="\/ledger\.js"><\/script>\n  <script src="\/app\.js"><\/script>/);
   const line = http.split("\n").find((item) => item.includes("const files"));
   assert.ok(line);
   assert.match(line, /"\/linter\.js", "\/linter\.css", "\/bigboard\.js", "\/bigboard\.css"/);
-  const sheets = '["styles.css", "timeline.css", "lessons.css", "replay.css", "linter.css", "bigboard.css"]';
-  const scripts = '["timeline.js", "lessons.js", "replay.js", "linter.js", "bigboard.js", "app.js"]';
+  const sheets = '["styles.css", "timeline.css", "lessons.css", "replay.css", "linter.css", "bigboard.css", "ledger.css"]';
+  const scripts = '["timeline.js", "lessons.js", "replay.js", "linter.js", "bigboard.js", "ledger.js", "app.js"]';
   for (const file of ["test/replay.test.ts", "test/replay.pooled.test.ts", "test/linter.test.ts"]) {
     const text = readFileSync(join(root, file), "utf8");
     assert.equal(text.includes(sheets), true, file);
     assert.equal(text.includes(scripts), true, file);
   }
   const pooled = readFileSync(join(root, "test/linter.pooled.test.ts"), "utf8");
-  assert.match(pooled, /scripts\.slice\(scriptAt, scriptAt \+ 4\), \["replay\.js", "linter\.js", "bigboard\.js", "app\.js"\]/);
+  assert.match(pooled, /scripts\.slice\(scriptAt, scriptAt \+ 5\), \["replay\.js", "linter\.js", "bigboard\.js", "ledger\.js", "app\.js"\]/);
 });

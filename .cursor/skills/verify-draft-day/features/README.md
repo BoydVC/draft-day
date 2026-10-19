@@ -34,6 +34,7 @@ This directory is the maintained source for verifying the War Room. Read the ind
 - [Replay](./replay.md) plays a pick's Decision log one event at a time, with a clock, a status chip, and the runs and stages so far.
 - [Linter](./linter.md) checks a scouting report for gradeable rubric lines, EARS bindings, and distinct angles.
 - [Big Board stats](./big-board-stats.md) counts which angles win, how many trades a pick takes, and how often the physical verifies.
+- [Season ledger](./season-ledger.md) shows which open pull requests are fresh, docs-only, stale, failed, or unverified, and the verdict each status came from.
 - [Pick page](./pick-page.md) shows the scouting report, candidates, scorecard, trades, physical, and decision log.
 - [Film Room](./film-room.md) shows the Scorecard: base, swap, pass toggle, and the reason sentence.
 - [Locker Room](./lessons.md) groups repeated findings into lessons and proposes one check for each.

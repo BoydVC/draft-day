@@ -83,3 +83,7 @@ ts	phase	decision	why	evidence	result
 2026-10-18T23:30:00Z	graft	A thrown stats fetch or unreadable body paints Could not load Big Board stats and a Big Board link	The base only handled a non-OK response; this is the dd/p7-big-board-c error section, and a non-OK body still shows its error string	src/ui/app.js	open
 2026-10-18T23:30:00Z	graft	Rejected c3 status chips	They push the tiles down at 390 and the summary already carries drafted	docs/SPEC-008-big-board.md	open
 2026-10-18T23:30:00Z	graft	Rejected a second walkover suffix beside the Walkovers cell	c1's suffix stays only when the walkover trade is that same one display, not a suffix plus a cell	src/ui/bigboard.js	open
+2026-10-19T14:20:00Z	ledger	Status is a fold of reduce() verdicts and ledger lines keyed by head SHA, never stored	A stored status would drift from the book the moment a verdict lands	src/core/ledger.ts	open
+2026-10-19T14:20:00Z	ledger	Each row carries the verdict sequence and paints as a closed details element	Boyd can open why a PR is docs-only without a second page or JS state	src/ui/ledger.js	open
+2026-10-19T14:20:00Z	ledger	The ledger file is appended only by dd ledger import-prs and record under the lock	GET /api/ledger is read-only so a request cannot change the book	src/store/ledger.ts	open
+2026-10-19T14:20:00Z	ledger	docs-only requires a drift from the last VERIFIED SHA to head whose every path starts with docs/	A head move with no drift, or any path outside docs/, is stale	src/core/ledger.ts	open
