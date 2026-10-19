@@ -19,6 +19,25 @@ npm run dd -- serve
 
 The War Room listens on `http://127.0.0.1:4420` unless you pass `--host` and `--port`. It binds to loopback by default.
 
+### Morning routine
+
+Two minutes: file an idea, open the War Room, then read the ledger.
+
+```bash
+npm run dd -- intake --idea "Add a status legend" --source chat --target BoydVC/draft-day
+npm run dd -- serve
+```
+
+Open `http://127.0.0.1:4420`. The Big Board is `#/`. A driver reads `dd next <pickId>` and writes what happened with `dd record`. Nothing on this page merges.
+
+```bash
+npm run dd -- ledger
+npm run dd -- ledger import-prs pulls.json
+npm run dd -- ledger record verdict.jsonl
+```
+
+`#/ledger` is the same fold. `ledger import-prs` records the open pull requests. A verdict outside a pick log must be recorded with `dd ledger record`, or the row stays unverified. The Season Ledger screenshots in `docs/screens/p10-polish/` use `test/fixtures/ledger/ledger-real.jsonl` plus `test/fixtures/ledger/ledger-polish.jsonl`: #1 is VERIFIED certainty 5 at f51dae8 and 4edd03a, and #11 is VERIFIED certainty 5 at af1e78c.
+
 `dd selftest` runs a whole pick in a temporary data directory against a fake driver: three candidates (one errors, then succeeds), a judge, a trade, a failed physical, a fix, a verified physical, a policy refusal, and a walkover.
 
 ```bash
@@ -42,9 +61,37 @@ A brand-new pick rests in `intake` until the scouting report is recorded. `scout
 
 ## Commands
 
-`intake`, `next`, `record`, `show`, `timeline`, `board`, `brief`, `lessons`, `serve`, `doctor`, `selftest`.
+`dd help` lists every command:
+
+`intake`, `next`, `record`, `show`, `timeline`, `board`, `brief`, `lessons`, `stats`, `ledger`, `ledger import-prs`, `ledger record`, `lint-scout`, `serve`, `doctor`, `selftest`.
+
+| Command | What it does |
+|---|---|
+| `stats` | Big Board stats: angles, trades, verify rate, time per stage. Optional `--since` and `--until`. |
+| `ledger` | Season ledger: merge call, re-run list, and one row per open pull request. |
+| `ledger import-prs` | Append a pulls file (`--at` is the observation time). |
+| `ledger record` | Append verdict and drift lines. A verdict outside a pick log must be recorded here. |
+| `lint-scout` | Check a scouting report file, or the report on `--pick <id>`. |
 
 Pass `--json` for a JSON payload. Pass `--data`, `--config`, and `--targets` to point at other files.
+
+## War Room pages
+
+| Page | Hash |
+|---|---|
+| Big Board | `#/` |
+| Pick | `#/picks/<id>` |
+| Replay | `#/picks/<id>/replay` |
+| Scouting linter | `#/picks/<id>/linter` |
+| Locker Room | `#/lessons` |
+| Big Board stats | `#/stats` |
+| Season ledger | `#/ledger` |
+
+## Pull requests
+
+Every draft pull request body opens with this line:
+
+Draft only. Do not merge, enable auto-merge, or mark ready for review.
 
 ## Layout
 

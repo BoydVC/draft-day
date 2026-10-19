@@ -241,6 +241,37 @@ if summary != want:
 PY
     rm -f "$body"
     echo "seeded ledger"
+    if [[ "${2:-}" == "polish" ]]; then
+      node --experimental-strip-types src/cli/dd.ts ledger record test/fixtures/ledger/ledger-polish.jsonl --data "$DATA"
+      body="$(mktemp)"
+      code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/ledger")"
+      python3 - "$body" "$code" <<'PY'
+import json, sys
+code = sys.argv[2]
+want = "11 open PRs \u00b7 stack #1\u2192#11 (10) \u00b7 merge-safe through #9 \u00b7 re-run #10 \u00b7 5 fresh, 4 docs-only, 1 unverified \u00b7 1 off stack"
+if code != "200":
+    print(f"seed-ledger: GET /api/ledger returned {code}", file=sys.stderr)
+    sys.exit(1)
+data = json.load(open(sys.argv[1]))
+summary = data.get("summary", "")
+if summary != want:
+    print(f"seed-ledger: summary was {summary}", file=sys.stderr)
+    sys.exit(1)
+rows = {row["number"]: row for row in data.get("rows", [])}
+one = rows.get(1, {})
+eleven = rows.get(11, {})
+seq = one.get("sequence") or []
+shas = {item.get("headSha", "")[:7] for item in seq if item.get("verdict") == "VERIFIED" and item.get("certainty") == 5}
+if one.get("status") != "fresh" or "f51dae8" not in shas or "4edd03a" not in shas:
+    print(f"seed-ledger: #1 was {one.get('status')} {one.get('why')}", file=sys.stderr)
+    sys.exit(1)
+if eleven.get("status") != "fresh" or not str(eleven.get("why", "")).startswith("verified at af1e78c (certainty 5)"):
+    print(f"seed-ledger: #11 was {eleven.get('status')} {eleven.get('why')}", file=sys.stderr)
+    sys.exit(1)
+PY
+      rm -f "$body"
+      echo "seeded ledger polish"
+    fi
     if [[ "${2:-}" == "tuesday" ]]; then
       sed -n '22,23p' "$ROOT/test/fixtures/ledger/ledger-tuesday.jsonl" | node --experimental-strip-types src/cli/dd.ts ledger record - --data "$DATA"
       body="$(mktemp)"
