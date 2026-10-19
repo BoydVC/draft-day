@@ -1,0 +1,91 @@
+.dd-ledger {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dd-ledger h2,
+.dd-ledger h3,
+.dd-ledger p,
+.dd-ledger li,
+.dd-ledger span {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dd-ledger h3 {
+  margin: 14px 0 6px;
+  font: 600 13px/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+}
+
+.dd-ledger [data-ledger="summary"] {
+  margin: 0;
+  font: 600 17px/1.35 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger ol,
+.dd-ledger ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dd-ledger li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin: 0 0 8px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.dd-ledger .dd-pos {
+  font: 700 15px/1 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger .dd-status {
+  font: 700 15px/1.2 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger .dd-status[data-status="fresh"] { color: var(--chip-done-ink); }
+.dd-ledger .dd-status[data-status="docs-only"] { color: var(--chip-review-ink); }
+.dd-ledger .dd-status[data-status="stale"] { color: var(--chip-work-ink); }
+.dd-ledger .dd-status[data-status="failed"] { color: var(--chip-stop-ink); }
+.dd-ledger .dd-status[data-status="unverified"] { color: var(--muted); }
+
+.dd-ledger .dd-why,
+.dd-ledger .dd-title {
+  flex: 1 1 12rem;
+}
+
+.dd-ledger a,
+a[href="#/ledger"],
+p.back:has(+ [aria-label="Season ledger"]) a,
+[aria-label="Season ledger"] a {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 12px 14px;
+  line-height: 1.2;
+}
+
+.dd-ledger a {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  text-decoration: none;
+}
+
+p.back:has(a[href="#/ledger"]) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}

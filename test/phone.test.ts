@@ -250,6 +250,7 @@ test("W5 no color literals", () => {
   const replayCss = readFileSync(join(root, "src/ui/replay.css"), "utf8");
   const linterCss = readFileSync(join(root, "src/ui/linter.css"), "utf8");
   const bigboardCss = readFileSync(join(root, "src/ui/bigboard.css"), "utf8");
+  const ledgerCss = readFileSync(join(root, "src/ui/ledger.css"), "utf8");
   const files: Array<[string, string]> = [
     ["styles.css", rest],
     ["timeline.css", timelineCss],
@@ -257,6 +258,7 @@ test("W5 no color literals", () => {
     ["replay.css", replayCss],
     ["linter.css", linterCss],
     ["bigboard.css", bigboardCss],
+    ["ledger.css", ledgerCss],
   ];
   for (const [name, css] of files) {
     const clean = css.replace(/\/\*[\s\S]*?\*\//g, "");

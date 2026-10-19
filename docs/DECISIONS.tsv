@@ -83,3 +83,7 @@ ts	phase	decision	why	evidence	result
 2026-10-18T23:30:00Z	graft	A thrown stats fetch or unreadable body paints Could not load Big Board stats and a Big Board link	The base only handled a non-OK response; this is the dd/p7-big-board-c error section, and a non-OK body still shows its error string	src/ui/app.js	open
 2026-10-18T23:30:00Z	graft	Rejected c3 status chips	They push the tiles down at 390 and the summary already carries drafted	docs/SPEC-008-big-board.md	open
 2026-10-18T23:30:00Z	graft	Rejected a second walkover suffix beside the Walkovers cell	c1's suffix stays only when the walkover trade is that same one display, not a suffix plus a cell	src/ui/bigboard.js	open
+2026-10-19T16:00:00Z	ledger	One kind table lists each entry field in canonical order with its check and reason	parseLedgerEntry walks that table, so a new field is refused until the row names the check	src/core/ledger.ts	open
+2026-10-19T16:00:00Z	ledger	The fold is admit, observe, order verdicts, classify, stack, then summarize	Each phase reads the previous phase, and every status is derived from reduce() plus the append-only book	src/core/ledger.ts	open
+2026-10-19T16:00:00Z	ledger	Only dd ledger import-prs and dd ledger record append data/ledger.jsonl, under the ledger lock	GET /api/ledger only reads; a correction is a new line, not an edit	src/store/ledger.ts	open
+2026-10-19T16:00:00Z	ledger	The ledger view is an ordered list painted from SeasonLedger	A link exists only for a p-YYYYMMDD-NN id or a BoydVC repo plus an integer PR number	src/ui/ledger.js	open
