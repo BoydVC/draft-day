@@ -237,11 +237,16 @@ function toView(pass: JudgePass, lines: readonly DraftLine[]): PassView {
 }
 
 function lineFor(drafts: readonly DraftLine[][], cand: CandId): DraftLine | undefined {
-  for (let index = drafts.length - 1; index >= 0; index -= 1) {
-    const found = drafts[index]?.find((line) => line.cand === cand);
-    if (found) return found;
+  let chosen: DraftLine | undefined;
+  let diff: DraftLine["diff"];
+  for (const draft of drafts) {
+    const found = draft.find((line) => line.cand === cand);
+    if (!found) continue;
+    chosen = found;
+    if (found.diff) diff = found.diff;
   }
-  return undefined;
+  if (!chosen) return undefined;
+  return diff ? { ...chosen, diff } : { ...chosen, diff: undefined };
 }
 
 function cellScore(view: PassView, cand: CandId, criterionId: string): number {

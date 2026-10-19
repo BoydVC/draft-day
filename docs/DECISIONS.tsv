@@ -8,7 +8,7 @@ ts	phase	decision	why	evidence	result
 2026-10-16T16:40:00Z	score	Disagreeing passes use fewer risks, then fewer commands, then lower cand id	Arena tie rule needs a deterministic smaller-and-cleaner pick	src/core/score.ts	replaced
 2026-10-17T14:10:00Z	score	Tie rule is fewer diff lines, then fewer files, then fewer reported risks, then the lower cand id; a missing diff loses to a present one	SPEC 002 F9 replaces the old risks-then-commands order; the judge's own base is advisory	src/core/filmroom.ts	open
 2026-10-17T14:10:00Z	score	A missing rubric score counts as 0 and the denominator is every rubric weight	A card that skips a criterion must not outscore one that answers it badly	src/core/score.ts	open
-2026-10-17T14:10:00Z	score	Cross-pass tie uses each winner's diff from the latest pass that scored them	The later measurement is the one the board can still see	src/core/filmroom.ts	open
+2026-10-17T14:10:00Z	score	Cross-pass tie uses each winner's diff from the latest pass that scored them	The later measurement is the one the board can still see	src/core/filmroom.ts	replaced
 2026-10-17T14:10:00Z	ui	The Scorecard leads the pick page; at 390px the columns stack and the base column leads	Boyd reads who won from his phone before the scouting report	src/ui/app.js	open
 2026-10-16T16:40:00Z	store	Same event type plus key is a no-op	A revival that fires twice must not double-launch	src/store/eventlog.ts	open
 2026-10-16T16:40:00Z	policy	The War Room appends inbox rows and never writes pick events	A11; dd intake --from-inbox is the only pick writer	src/server/http.ts	open
@@ -91,3 +91,9 @@ ts	phase	decision	why	evidence	result
 2026-10-19T17:20:00Z	graft	The page leads with Merge-safe through #N or Not merge-safe yet, then one re-run sentence	That merge-desk heading and the next move stay above the 390 dark fold, with #2's docs-only why	src/ui/ledger.js	open
 2026-10-19T17:20:00Z	graft	Each row is a closed details element; classify adds sequence from the same ordered verdicts	The summary keeps the row line, and the body lists source, SHA, verdict, certainty, agent, and the drift	src/core/ledger.ts	open
 2026-10-19T17:20:00Z	graft	Rejected the stacked-label phone layout, the merge-order caption, and a status chip as the only signal	Those put the docs-only why below the fold or hid the status word; the word stays text and color is a token	src/ui/ledger.css	open
+2026-10-19T18:00:00Z	engine	Attempt-keyed records keep one copy unless the caller passes a new attempt or a new verdict file	A revival re-run was minting fail:cN:2 from a counter; the open event or the file hash is the idempotency input	src/cli/dd.ts	open
+2026-10-19T18:00:00Z	engine	The latest verdict on a head is the newest timestamp, with the prior source order as the tie-break	An older ledger VERIFIED was appended after a newer pick NOT_VERIFIED and read as fresh	src/core/ledger.ts	open
+2026-10-19T18:00:00Z	engine	A torn pick log makes its claimed PR unknown, and a dot segment is not a docs path	Fail closed: a torn tail was dropping the failing verdict and a docs/./src path counted as docs-only	src/core/ledger.ts	open
+2026-10-19T18:00:00Z	engine	A lock is owned by token plus pid; a live pid is never stolen, and only that token may unlink	The 10s mtime steal let a waiter in, then the old holder deleted the new lock	src/store/eventlog.ts	open
+2026-10-19T18:00:00Z	engine	Inbox intake holds inbox.lock across the cursor read and every pick it creates	Two pickup processes were each creating every unread row	src/cli/dd.ts	open
+2026-10-19T18:00:00Z	score	A cross-pass tie scores diff size from the pass that has a diff, later pass first	A pass-2 card that omits diff was treated as missing and the larger diff became the base	src/core/filmroom.ts	open
