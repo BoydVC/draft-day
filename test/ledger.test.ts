@@ -97,6 +97,17 @@ function fold(item: ExpectFile["rows"][number]): SeasonLedger {
   return seasonLedger(logsOf(item.logs), bookOf(item.ledger, item.allowlist), item.repo, Date.parse(item.now));
 }
 
+function oracleShape(ledger: SeasonLedger): ReturnType<typeof ledgerOracle> {
+  return {
+    ...ledger,
+    rows: ledger.rows.map((row) => {
+      const { sequence, ...rest } = row;
+      assert.equal(sequence.length, row.verdicts, `#${row.number} sequence`);
+      return rest;
+    }),
+  } as ReturnType<typeof ledgerOracle>;
+}
+
 function dd(args: string[], input?: string): Promise<{ code: number; stdout: string; stderr: string }> {
   return new Promise((resolve) => {
     const child = spawn(process.execPath, ["--experimental-strip-types", "src/cli/dd.ts", ...args], {
@@ -214,7 +225,7 @@ test("Q4 expected.json", () => {
     const book = bookOf(item.ledger, item.allowlist);
     const ledger = seasonLedger(logs, book, item.repo, Date.parse(item.now));
     assert.deepEqual(expectedFor(ledger), item.expected, item.case);
-    assert.deepEqual(ledger, ledgerOracle(logs, book, item.repo), item.case);
+    assert.deepEqual(oracleShape(ledger), ledgerOracle(logs, book, item.repo), item.case);
   }
 });
 
@@ -480,9 +491,14 @@ test("Q15 view and link", async () => {
   assert.equal(rootNode.attrs["data-open"], String(ledger.open));
   assert.equal(rootNode.attrs["data-merge-safe"], "none");
   assert.equal(rootNode.attrs["data-rerun"], ledger.rerun.join(","));
+  const call = drawn.nodes.find((node) => node.attrs.class === "dd-call");
+  assert.equal(plain(call as RecNode), "Not merge-safe yet");
+  assert.equal(plain(byAria(drawn.nodes, "Re-run list")), "Re-run #1 before you merge.");
   assert.equal(plain(byAria(drawn.nodes, "Season ledger").children.find((child) => "tag" in child && child.attrs["data-ledger"] === "summary") as RecNode), ledger.summary);
   const merge = byAria(drawn.nodes, "Merge order");
   const mergeRows = merge.children.filter((child): child is RecNode => "tag" in child);
+  assert.equal(merge.tag, "ol");
+  assert.equal(mergeRows.every((node) => node.tag === "details" && node.attrs.open == null), true);
   assert.deepEqual(mergeRows.map((node) => Number(node.attrs["data-pr"])), ledger.stack);
   for (const node of mergeRows) {
     const line = ledger.rows.find((item) => item.number === Number(node.attrs["data-pr"]));
@@ -498,7 +514,15 @@ test("Q15 view and link", async () => {
     assert.equal(body.includes(line.status), true);
     assert.equal(body.includes(line.why), true);
     assert.equal(body.includes(line.title), true);
+    const summary = node.children.find((child): child is RecNode => "tag" in child && child.tag === "summary");
+    assert.ok(summary);
+    assert.equal(plain(summary).includes(line.why), true);
+    assert.equal(plain(summary).includes(line.status), true);
   }
+  const two = mergeRows.find((node) => node.attrs["data-pr"] === "2");
+  assert.ok(two);
+  assert.match(plain(two), /ledger · ecec54cd11a08d2b5ddb7b318db37237e76d3c99 · VERIFIED · certainty 5 · agent bc-4050efce-cfa2-5769-9689-d4920abc22b5/);
+  assert.match(plain(two), /Drift · 9 files · docs-only/);
   const off = byAria(drawn.nodes, "Off the stack");
   const offRows = off.children.filter((child): child is RecNode => "tag" in child);
   assert.deepEqual(offRows.map((node) => Number(node.attrs["data-pr"])), ledger.offStack);

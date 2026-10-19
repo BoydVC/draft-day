@@ -1,6 +1,7 @@
 // Season ledger. One kind table is the entry schema. parseLedgerEntry walks it.
 // The fold is six phases, each taking the previous phase's output:
 // admit picks, observe PRs, order verdicts, classify, stack, summarize.
+// classify copies that ordered sequence onto the row for the disclosure.
 import type { DraftEvent } from "./events.ts";
 import { EXCLUDED_SOURCES } from "./bigboard.ts";
 import type { PickLog } from "./lessons.ts";
@@ -74,6 +75,10 @@ export interface LedgerVerdictRef {
   agentId: string | null;
 }
 
+export interface LedgerSequenceItem extends LedgerVerdictRef {
+  note?: string;
+}
+
 export interface LedgerRow {
   number: number;
   title: string;
@@ -91,6 +96,7 @@ export interface LedgerRow {
   verifiedSha: string | null;
   drift: { files: number; docsOnly: boolean } | null;
   why: string;
+  sequence: LedgerSequenceItem[];
 }
 
 export interface SeasonLedger {
@@ -268,7 +274,7 @@ export function prEntriesFromPulls(pulls: unknown, at: string, allowlist: readon
   return { ok: true, entries };
 }
 
-interface RankedVerdict extends LedgerVerdictRef { number: number }
+interface RankedVerdict extends LedgerSequenceItem { number: number }
 interface Admitted {
   skipped: SeasonLedger["skipped"]["logs"];
   picks: { pickId: string; claim: number | null; verdicts: RankedVerdict[] }[];
@@ -449,7 +455,7 @@ function orderVerdicts(observed: Observed): Ordered {
   }
   for (const row of [...observed.ledgerVerdicts].sort(later)) {
     const entry = row.entry;
-    push(entry.number, {
+    const ranked: RankedVerdict = {
       verdict: entry.verdict,
       headSha: entry.headSha,
       certainty: entry.certainty,
@@ -457,13 +463,28 @@ function orderVerdicts(observed: Observed): Ordered {
       number: entry.number,
       source: "ledger",
       agentId: entry.agentId ?? null,
-    });
+    };
+    if (typeof entry.note === "string") ranked.note = entry.note;
+    push(entry.number, ranked);
   }
   return { ...observed, seqByPr, claims };
 }
 
 function countWord(count: number, word: string): string {
   return `${count} ${word}${count === 1 ? "" : "s"}`;
+}
+
+function sequenceItem(verdict: RankedVerdict): LedgerSequenceItem {
+  const item: LedgerSequenceItem = {
+    verdict: verdict.verdict,
+    headSha: verdict.headSha,
+    certainty: verdict.certainty,
+    ledger: verdict.ledger,
+    source: verdict.source,
+    agentId: verdict.agentId,
+  };
+  if (typeof verdict.note === "string") item.note = verdict.note;
+  return item;
 }
 
 function whyText(status: LedgerStatus, headSha: string, lastAtHead: LedgerVerdictRef | null, lastVerified: LedgerVerdictRef | null, drift: DriftEntry | null, lastAny: LedgerVerdictRef | null): string {
@@ -524,6 +545,7 @@ function classify(ordered: Ordered): Classified {
       verifiedSha: status === "fresh" ? entry.headSha : lastVerified ? lastVerified.headSha : null,
       drift: drift ? { files: drift.files.length, docsOnly: status === "docs-only" } : null,
       why: whyText(status, entry.headSha, lastAtHead, lastVerified, drift, lastAny),
+      sequence: seq.map(sequenceItem),
     };
   });
   return { ...ordered, rows };

@@ -4,7 +4,7 @@ How far down the open draft stack Boyd can merge right now, and which pull reque
 
 ## Sub-features
 
-- `ledger-phone` lays the real season out at 390×844 dark and light and at 430×932 dark, with the summary, re-run list, and merge order readable and every ledger control and link at least 44×44.
+- `ledger-phone` lays the real season out at 390×844 dark and light and at 430×932 dark. The heading is `Not merge-safe yet`, the next sentence is `Re-run #1 before you merge.`, and #2's docs-only why is on the closed row. Every ledger control and link is at least 44×44.
 - `ledger-desktop` lays the same DOM out at 1280×800 light and dark. Every ledger control and link is still at least 44×44.
 - `ledger-tuesday` opens the projection after `seed-ledger tuesday`. The summary is merge-safe through #9 and re-run none.
 - `ledger-empty` opens `#/ledger` before any ledger seed. The summary is `No open PRs`.
