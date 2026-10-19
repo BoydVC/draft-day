@@ -241,5 +241,11 @@ export async function signature(dataDir: string): Promise<string> {
   } catch {
     parts.push("inbox:0");
   }
+  try {
+    const ledger = await stat(join(dataDir, "ledger.jsonl"));
+    parts.push(`ledger:${ledger.size}:${ledger.mtimeMs}`);
+  } catch {
+    parts.push("ledger:0");
+  }
   return parts.join("|");
 }

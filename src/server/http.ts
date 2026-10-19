@@ -95,6 +95,25 @@ function pickView(pick: Pick, events: DraftEvent[], now: number) {
   };
 }
 
+function jsonContent(req: IncomingMessage): boolean {
+  const header = req.headers["content-type"];
+  if (typeof header !== "string") return false;
+  return header.split(";")[0]?.trim().toLowerCase() === "application/json";
+}
+
+function originAllowed(req: IncomingMessage): boolean {
+  const origin = req.headers.origin;
+  if (origin === undefined) return true;
+  if (typeof origin !== "string") return false;
+  const host = req.headers.host;
+  if (typeof host !== "string" || host.length === 0) return false;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
+
 function contentType(file: string): string {
   if (file.endsWith(".css")) return "text/css; charset=utf-8";
   if (file.endsWith(".js")) return "text/javascript; charset=utf-8";
@@ -205,6 +224,14 @@ export async function startServer(options: ServerOptions): Promise<{
     }
 
     if (req.method === "POST" && path === "/api/intake") {
+      if (!jsonContent(req)) {
+        send(res, 415, { error: "content-type must be application/json" });
+        return;
+      }
+      if (!originAllowed(req)) {
+        send(res, 403, { error: "origin not allowed" });
+        return;
+      }
       let config: Config;
       let targets: string[];
       try {

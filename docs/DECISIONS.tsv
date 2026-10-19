@@ -97,3 +97,6 @@ ts	phase	decision	why	evidence	result
 2026-10-19T18:00:00Z	engine	A lock is owned by token plus pid; a live pid is never stolen, and only that token may unlink	The 10s mtime steal let a waiter in, then the old holder deleted the new lock	src/store/eventlog.ts	open
 2026-10-19T18:00:00Z	engine	Inbox intake holds inbox.lock across the cursor read and every pick it creates	Two pickup processes were each creating every unread row	src/cli/dd.ts	open
 2026-10-19T18:00:00Z	score	A cross-pass tie scores diff size from the pass that has a diff, later pass first	A pass-2 card that omits diff was treated as missing and the larger diff became the base	src/core/filmroom.ts	open
+2026-10-19T18:30:00Z	live	The War Room signature includes ledger.jsonl size and mtime	An open Season ledger stayed stale after dd ledger record or import-prs because only pick logs and the inbox were watched	src/store/eventlog.ts	open
+2026-10-19T18:30:00Z	ui	Idea, lesson, and inbox tokens wrap at every width, not only under 480px	A 120-character token on the Big Board widened the page to 2211px at 1280	src/ui/styles.css	open
+2026-10-19T18:30:00Z	server	POST /api/intake requires application/json and a same-origin or absent Origin	A text/plain post from another loopback port was accepted and appended to the inbox	src/server/http.ts	open
