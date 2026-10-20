@@ -28,6 +28,7 @@ import {
   type PickLog,
 } from "./fixtures/bigboard/bigboard-harness.mjs";
 import { byName, find as domFind, loadWarRoom, text as domText } from "./fixtures/phone/dom-harness.mjs";
+import { swapOracle } from "./fixtures/swap/swap-harness.mjs";
 
 const exec = promisify(execFile);
 const root = process.cwd();
@@ -146,7 +147,7 @@ async function withData<T>(file: string, run: (dataDir: string) => Promise<T>): 
 }
 
 function oracle(input: readonly PickLog[], window?: { since: string | null; until: string | null } | null, now = NOW): BigBoardStats {
-  return bigBoardOracle(input, window, now);
+  return { ...bigBoardOracle(input, window, now), swap: swapOracle(input, window, now) } as BigBoardStats;
 }
 
 function dropPick6Verdict(input: readonly PickLog[]): PickLog[] {

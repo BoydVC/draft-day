@@ -295,6 +295,63 @@ PY
       echo "seeded ledger tuesday"
     fi
     ;;
+  seed-swap)
+    load_state
+    seed_files=("$ROOT/test/fixtures/ledger/picks.jsonl" "$ROOT/test/fixtures/swap/models.jsonl")
+    want_two=12
+    want_flipped=6
+    want_judged=13
+    seeded="seeded swap"
+    if [[ "${2:-}" == "hostile" ]]; then
+      seed_files+=("$ROOT/test/fixtures/swap/hostile.jsonl")
+      want_two=16
+      want_flipped=8
+      want_judged=17
+      seeded="seeded swap hostile"
+    fi
+    node -e '
+const fs = require("fs");
+const path = require("path");
+const safe = /^p-\d{8}-\d{2}$/;
+const args = process.argv.slice(1);
+const data = args.pop();
+const by = new Map();
+for (const file of args) {
+  for (const line of fs.readFileSync(file, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    const row = JSON.parse(line);
+    if (!safe.test(String(row.pickId))) continue;
+    if (!by.has(row.pickId)) by.set(row.pickId, []);
+    by.get(row.pickId).push(row.event);
+  }
+}
+for (const [id, events] of by) {
+  const dir = path.join(data, "picks", id);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "events.jsonl"), events.map((event) => JSON.stringify(event)).join("\n") + "\n");
+}
+' "${seed_files[@]}" "$DATA"
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/stats")"
+    if [[ "$code" != "200" ]]; then
+      echo "seed-swap: GET /api/stats returned ${code}" >&2
+      rm -f "$body"
+      exit 1
+    fi
+    python3 - "$body" "$want_two" "$want_flipped" "$want_judged" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+swap = data.get("swap") or {}
+got = (swap.get("twoPass"), swap.get("flipped"), swap.get("judged"))
+want = (int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]))
+if got != want:
+    print(f"seed-swap: swap was twoPass {got[0]} flipped {got[1]} judged {got[2]}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add judged picks)", file=sys.stderr)
+    sys.exit(1)
+PY
+    rm -f "$body"
+    echo "$seeded"
+    ;;
   cleanup)
     load_state
     if kill -0 "$PID" 2>/dev/null; then
@@ -314,7 +371,7 @@ PY
     echo "cleaned pid ${PID:-?} data ${DATA:-?}"
     ;;
   *)
-    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|seed-linter|seed-bigboard|seed-ledger|cleanup" >&2
+    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|seed-linter|seed-bigboard|seed-ledger|seed-swap|cleanup" >&2
     exit 2
     ;;
 esac
