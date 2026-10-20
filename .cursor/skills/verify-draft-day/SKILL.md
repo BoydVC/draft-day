@@ -81,6 +81,6 @@ This kills the PID from `/tmp/dd-verify/state.env` and deletes that run's data d
 
 ## Helpers
 
-`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, `seed-timeline`, `seed-lessons`, `seed-replay`, `seed-linter`, `seed-bigboard`, `seed-ledger`, or `cleanup` from the repo root. It prints the URL on launch. `seed-ledger polish` records `test/fixtures/ledger/ledger-polish.jsonl` after the real season, so #1 is VERIFIED certainty 5 at f51dae8 and 4edd03a and #11 is VERIFIED certainty 5 at af1e78c.
+`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, `seed-timeline`, `seed-lessons`, `seed-replay`, `seed-linter`, `seed-bigboard`, `seed-ledger`, or `cleanup` from the repo root. It prints the URL on launch. `seed-ledger polish` records `test/fixtures/ledger/ledger-polish.jsonl` after the real season, so #1 is VERIFIED certainty 5 at f51dae8 and 4edd03a, #10 is VERIFIED certainty 5 at ace89ea, and #11 is VERIFIED certainty 5 at af1e78c. The summary is `11 open PRs · stack #1→#11 (10) · merge-safe through #11 · re-run none · 6 fresh, 4 docs-only · 1 off stack`.
 
 Keep this map honest with `/maintain-verification-skill` when the War Room changes. One correction pass at a time.
