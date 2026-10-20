@@ -22,12 +22,12 @@ Preconditions:
 
 - **Enter an idea.** Choose the `Idea` textbox and type `Show the run count in the page title`. Leave Target as `BoydVC/draft-day` and Candidates as `3`.
 - **Submit.** Choose `Add pick`. The status line says `Queued in the inbox. Nothing launches from this page.` A table row shows that idea with status `intake` and Pick column `queued`. The page does not reload.
-- **Confirm the side effect.** `GET $URL/api/board` includes the idea under `inbox`. `$DATA/intake.jsonl` has a new line. No new file appears under `$DATA/picks/` for that idea until `dd intake --from-inbox`.
+- **Confirm the side effect.** Source `/tmp/dd-verify/state.env` first. `GET $URL/api/board` includes the idea under `inbox`. `$DATA/intake.jsonl` has a new line. No new file appears under `$DATA/picks/` for that idea until `node --experimental-strip-types src/cli/dd.ts intake --from-inbox --data "$DATA"`.
 - **Proof.** Screenshot `/opt/cursor/artifacts/war-room/big-board-after-new-pick.png` showing the new row and the War Room heading.
 
 ## Gotchas
 
-- `Add pick` does not create a pick id. The row stays `queued` until `dd intake --from-inbox`.
+- `Add pick` does not create a pick id. The row stays `queued` until `node --experimental-strip-types src/cli/dd.ts intake --from-inbox --data "$DATA"`.
 - A target that is not in `targets.json` returns an error and must not add a row. Do not "fix" that by posting a looser target.
 - Typing in `Idea` while a live update arrives must not wipe the text. If a proof run submits and the field clears, that is the successful submit, not a lost keystroke.
 - While a submit is in flight the status line says `Sending…` and `Add pick` is disabled. A live update must not clear that sentence or the idea.
