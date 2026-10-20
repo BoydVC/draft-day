@@ -1,22 +1,42 @@
 import type { DraftEvent } from "./events.ts";
 import { isPickId } from "./ids.ts";
 import type { LessonWindow, PickLog } from "./lessons.ts";
+import { filmRoom } from "./filmroom.ts";
 import { reduce } from "./reducer.ts";
 import { formatDuration, timeline, type StageSpan } from "./timeline.ts";
 import { CAND_IDS, type CandId, type Pick as BoardPick, type PickId } from "./types.ts";
+import { LABELS, type Label, type SwapState } from "./types.ts";
 
 /** The stats rule, one row per line of SPEC 008. A new id fails `tsc` until its row has a fold, a text line, and a DOM container. */
-export const METRIC_IDS = ["logs", "angles", "slots", "trades", "verify", "stages", "summary"] as const;
+export const METRIC_IDS = ["logs", "angles", "slots", "trades", "verify", "swap", "stages", "summary"] as const;
 export type MetricId = (typeof METRIC_IDS)[number];
 
 export const STAGE_ORDER = ["Intake", "Scouting Report", "Combine", "Film Room", "Trade", "Physical"] as const;
 export const ANGLE_NAME_MAX = 48;
+export const DEFAULT_MODEL = "account default";
+export const MODEL_NAME_MAX = 48;
 export const EXCLUDED_SOURCES = ["selftest"] as const;
 
 export interface Ratio { num: number; den: number; rate: number | null }
 export interface WinRow { key: string; name: string; entries: number; wins: number; walkovers: number; rate: number | null; picks: string[] }
 export interface TradeRow { pickId: string; base: CandId | null; trades: number }
 export interface StageRow { stage: string; picks: number; medianMs: number; medianText: string; totalMs: number }
+export interface SwapLabelRow { label: Label; wins: number; passes: number; rate: number | null }
+export interface SwapModelRow { key: string; name: string; picks: number; flipped: number; rate: number | null; pickIds: string[] }
+export interface SwapPickRow { pickId: string; swap: SwapState; winners: (CandId | null)[]; base: CandId; models: string[] }
+export interface SwapStats {
+  judged: number;
+  single: number;
+  twoPass: number;
+  consistent: number;
+  flipped: number;
+  rate: number | null;
+  tieRule: number;
+  strict: string[];
+  labels: SwapLabelRow[];
+  models: SwapModelRow[];
+  rows: SwapPickRow[];
+}
 export interface BigBoardStats {
   window: LessonWindow;
   summary: string;
@@ -28,6 +48,7 @@ export interface BigBoardStats {
   trades: { picks: number; total: number; mean: number | null; rows: TradeRow[] };
   verify: { picks: number; firstTry: Ratio; final: Ratio; fixLoops: number; verdicts: { VERIFIED: number; NOT_VERIFIED: number; INCONCLUSIVE: number } };
   stages: StageRow[];
+  swap: SwapStats;
 }
 
 const TERMINAL = new Set<BoardPick["status"]>(["drafted", "failed", "cancelled"]);
@@ -57,6 +78,29 @@ export function median(values: readonly number[]): number {
 
 function ratio(num: number, den: number): Ratio {
   return { num, den, rate: den === 0 ? null : Math.round((num / den) * 1000) / 1000 };
+}
+
+const MODEL_CONTROL = /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g;
+
+/** Untrusted judgeModel text. Blank becomes the account default. Whitespace collapses before controls are replaced, then the name is capped at 48 code points. */
+export function judgeModelName(value: unknown): string {
+  if (typeof value !== "string") return DEFAULT_MODEL;
+  const name = value.replace(/\s+/g, " ").trim().replace(MODEL_CONTROL, "\uFFFD");
+  if (!name) return DEFAULT_MODEL;
+  const chars = Array.from(name);
+  return chars.length > MODEL_NAME_MAX ? chars.slice(0, MODEL_NAME_MAX).join("").trimEnd() : name;
+}
+
+function judgeModelKey(value: unknown): string {
+  return judgeModelName(value).toLowerCase();
+}
+
+function pairOf(first: unknown, second: unknown): { key: string; name: string } {
+  const k1 = judgeModelKey(first);
+  const k2 = judgeModelKey(second);
+  const n1 = judgeModelName(first);
+  const n2 = judgeModelName(second);
+  return k1 === k2 ? { key: k1, name: n1 } : { key: `${k1} + ${k2}`, name: `${n1} + ${n2}` };
 }
 
 function percentText(rate: number | null): string {
@@ -272,6 +316,105 @@ function foldStages(book: Book): StageRow[] {
   });
 }
 
+interface SwapDraft {
+  pickId: string;
+  swap: SwapState;
+  winners: (CandId | null)[];
+  base: CandId;
+  models: string[];
+  tie: boolean;
+  raw: unknown[];
+}
+
+function foldSwap(book: Book): SwapStats {
+  const drafts: SwapDraft[] = [];
+  const labelAcc = new Map<string, { wins: number; passes: number }>();
+  for (const item of book.counted) {
+    const room = filmRoom(item.pick);
+    if (!room?.base) continue;
+    const passes = [...(item.pick.judgement?.passes ?? [])].sort((a, b) => a.pass - b.pass);
+    for (const view of room.passes) {
+      if (!view.winner) continue;
+      for (const line of view.lines) {
+        const acc = labelAcc.get(line.label) ?? { wins: 0, passes: 0 };
+        acc.passes += 1;
+        labelAcc.set(line.label, acc);
+      }
+      const winnerLabel = view.lines.find((line) => line.cand === view.winner)?.label;
+      if (winnerLabel) labelAcc.get(winnerLabel)!.wins += 1;
+    }
+    drafts.push({
+      pickId: item.pickId,
+      swap: room.swap,
+      winners: room.passes.map((view) => view.winner),
+      base: room.base,
+      models: passes.map((pass) => judgeModelName(pass.judgeModel)),
+      tie: room.tieRule !== null,
+      raw: passes.map((pass) => pass.judgeModel),
+    });
+  }
+  const twoPass = drafts.filter((row) => row.swap !== "single");
+  const flipped = twoPass.filter((row) => row.swap === "flipped");
+  const modelAcc = new Map<string, { key: string; name: string; picks: number; flipped: number; pickIds: string[] }>();
+  for (const row of twoPass) {
+    const pair = pairOf(row.raw[0], row.raw[1]);
+    let acc = modelAcc.get(pair.key);
+    if (!acc) {
+      acc = { key: pair.key, name: pair.name, picks: 0, flipped: 0, pickIds: [] };
+      modelAcc.set(pair.key, acc);
+    }
+    acc.picks += 1;
+    if (row.swap === "flipped") acc.flipped += 1;
+    acc.pickIds.push(row.pickId);
+  }
+  return {
+    judged: drafts.length,
+    single: drafts.length - twoPass.length,
+    twoPass: twoPass.length,
+    consistent: twoPass.length - flipped.length,
+    flipped: flipped.length,
+    rate: ratio(flipped.length, twoPass.length).rate,
+    tieRule: drafts.filter((row) => row.tie).length,
+    strict: flipped.map((row) => row.pickId),
+    labels: LABELS.filter((label) => labelAcc.has(label)).map((label) => {
+      const acc = labelAcc.get(label)!;
+      return { label, wins: acc.wins, passes: acc.passes, rate: ratio(acc.wins, acc.passes).rate };
+    }),
+    models: [...modelAcc.values()]
+      .map((acc) => ({
+        key: acc.key,
+        name: acc.name,
+        picks: acc.picks,
+        flipped: acc.flipped,
+        rate: ratio(acc.flipped, acc.picks).rate,
+        pickIds: acc.pickIds,
+      }))
+      .sort((a, b) => b.picks - a.picks || cmp(a.key, b.key)),
+    rows: drafts.map((row) => ({
+      pickId: row.pickId,
+      swap: row.swap,
+      winners: row.winners,
+      base: row.base,
+      models: row.models,
+    })),
+  };
+}
+
+function swapStrictLine(swap: SwapStats): string {
+  return `Strict rule (tie unless both passes agree): no base for ${swap.strict.length ? swap.strict.join(", ") : "none"}`;
+}
+
+function swapText(swap: SwapStats): string {
+  if (swap.judged === 0) return ["Swap bias", "  no judged picks"].join("\n");
+  const lines = ["Swap bias"];
+  lines.push(`  two-pass ${swap.twoPass} \u00b7 flipped ${swap.flipped} (${percentText(swap.rate)}) \u00b7 single ${swap.single}`);
+  lines.push(`  tie rule settled ${swap.tieRule}`);
+  lines.push(`  ${swapStrictLine(swap)}`);
+  lines.push(`  label wins ${swap.labels.length ? swap.labels.map((row) => `${row.label} ${row.wins}/${row.passes} ${percentText(row.rate)}`).join(" \u00b7 ") : "\u2014"}`);
+  for (const row of swap.models) lines.push(`  ${row.name} flipped ${row.flipped}/${row.picks} ${percentText(row.rate)}`);
+  return lines.join("\n");
+}
+
 function foldSummary(book: Book): string {
   const { picks } = foldLogs(book);
   const verify = foldVerify(book);
@@ -336,6 +479,10 @@ function textStages(stats: BigBoardStats): string {
   return ["Time per stage", ...stats.stages.map((row) => `  ${row.stage}  ${row.medianText}  ${row.picks}`)].join("\n");
 }
 
+function textSwap(stats: BigBoardStats): string {
+  return swapText(stats.swap);
+}
+
 interface MetricDom { aria: string; row: string | null }
 interface MetricRow {
   dom: MetricDom;
@@ -349,6 +496,7 @@ const LEDGER = {
   slots: { dom: { aria: "Win rate by slot", row: "data-slot" }, fold: (book: Book) => foldWins(book, true), text: textSlots },
   trades: { dom: { aria: "Trades per pick", row: "data-pick" }, fold: foldTrades, text: textTrades },
   verify: { dom: { aria: "Verify pass rate", row: "data-first-try" }, fold: foldVerify, text: textVerify },
+  swap: { dom: { aria: "Swap bias", row: "data-model" }, fold: foldSwap, text: textSwap },
   stages: { dom: { aria: "Time per stage", row: "data-stage" }, fold: foldStages, text: textStages },
   summary: { dom: { aria: "Big Board stats", row: "data-stats" }, fold: foldSummary, text: (stats: BigBoardStats) => stats.summary },
 } satisfies Record<MetricId, MetricRow>;
@@ -383,6 +531,7 @@ export function bigBoardStats(logs: readonly PickLog[], window?: LessonWindow | 
     trades: LEDGER.trades.fold(book),
     verify: LEDGER.verify.fold(book),
     stages: LEDGER.stages.fold(book),
+    swap: LEDGER.swap.fold(book),
   };
 }
 
