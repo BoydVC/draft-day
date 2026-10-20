@@ -105,13 +105,16 @@ export type {
 
 export {
   ANGLE_NAME_MAX,
+  DEFAULT_MODEL,
   EXCLUDED_SOURCES,
   METRIC_IDS,
+  MODEL_NAME_MAX,
   STAGE_ORDER,
   angleKey,
   angleName,
   bigBoardStats,
   bigBoardText,
+  judgeModelName,
   median,
   statContainers,
 } from "./bigboard.ts";
@@ -120,6 +123,10 @@ export type {
   MetricId,
   Ratio,
   StageRow,
+  SwapLabelRow,
+  SwapModelRow,
+  SwapPickRow,
+  SwapStats,
   TradeRow,
   WinRow,
 } from "./bigboard.ts";

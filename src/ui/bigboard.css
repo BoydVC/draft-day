@@ -230,3 +230,223 @@ p.back:has(a[href="#/stats"]) {
     align-items: end;
   }
 }
+
+.dd-tile[data-leader="swap"] {
+  grid-column: 1 / -1;
+  padding: 8px 12px 10px;
+  border-color: var(--gold);
+  background: var(--glow);
+}
+
+.dd-tile[data-leader="swap"] strong {
+  font-size: 2.6rem;
+  line-height: 0.95;
+  margin-top: 0;
+}
+
+.dd-flip {
+  display: flex;
+  align-self: stretch;
+  width: 100%;
+  height: 0.85rem;
+  margin-top: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.dd-tile[data-leader="swap"] .dd-flip {
+  height: 0.85rem;
+  margin-top: 6px;
+}
+
+.dd-flip-flipped,
+.dd-flip-held {
+  display: block;
+  flex: none;
+  height: 100%;
+  min-width: 0;
+}
+
+.dd-flip-flipped {
+  width: var(--flip, 0%);
+  background: var(--red);
+}
+
+.dd-flip-held {
+  width: calc(100% - var(--flip, 0%));
+  background: var(--green);
+}
+
+.dd-flip[data-empty="true"] .dd-flip-flipped,
+.dd-flip[data-empty="true"] .dd-flip-held {
+  background: var(--line);
+}
+
+.dd-flip-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 2px 0 0;
+  font: 700 0.75rem/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dd-flip-key-flipped { color: var(--red); }
+.dd-flip-key-held { color: var(--green); }
+
+.dd-flip-line {
+  margin: 4px 0 0;
+  font: 700 1rem/1.25 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-flip-strict {
+  margin: 2px 0 0;
+  font: 600 0.95rem/1.25 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-stat-swap { grid-column: 1 / -1; }
+
+.dd-swap-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+}
+
+.dd-swap-labels li {
+  flex-direction: row;
+  align-items: baseline;
+  width: auto;
+  margin: 0;
+  font: 700 1rem/1.3 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-swap-models li,
+.dd-swap-picks li {
+  width: 100%;
+}
+
+.dd-swap-name,
+.dd-swap-frac,
+.dd-swap-state,
+.dd-swap-base {
+  align-self: stretch;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dd-swap-name {
+  font: 700 1rem/1.3 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-swap-frac,
+.dd-swap-base {
+  color: var(--muted);
+  font: 700 0.95rem/1.2 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-swap-state {
+  font: 700 1rem/1.2 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-swap-flipped { color: var(--red); }
+.dd-swap-consistent { color: var(--green); }
+.dd-swap-single { color: var(--muted); }
+
+.dd-stat-swap summary {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 44px;
+  min-height: 44px;
+  max-width: 100%;
+  padding: 8px 4px;
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.dd-swap-models details,
+.dd-swap-picks details,
+.dd-swap-evidence,
+.dd-swap-proof,
+.dd-swap-passes {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.dd-swap-evidence,
+.dd-swap-passes {
+  margin: 4px 0 8px;
+  padding: 4px 0 4px 10px;
+  border-left: 3px solid var(--line);
+}
+
+.dd-swap-proof p,
+.dd-swap-passes p {
+  margin: 0 0 4px;
+}
+
+.dd-swap-head { display: none; }
+
+.dd-board .dd-swap-picks > li > [data-col]::before,
+.dd-board .dd-swap-picks > li > details > summary[data-col]::before {
+  content: attr(data-col);
+  display: block;
+  margin-bottom: 2px;
+  font: 700 11px/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+@media (max-width: 600px) {
+  .dd-board .dd-swap-picks > li {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dd-swap-head,
+  .dd-board .dd-swap-picks > li {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.85fr) minmax(0, 0.5fr) minmax(0, 1.8fr);
+    gap: 8px;
+    align-items: center;
+  }
+
+  .dd-swap-head {
+    margin: 8px 0 0;
+    font: 700 11px/1.2 ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  .dd-board .dd-swap-picks > li > [data-col]::before,
+  .dd-board .dd-swap-picks > li > details > summary[data-col]::before {
+    content: none;
+    display: none;
+  }
+
+  .dd-swap-name,
+  .dd-swap-frac,
+  .dd-swap-state,
+  .dd-swap-base {
+    width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dd-flip-flipped,
+  .dd-flip-held {
+    transition: width 200ms ease;
+  }
+}
