@@ -22,4 +22,4 @@ npm run dd -- doctor
 
 Targets come from `targets.json`. The owner has to be `BoydVC`, the repo has to be on that list, and the string cannot contain `kpd`. Ideas that match the policy screen are stored as failed picks with reason `policy`.
 
-Do not merge, enable auto-merge, deploy, or push to `main`. Pull requests from this engine stay drafts.
+Do not merge, enable auto-merge, deploy, or push to `main`. Pull requests from this engine stay drafts. Every draft pull request body opens with: Draft only. Do not merge, enable auto-merge, or mark ready for review.
