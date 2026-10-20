@@ -230,6 +230,10 @@ function assertSwapDom(stats: BigBoardStats): RecNode[] {
     assert.equal(body.includes(want.name), true, want.key);
     assert.equal(body.includes(`${want.flipped}/${want.picks}`), true, want.key);
     assert.equal(childElements(node).some((child) => child.attrs.class === "dd-flip"), true, want.key);
+    const disclosure = childElements(node).find((child) => child.tag === "details");
+    assert.ok(disclosure, want.key);
+    assert.equal(disclosure.attrs.open, undefined, want.key);
+    for (const id of want.pickIds) assert.equal(plain(disclosure).includes(String(id)), true, want.key);
   });
   const picks = drawn.nodes.find((node) => node.attrs["aria-label"] === "Swap by pick");
   assert.ok(picks);
@@ -244,6 +248,20 @@ function assertSwapDom(stats: BigBoardStats): RecNode[] {
     const href = childElements(node).find((child) => child.tag === "a")?.attrs.href;
     if (/^p-\d{8}-\d{2}$/.test(want.pickId)) assert.equal(href, `#/picks/${want.pickId}`);
     else assert.equal(href, undefined);
+    const disclosure = childElements(node).find((child) => child.tag === "details");
+    assert.ok(disclosure, want.pickId);
+    assert.equal(disclosure.attrs.open, undefined, want.pickId);
+    const summary = childElements(disclosure).find((child) => child.tag === "summary");
+    assert.ok(summary, want.pickId);
+    const judges = want.models.filter((name) => name).join(" \u00b7 ");
+    assert.equal(plain(summary), judges || "\u2014", want.pickId);
+    const facts = plain(disclosure);
+    const total = Math.max(want.winners.length, want.models.length);
+    for (let index = 0; index < total; index += 1) {
+      const winner = want.winners[index] ? String(want.winners[index]) : "none";
+      const model = want.models[index] || "account default";
+      assert.equal(facts.includes(`Pass ${index + 1} \u00b7 winner ${winner} \u00b7 judge ${model}`), true, want.pickId);
+    }
   });
   return drawn.nodes;
 }

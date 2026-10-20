@@ -143,12 +143,41 @@ function windowForm(stats, el) {
   return form;
 }
 
+function passFacts(row) {
+  const winners = Array.isArray(row && row.winners) ? row.winners : [];
+  const models = Array.isArray(row && row.models) ? row.models : [];
+  const lines = [];
+  const total = Math.max(winners.length, models.length);
+  for (let index = 0; index < total; index += 1) {
+    const winner = winners[index] ? String(winners[index]) : "none";
+    const model = typeof models[index] === "string" && models[index] ? models[index] : "account default";
+    lines.push(`Pass ${index + 1} \u00b7 winner ${winner} \u00b7 judge ${model}`);
+  }
+  return lines;
+}
+
+function stateClass(state) {
+  if (state === "flipped" || state === "consistent" || state === "single") return `dd-swap-state dd-swap-${state}`;
+  return "dd-swap-state";
+}
+
+function pickProof(row, el) {
+  const id = String(row && row.pickId || "");
+  const href = pickHref(id);
+  const state = row && row.swap ? String(row.swap) : "";
+  const children = [href ? el("a", { href }, [id]) : id];
+  if (state) children.push(el("span", { class: stateClass(state) }, [state]));
+  for (const line of passFacts(row)) children.push(el("p", {}, [line]));
+  return el("div", { class: "dd-swap-proof" }, children);
+}
+
 function swapSection(swap, el) {
   const body = swap || {};
   const labels = Array.isArray(body.labels) ? body.labels : [];
   const models = Array.isArray(body.models) ? body.models : [];
   const rows = Array.isArray(body.rows) ? body.rows : [];
   const strictIds = Array.isArray(body.strict) ? body.strict : [];
+  const byId = new Map(rows.map((row) => [row.pickId, row]));
   const children = [
     el("p", { class: "dd-flip-line", "data-swap": "headline" }, [swapHeadline(body)]),
   ];
@@ -161,27 +190,49 @@ function swapSection(swap, el) {
       "data-passes": count(row.passes),
     }, [`${row.label} ${count(row.wins)}/${count(row.passes)} ${percentText(row.rate)}`]))),
     el("p", { class: "dd-kicker" }, ["By judge model"]),
-    el("ul", { "aria-label": "Swap bias by judge model", class: "dd-swap-models" }, models.map((row) => el("li", {
-      "data-model": row.key,
-      "data-picks": count(row.picks),
-      "data-flipped": count(row.flipped),
-    }, [
-      el("span", { class: "dd-swap-name" }, [String(row.name ?? "")]),
-      el("span", { class: "dd-swap-frac" }, [`${count(row.flipped)}/${count(row.picks)}`]),
-      flipMeter(el, row.rate),
-    ]))),
+    el("ul", { "aria-label": "Swap bias by judge model", class: "dd-swap-models" }, models.map((row) => {
+      const ids = Array.isArray(row.pickIds) ? row.pickIds : [];
+      return el("li", {
+        "data-model": row.key,
+        "data-picks": count(row.picks),
+        "data-flipped": count(row.flipped),
+      }, [
+        el("details", {}, [
+          el("summary", {}, [
+            el("span", { class: "dd-swap-name" }, [String(row.name ?? "")]),
+            el("span", { class: "dd-swap-frac" }, [`${count(row.flipped)}/${count(row.picks)}`]),
+          ]),
+          el("div", { class: "dd-swap-evidence" }, ids.map((id) => pickProof(byId.get(id) || { pickId: id }, el))),
+        ]),
+        flipMeter(el, row.rate),
+      ]);
+    })),
     el("p", { class: "dd-kicker" }, ["By pick"]),
+    el("div", { class: "dd-swap-head", "aria-hidden": "true" }, [
+      el("span", {}, ["Pick"]),
+      el("span", {}, ["Swap"]),
+      el("span", {}, ["Base"]),
+      el("span", {}, ["Judges"]),
+    ]),
     el("ul", { "aria-label": "Swap by pick", class: "dd-swap-picks" }, rows.map((row) => {
       const href = pickHref(row.pickId);
       const id = String(row.pickId);
+      const judges = Array.isArray(row.models) ? row.models.map((name) => String(name)).filter(Boolean).join(" \u00b7 ") : "";
+      const idNode = href
+        ? el("a", { href, "data-col": "Pick" }, [id])
+        : el("span", { "data-col": "Pick" }, [id]);
       return el("li", {
         "data-pick": row.pickId,
         "data-swap": row.swap,
         "data-base": row.base,
       }, [
-        href ? el("a", { href }, [id]) : id,
-        el("span", { class: "dd-swap-state" }, [String(row.swap)]),
-        el("span", { class: "dd-swap-base" }, [`base ${row.base}`]),
+        idNode,
+        el("span", { class: stateClass(row.swap), "data-col": "Swap" }, [String(row.swap)]),
+        el("span", { class: "dd-swap-base", "data-col": "Base" }, [`base ${row.base}`]),
+        el("details", {}, [
+          el("summary", { "data-col": "Judges" }, [judges || "\u2014"]),
+          el("div", { class: "dd-swap-passes" }, passFacts(row).map((line) => el("p", {}, [line]))),
+        ]),
       ]);
     })),
   );

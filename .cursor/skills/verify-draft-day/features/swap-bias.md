@@ -4,8 +4,8 @@ How often the reversed Film Room pass flipped the call, which label positions wo
 
 ## Sub-features
 
-- `swap-phone` lays the seeded season plus model picks out at 390×844 dark and light and at 430×932 dark. The flip-rate tile is the first leader: a big percent, a two-color meter, the headline, and the strict sentence. Every new link is at least 44×44.
-- `swap-desktop` lays the same DOM out at 1280×800 light and dark. The meter and the strict sentence stay on the tile. Sections sit in columns. Every control is still at least 44×44.
+- `swap-phone` lays the seeded season plus model picks out at 390×844 dark and light and at 430×932 dark. The flip-rate tile is the first leader: a big percent, a two-color meter, the headline, and the strict sentence. Model rows and pick rows are closed `details`. At 600 and 390 the pick rows stack with a label on each field. Every new link and summary is at least 44×44.
+- `swap-desktop` lays the same DOM out at 1280×800 light and dark. The pick rows are a CSS grid under the labels Pick, Swap, Base, and Judges. The meter and the strict sentence stay on the tile. Every control is still at least 44×44.
 - `swap-hostile` adds the hostile logs and opens `#/stats` at 390×844 dark. Model names stay text. The page does not grow wider than the phone.
 - `swap-empty` opens `#/stats?until=2026-10-01` at 390×844 dark and shows `No judged picks yet`.
 - `swap-window` opens `#/stats?since=2026-10-18` at 390×844 dark. The headline is `Reversed pass flipped 3 of 5 two-pass picks (60%)`.
@@ -14,7 +14,7 @@ How often the reversed Film Room pass flipped the call, which label positions wo
 
 - `control.sh launch`, then `control.sh seed-swap`. That prints `seeded swap`.
 - The Big Board link `Stats` goes to `#/stats`. `Big Board` on the stats view returns to `#/`.
-- The first leader tile is the flip rate. The Swap bias section lower on the page repeats the headline, the strict sentence, one meter per judge model, and one row per judged pick.
+- The first leader tile is the flip rate. The Swap bias section lower on the page repeats the headline, the strict sentence, and one meter per judge model. Each model and each pick is a closed `details` whose body lists that pick's pass winners and judge models. At 1280 the pick rows are columns. At 600 and 390 the same rows stack.
 - `control.sh seed-swap hostile` then also writes the hostile logs and prints `seeded swap hostile`.
 
 ## Driving it with the browser
@@ -24,10 +24,10 @@ Preconditions:
 - `control.sh doctor` passes, then `control.sh seed-swap` prints `seeded swap`.
 - Chrome is available. On Node 20, run `cdp-shot.mjs` with `--experimental-websocket`. Node 22 has WebSocket built in.
 - Screenshots go under `/opt/cursor/artifacts/war-room/`. The probe is `test/fixtures/phone/probe.js`, driven by `test/fixtures/phone/cdp-shot.mjs`.
-- The flip-rate tile is above the fold, so these shots are the top of the page. Do not scroll the section into view.
+- The flip-rate tile is above the fold. Phone, empty, window, and hostile shots stay at the top of the page. Desktop shots scroll the Swap bias section into view so the pick grid is in frame: `--before 'document.querySelector("[aria-label=\\"Swap bias\\"]")?.scrollIntoView()'`.
 
 - **Phone.** `node test/fixtures/phone/cdp-shot.mjs --url "$URL/#/stats" --width 390 --height 844 --scheme dark --shot /opt/cursor/artifacts/war-room/stats-swap-390-dark.png`, then the same URL at 390×844 light (`stats-swap-390-light.png`) and 430×932 dark (`stats-swap-430-dark.png`). Each JSON line has `"ok":true`, `"offOrigin":[]`, and `scrollWidth` at most the width. The tile reads `Reversed pass flipped 6 of 12 two-pass picks (50%)`.
-- **Desktop.** The same tool on `"$URL/#/stats"` at 1280×800 light (`stats-swap-1280-light.png`) and 1280×800 dark (`stats-swap-1280-dark.png`). Each line is `"ok":true`. The flip-rate tile still leads. Every stats control and link is at least 44×44.
+- **Desktop.** The same tool on `"$URL/#/stats"` at 1280×800 light (`stats-swap-1280-light.png`) and 1280×800 dark (`stats-swap-1280-dark.png`), with the Swap bias section scrolled into view. Each line is `"ok":true` and `scrollWidth` equals the width. The pick rows are a grid. Every stats control and link is at least 44×44.
 - **Hostile.** `control.sh seed-swap hostile`, then `"$URL/#/stats"` at 390×844 dark (`stats-swap-hostile-390-dark.png`). The line is `"ok":true` and `"offOrigin":[]`.
 - **Empty.** `"$URL/#/stats?until=2026-10-01"` at 390×844 dark (`stats-swap-empty-390-dark.png`). The tile says `No judged picks yet`. The line is `"ok":true`.
 - **Window.** `"$URL/#/stats?since=2026-10-18"` at 390×844 dark (`stats-swap-window-390-dark.png`). The headline is `Reversed pass flipped 3 of 5 two-pass picks (60%)`. The line is `"ok":true`.
