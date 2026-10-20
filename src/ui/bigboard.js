@@ -78,6 +78,54 @@ function pickHref(id) {
   return /^p-\d{8}-\d{2}$/.test(String(id)) ? `#/picks/${id}` : null;
 }
 
+function swapHeadline(swap) {
+  if (!count(swap && swap.judged)) return "No judged picks yet";
+  if (!count(swap.twoPass)) return "No two-pass picks yet";
+  return `Reversed pass flipped ${count(swap.flipped)} of ${count(swap.twoPass)} two-pass picks (${percentText(swap.rate)})`;
+}
+
+function swapStrict(swap) {
+  const ids = Array.isArray(swap && swap.strict) ? swap.strict : [];
+  return `Strict rule (tie unless both passes agree): no base for ${ids.length ? ids.join(", ") : "none"}`;
+}
+
+function swapSection(stats, el) {
+  const swap = (stats && stats.swap) || {};
+  const list = (rows) => (Array.isArray(rows) ? rows : []);
+  const body = [
+    el("h3", {}, ["Swap bias"]),
+    el("p", { "data-swap": "headline" }, [swapHeadline(swap)]),
+  ];
+  if (count(swap.twoPass) > 0) body.push(el("p", { "data-swap": "strict" }, [swapStrict(swap)]));
+  body.push(
+    el("ul", { "aria-label": "Winner by label" }, list(swap.labels).map((row) => el("li", {
+      "data-winner-label": row.label,
+      "data-wins": row.wins,
+      "data-passes": row.passes,
+    }, [`${row.label} ${row.wins}/${row.passes}`]))),
+    el("ul", { "aria-label": "Swap bias by judge model" }, list(swap.models).map((row) => el("li", {
+      "data-model": row.key,
+      "data-picks": row.picks,
+      "data-flipped": row.flipped,
+    }, [`${row.name} ${row.flipped}/${row.picks}`]))),
+    el("ul", { "aria-label": "Swap by pick" }, list(swap.rows).map((row) => {
+      const href = pickHref(row.pickId);
+      const name = href ? el("a", { href }, [String(row.pickId)]) : String(row.pickId);
+      return el("li", { "data-pick": row.pickId, "data-swap": row.swap, "data-base": row.base }, [name, ` ${row.swap} base ${row.base}`]);
+    })),
+  );
+  return el("section", {
+    class: "dd-stat",
+    "aria-label": "Swap bias",
+    "data-judged": count(swap.judged),
+    "data-two-pass": count(swap.twoPass),
+    "data-flipped": count(swap.flipped),
+    "data-single": count(swap.single),
+    "data-tie-rule": count(swap.tieRule),
+    "data-strict": list(swap.strict).join(","),
+  }, body);
+}
+
 function windowForm(stats, el) {
   const bounds = stats && stats.window ? stats.window : {};
   const since = el("input", { id: "since", name: "since", type: "date", value: bounds.since || "" });
@@ -156,6 +204,7 @@ function draftDayBigBoard(stats, el) {
         ]),
       ]),
     ]),
+    swapSection(body, el),
     el("section", { class: "dd-stat dd-stat-stages" }, [
       el("h3", {}, ["Time per stage"]),
       el("ul", { "aria-label": "Time per stage" }, stages.map((row) => el("li", {

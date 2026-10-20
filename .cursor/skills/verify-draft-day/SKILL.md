@@ -55,7 +55,7 @@ Live updates use `EventSource` on `/api/events`. After `Add pick`, the new idea 
 
 - On a pick page, `Replay` goes to `#/picks/<id>/replay`. Replay has `Pick page` and `Big Board`, plus `First event`, `Previous event`, `Play` (it reads `Pause` while the film is moving), `Next event`, `Last event`, and the `Event` slider.
 - On a pick page, `Lint` goes to `#/picks/<id>/linter`. The Scouting linter shows the summary, rubric gradeability, EARS coverage, angle pairs, hard findings, and soft warnings. The `Lint document` box and the `Lint` button re-check a pasted JSON or markdown report.
-- On the Big Board, `Stats` goes to `#/stats`. Big Board stats shows the summary, win rate by angle, win rate by slot, trades per pick, verify pass rate, and time per stage. `Since` and `Until` with `Apply` narrow the window. `Big Board` goes back to `#/`.
+- On the Big Board, `Stats` goes to `#/stats`. Big Board stats shows the summary, win rate by angle, win rate by slot, trades per pick, verify pass rate, and time per stage. `Since` and `Until` with `Apply` narrow the window. `Big Board` goes back to `#/`. The Swap bias section, under Verify pass rate, shows how often the reversed pass flipped, which label won, the flip rate for each judge model, and which picks would have no base if a tie required both passes to agree.
 - On the Big Board, `Ledger` goes to `#/ledger`. The Season ledger leads with the merge call and one re-run sentence, then the summary, a one-line legend, merge order, and anything off the stack. Each row is a closed disclosure of that PR's verdict sequence. `Big Board` goes back to `#/`.
 
 ## Evidence
@@ -81,6 +81,6 @@ This kills the PID from `/tmp/dd-verify/state.env` and deletes that run's data d
 
 ## Helpers
 
-`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, `seed-timeline`, `seed-lessons`, `seed-replay`, `seed-linter`, `seed-bigboard`, `seed-ledger`, or `cleanup` from the repo root. It prints the URL on launch. `seed-ledger polish` records `test/fixtures/ledger/ledger-polish.jsonl` after the real season, so #1 is VERIFIED certainty 5 at f51dae8 and 4edd03a and #11 is VERIFIED certainty 5 at af1e78c.
+`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, `seed-timeline`, `seed-lessons`, `seed-replay`, `seed-linter`, `seed-bigboard`, `seed-ledger`, `seed-swap`, or `cleanup` from the repo root. It prints the URL on launch. `seed-ledger polish` records `test/fixtures/ledger/ledger-polish.jsonl` after the real season, so #1 is VERIFIED certainty 5 at f51dae8 and 4edd03a and #11 is VERIFIED certainty 5 at af1e78c.
 
 Keep this map honest with `/maintain-verification-skill` when the War Room changes. One correction pass at a time.

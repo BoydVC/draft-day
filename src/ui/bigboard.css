@@ -230,3 +230,8 @@ p.back:has(a[href="#/stats"]) {
     align-items: end;
   }
 }
+
+[aria-label="Swap bias"] [data-swap="flipped"] { color: var(--red); }
+[aria-label="Swap bias"] [data-swap="consistent"] { color: var(--green); }
+[aria-label="Swap bias"] [data-swap="single"] { color: var(--muted); }
+[aria-label="Swap by pick"] > li { flex-direction: row; flex-wrap: wrap; align-items: center; column-gap: 8px; }

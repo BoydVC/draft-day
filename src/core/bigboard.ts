@@ -1,22 +1,41 @@
 import type { DraftEvent } from "./events.ts";
+import { filmRoom } from "./filmroom.ts";
 import { isPickId } from "./ids.ts";
 import type { LessonWindow, PickLog } from "./lessons.ts";
 import { reduce } from "./reducer.ts";
 import { formatDuration, timeline, type StageSpan } from "./timeline.ts";
-import { CAND_IDS, type CandId, type Pick as BoardPick, type PickId } from "./types.ts";
+import { CAND_IDS, LABELS, type CandId, type Label, type Pick as BoardPick, type PickId, type SwapState } from "./types.ts";
 
 /** The stats rule, one row per line of SPEC 008. A new id fails `tsc` until its row has a fold, a text line, and a DOM container. */
-export const METRIC_IDS = ["logs", "angles", "slots", "trades", "verify", "stages", "summary"] as const;
+export const METRIC_IDS = ["logs", "angles", "slots", "trades", "verify", "swap", "stages", "summary"] as const;
 export type MetricId = (typeof METRIC_IDS)[number];
 
 export const STAGE_ORDER = ["Intake", "Scouting Report", "Combine", "Film Room", "Trade", "Physical"] as const;
 export const ANGLE_NAME_MAX = 48;
 export const EXCLUDED_SOURCES = ["selftest"] as const;
+export const DEFAULT_MODEL = "account default";
+export const MODEL_NAME_MAX = 48;
 
 export interface Ratio { num: number; den: number; rate: number | null }
 export interface WinRow { key: string; name: string; entries: number; wins: number; walkovers: number; rate: number | null; picks: string[] }
 export interface TradeRow { pickId: string; base: CandId | null; trades: number }
 export interface StageRow { stage: string; picks: number; medianMs: number; medianText: string; totalMs: number }
+export interface SwapLabelRow { label: Label; wins: number; passes: number; rate: number | null }
+export interface SwapModelRow { key: string; name: string; picks: number; flipped: number; rate: number | null; pickIds: string[] }
+export interface SwapPickRow { pickId: string; swap: SwapState; winners: (CandId | null)[]; base: CandId; models: string[] }
+export interface SwapStats {
+  judged: number;
+  single: number;
+  twoPass: number;
+  consistent: number;
+  flipped: number;
+  rate: number | null;
+  tieRule: number;
+  strict: string[];
+  labels: SwapLabelRow[];
+  models: SwapModelRow[];
+  rows: SwapPickRow[];
+}
 export interface BigBoardStats {
   window: LessonWindow;
   summary: string;
@@ -28,6 +47,7 @@ export interface BigBoardStats {
   trades: { picks: number; total: number; mean: number | null; rows: TradeRow[] };
   verify: { picks: number; firstTry: Ratio; final: Ratio; fixLoops: number; verdicts: { VERIFIED: number; NOT_VERIFIED: number; INCONCLUSIVE: number } };
   stages: StageRow[];
+  swap: SwapStats;
 }
 
 const TERMINAL = new Set<BoardPick["status"]>(["drafted", "failed", "cancelled"]);
@@ -336,6 +356,186 @@ function textStages(stats: BigBoardStats): string {
   return ["Time per stage", ...stats.stages.map((row) => `  ${row.stage}  ${row.medianText}  ${row.picks}`)].join("\n");
 }
 
+/** Whitespace collapses first, then C0/C1 and line separators become U+FFFD. Blank names are the account default. */
+const MODEL_NAME_RULES: readonly { pattern: RegExp; replacement: string; trim: boolean }[] = [
+  { pattern: /\s+/g, replacement: " ", trim: true },
+  { pattern: /[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, replacement: "\uFFFD", trim: false },
+];
+
+export function judgeModelName(value: unknown): string {
+  if (typeof value !== "string") return DEFAULT_MODEL;
+  let name = value;
+  for (const rule of MODEL_NAME_RULES) {
+    name = name.replace(rule.pattern, rule.replacement);
+    if (rule.trim) name = name.trim();
+  }
+  if (!name) return DEFAULT_MODEL;
+  const chars = Array.from(name);
+  return chars.length > MODEL_NAME_MAX ? chars.slice(0, MODEL_NAME_MAX).join("").trimEnd() : name;
+}
+
+interface JudgedPass { winner: CandId | null; winnerLabel: Label | null; labels: Label[] }
+interface JudgedRow {
+  pickId: string;
+  swap: SwapState;
+  winners: (CandId | null)[];
+  base: CandId;
+  models: string[];
+  tieRule: boolean;
+  passes: JudgedPass[];
+}
+interface JudgedPhase { rows: JudgedRow[] }
+interface CountPhase extends JudgedPhase {
+  judged: number;
+  single: number;
+  twoPass: number;
+  consistent: number;
+  flipped: number;
+  rate: number | null;
+  tieRule: number;
+}
+interface LabelPhase extends CountPhase { labels: SwapLabelRow[] }
+interface ModelPhase extends LabelPhase { models: SwapModelRow[] }
+
+/** Judged rows: a filmRoom with a base, passes in pass order, model names already replaced. */
+function judgedRows(book: Book): JudgedPhase {
+  const rows: JudgedRow[] = [];
+  for (const item of book.counted) {
+    const room = filmRoom(item.pick);
+    if (!room?.base) continue;
+    const recorded = [...(item.pick.judgement?.passes ?? [])].sort((a, b) => a.pass - b.pass);
+    rows.push({
+      pickId: item.pickId,
+      swap: room.swap,
+      winners: room.passes.map((pass) => pass.winner),
+      base: room.base,
+      models: recorded.map((pass) => judgeModelName(pass.judgeModel)),
+      tieRule: room.tieRule !== null,
+      passes: room.passes.map((pass) => ({
+        winner: pass.winner,
+        winnerLabel: pass.lines.find((line) => line.cand === pass.winner)?.label ?? null,
+        labels: pass.lines.map((line) => line.label),
+      })),
+    });
+  }
+  return { rows };
+}
+
+/** Counts from the judged rows: single, two-pass, flipped, rate, and how many the tie rule settled. */
+function countSwap(phase: JudgedPhase): CountPhase {
+  const judged = phase.rows.length;
+  const single = phase.rows.filter((row) => row.swap === "single").length;
+  const twoPass = judged - single;
+  const flipped = phase.rows.filter((row) => row.swap === "flipped").length;
+  return {
+    rows: phase.rows,
+    judged,
+    single,
+    twoPass,
+    consistent: twoPass - flipped,
+    flipped,
+    rate: ratio(flipped, twoPass).rate,
+    tieRule: phase.rows.filter((row) => row.tieRule).length,
+  };
+}
+
+/** Label tallies: every pass view that has a winner, A through E, only labels that appeared. */
+function labelTallies(phase: CountPhase): LabelPhase {
+  const acc = new Map<Label, { wins: number; passes: number }>();
+  for (const row of phase.rows) {
+    for (const pass of row.passes) {
+      if (!pass.winner) continue;
+      for (const label of pass.labels) {
+        const cell = acc.get(label) ?? { wins: 0, passes: 0 };
+        cell.passes += 1;
+        acc.set(label, cell);
+      }
+      if (pass.winnerLabel) acc.get(pass.winnerLabel)!.wins += 1;
+    }
+  }
+  const labels = LABELS.filter((label) => acc.has(label)).map((label) => {
+    const cell = acc.get(label)!;
+    return { label, wins: cell.wins, passes: cell.passes, rate: ratio(cell.wins, cell.passes).rate };
+  });
+  return { ...phase, labels };
+}
+
+function pairNames(first: string, second: string): { key: string; name: string } {
+  const k1 = first.toLowerCase();
+  const k2 = second.toLowerCase();
+  return k1 === k2 ? { key: k1, name: first } : { key: `${k1} + ${k2}`, name: `${first} + ${second}` };
+}
+
+/** Model pairs: two-pass rows only, pass order, first display name kept, then picks desc and key asc. */
+function modelPairs(phase: LabelPhase): ModelPhase {
+  const acc = new Map<string, { key: string; name: string; picks: number; flipped: number; pickIds: string[] }>();
+  for (const row of phase.rows) {
+    if (row.swap === "single") continue;
+    const pair = pairNames(row.models[0] ?? DEFAULT_MODEL, row.models[1] ?? DEFAULT_MODEL);
+    let cell = acc.get(pair.key);
+    if (!cell) {
+      cell = { key: pair.key, name: pair.name, picks: 0, flipped: 0, pickIds: [] };
+      acc.set(pair.key, cell);
+    }
+    cell.picks += 1;
+    if (row.swap === "flipped") cell.flipped += 1;
+    cell.pickIds.push(row.pickId);
+  }
+  const models = [...acc.values()].map((cell) => ({
+    key: cell.key,
+    name: cell.name,
+    picks: cell.picks,
+    flipped: cell.flipped,
+    rate: ratio(cell.flipped, cell.picks).rate,
+    pickIds: cell.pickIds,
+  })).sort((a, b) => b.picks - a.picks || cmp(a.key, b.key));
+  return { ...phase, models };
+}
+
+/** Strict list: flipped pick ids in row order. Shown, never applied to a base. */
+function strictList(phase: ModelPhase): SwapStats {
+  return {
+    judged: phase.judged,
+    single: phase.single,
+    twoPass: phase.twoPass,
+    consistent: phase.consistent,
+    flipped: phase.flipped,
+    rate: phase.rate,
+    tieRule: phase.tieRule,
+    strict: phase.rows.filter((row) => row.swap === "flipped").map((row) => row.pickId),
+    labels: phase.labels,
+    models: phase.models,
+    rows: phase.rows.map((row) => ({
+      pickId: row.pickId,
+      swap: row.swap,
+      winners: row.winners,
+      base: row.base,
+      models: row.models,
+    })),
+  };
+}
+
+function foldSwap(book: Book): SwapStats {
+  return strictList(modelPairs(labelTallies(countSwap(judgedRows(book)))));
+}
+
+function textSwap(stats: BigBoardStats): string {
+  const swap = stats.swap;
+  if (swap.judged === 0) return ["Swap bias", "  no judged picks"].join("\n");
+  const labels = swap.labels.length
+    ? swap.labels.map((row) => `${row.label} ${row.wins}/${row.passes} ${percentText(row.rate)}`).join(" \u00b7 ")
+    : EMPTY;
+  const lines = [
+    "Swap bias",
+    `  two-pass ${swap.twoPass} \u00b7 flipped ${swap.flipped} (${percentText(swap.rate)}) \u00b7 single ${swap.single}`,
+    `  tie rule settled ${swap.tieRule}`,
+    `  Strict rule (tie unless both passes agree): no base for ${swap.strict.length ? swap.strict.join(", ") : "none"}`,
+    `  label wins ${labels}`,
+  ];
+  for (const model of swap.models) lines.push(`  ${model.name} flipped ${model.flipped}/${model.picks} ${percentText(model.rate)}`);
+  return lines.join("\n");
+}
+
 interface MetricDom { aria: string; row: string | null }
 interface MetricRow {
   dom: MetricDom;
@@ -349,6 +549,7 @@ const LEDGER = {
   slots: { dom: { aria: "Win rate by slot", row: "data-slot" }, fold: (book: Book) => foldWins(book, true), text: textSlots },
   trades: { dom: { aria: "Trades per pick", row: "data-pick" }, fold: foldTrades, text: textTrades },
   verify: { dom: { aria: "Verify pass rate", row: "data-first-try" }, fold: foldVerify, text: textVerify },
+  swap: { dom: { aria: "Swap bias", row: "data-model" }, fold: foldSwap, text: textSwap },
   stages: { dom: { aria: "Time per stage", row: "data-stage" }, fold: foldStages, text: textStages },
   summary: { dom: { aria: "Big Board stats", row: "data-stats" }, fold: foldSummary, text: (stats: BigBoardStats) => stats.summary },
 } satisfies Record<MetricId, MetricRow>;
@@ -383,6 +584,7 @@ export function bigBoardStats(logs: readonly PickLog[], window?: LessonWindow | 
     trades: LEDGER.trades.fold(book),
     verify: LEDGER.verify.fold(book),
     stages: LEDGER.stages.fold(book),
+    swap: LEDGER.swap.fold(book),
   };
 }
 
