@@ -32,11 +32,11 @@ Open `http://127.0.0.1:4420`. The Big Board is `#/`. A driver reads `dd next <pi
 
 ```bash
 npm run dd -- ledger
-npm run dd -- ledger import-prs pulls.json
-npm run dd -- ledger record verdict.jsonl
+npm run dd -- ledger import-prs docs/examples/pulls.example.json
+npm run dd -- ledger record docs/examples/verdict.example.jsonl
 ```
 
-`#/ledger` is the same fold. `ledger import-prs` records the open pull requests. A verdict outside a pick log must be recorded with `dd ledger record`, or the row stays unverified. The Season Ledger screenshots in `docs/screens/p10-polish/` use `test/fixtures/ledger/ledger-real.jsonl` plus `test/fixtures/ledger/ledger-polish.jsonl`: #1 is VERIFIED certainty 5 at f51dae8 and 4edd03a, and #11 is VERIFIED certainty 5 at af1e78c.
+`#/ledger` is the same fold. Those two paths are committed examples, so the block runs as written on an empty `./data`. For real files, save the open pulls (`gh api repos/BoydVC/draft-day/pulls > pulls.json`) and run `npm run dd -- ledger import-prs pulls.json`. Write a verdict line to `verdict.jsonl` and run `npm run dd -- ledger record verdict.jsonl`. `ledger import-prs` records the open pull requests. A verdict outside a pick log must be recorded with `dd ledger record`, or the row stays unverified. The Season Ledger screenshots in `docs/screens/p10-polish/` use `test/fixtures/ledger/ledger-real.jsonl` plus `test/fixtures/ledger/ledger-polish.jsonl`: #1 is VERIFIED certainty 5 at f51dae8 and 4edd03a, and #11 is VERIFIED certainty 5 at af1e78c.
 
 `dd selftest` runs a whole pick in a temporary data directory against a fake driver: three candidates (one errors, then succeeds), a judge, a trade, a failed physical, a fix, a verified physical, a policy refusal, and a walkover.
 
