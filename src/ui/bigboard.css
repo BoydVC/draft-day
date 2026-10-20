@@ -356,9 +356,12 @@ p.back:has(a[href="#/stats"]) {
 .dd-swap-consistent { color: var(--green); }
 .dd-swap-single { color: var(--muted); }
 
-.dd-swap summary {
+.dd-stat-swap summary {
   box-sizing: border-box;
-  display: block;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
   min-width: 44px;
   min-height: 44px;
   max-width: 100%;
