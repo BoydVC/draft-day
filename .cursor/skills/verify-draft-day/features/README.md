@@ -6,14 +6,15 @@ This directory is the maintained source for verifying the War Room. Read the ind
 
 - Launch with `.cursor/skills/verify-draft-day/helpers/control.sh launch`.
 - The server is on `127.0.0.1` at the port in `/tmp/dd-verify/state.env`.
-- `dd selftest --keep` has seeded a drafted happy pick, a policy refusal, a walkover, and a close Film Room pick in that data directory.
-- Run `control.sh doctor` and require a live PID, a 200 from `/api/board`, and five doctor lines.
+- `dd selftest --keep` has seeded a drafted happy pick, a policy refusal, a walkover, and a close Film Room pick in that data directory. Those four selftest rows are the board only before `seed-ledger`.
+- Run `control.sh doctor` and require a live PID, a 200 from `/api/board`, and five doctor lines. The `port:` line reads `port: fail <port> in use` while the serve holds the port. `control.sh doctor` still prints `doctor: pass`.
 - Never drive a War Room this run did not start. Two runs need two ports and two data directories.
 
 ## Driving conventions
 
 - Start from the Big Board at `$URL/`.
-- Prefer the accessible names `War Room`, `New pick`, `Idea`, `Target`, `Candidates`, `Add pick`, and `Big Board`.
+- Prefer the accessible names `War Room`, `New pick`, `Idea`, `Target`, `Candidates`, `Add pick`, and `Big Board`. `Candidates` is a spinbutton, not a textbox. The document `h1` stays `War Room`; a pick id is `h2#pick-title`. The intake chip paints `INTAKE` because status chips use `text-transform: uppercase`.
+- `test/fixtures/phone/cdp-shot.mjs` forces an iPhone user agent and `mobile: true` at every width, including 1280.
 - Pick links use the pick id as their name.
 - Do not remove proof screenshots during cleanup.
 

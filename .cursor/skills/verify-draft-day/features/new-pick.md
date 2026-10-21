@@ -21,7 +21,7 @@ Preconditions:
 - The Target field still reads `BoydVC/draft-day`.
 
 - **Enter an idea.** Choose the `Idea` textbox and type `Show the run count in the page title`. Leave Target as `BoydVC/draft-day` and Candidates as `3`.
-- **Submit.** Choose `Add pick`. The status line says `Queued in the inbox. Nothing launches from this page.` A table row shows that idea with status `intake` and Pick column `queued`. The page does not reload.
+- **Submit.** Choose `Add pick`. The status line says `Queued in the inbox. Nothing launches from this page.` A table row shows that idea with status text `intake` and Pick column `queued`. The status chip uses `text-transform: uppercase`, so the shot paints `INTAKE`. The page does not reload.
 - **Confirm the side effect.** `GET $URL/api/board` includes the idea under `inbox`. `$DATA/intake.jsonl` has a new line. No new file appears under `$DATA/picks/` for that idea until `dd intake --from-inbox`.
 - **Proof.** Screenshot `/opt/cursor/artifacts/war-room/big-board-after-new-pick.png` showing the new row and the War Room heading.
 

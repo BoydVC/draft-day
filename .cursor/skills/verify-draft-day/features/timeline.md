@@ -11,8 +11,9 @@ The Decision log is the phone-readable history of one pick: a summary sentence, 
 
 ## How to get to it (user POV)
 
-- After `control.sh seed-timeline`, open `#/picks/p-20261010-07`.
+- `control.sh seed-timeline` is a helper. `SKILL.md` lists it with the other seeds. After it runs, open `#/picks/p-20261010-07`.
 - The region named `Decision log` is the last region on the pick page.
+- The New pick `Candidates` control is a spinbutton (`input type="number"`), not a textbox. `Idea` and `Target` are the textboxes.
 
 ## Driving it with the browser
 
@@ -26,12 +27,14 @@ Preconditions:
 - **Proof.** Screenshot `/opt/cursor/artifacts/war-room/timeline-drafted.png` with the summary and Stages visible. Screenshot `/opt/cursor/artifacts/war-room/timeline-runs.png` with the Runs table visible.
 - **Phone width.** Resize to 390×844. `document.documentElement.scrollWidth` is 390 or less. Screenshot `/opt/cursor/artifacts/war-room/timeline-phone.png`.
 - **Selftest agents.** Open the happy selftest pick (idea `Add a status legend to the War Room`). The summary ends `8 runs`. Agent ids such as `bc-c1-1` are text, not links. Screenshot `/opt/cursor/artifacts/war-room/timeline-selftest.png`.
-- **Live row.** `dd intake` a fresh pick in this data directory. Open its page. Record `candidate_launched --cand c1 --agent bc-11111111-2222-4333-8444-555555555555`. Within two seconds the Runs table shows a `running` row and an `Agent c1 attempt 1` link, without a reload. Screenshot `/opt/cursor/artifacts/war-room/timeline-live.png`. Record `candidate_finished --cand c1 --file` a report that holds one `dd-report` block. Within two seconds that row reads `finished`.
-- **Hostile text.** On another fresh pick, record `candidate_launched --cand c2 --agent 'javascript:alert(1)'` and `lesson_recorded --topic xss --text '<img src=x onerror=alert(1)>'`. Open the page. The lesson shows those characters. The Decision log contains no `img` element and no link for that agent. Screenshot `/opt/cursor/artifacts/war-room/timeline-hostile.png`.
+- **Live row.** Source `/tmp/dd-verify/state.env` in this shell (`set -a; source /tmp/dd-verify/state.env; set +a`). `node --experimental-strip-types src/cli/dd.ts intake --idea "Timeline live row" --source chat --target BoydVC/draft-day --n 3 --approval ask --data "$DATA" --json` creates the pick. Open its page. `node --experimental-strip-types src/cli/dd.ts record <id> candidate_launched --cand c1 --agent bc-11111111-2222-4333-8444-555555555555 --data "$DATA"`. Within two seconds the Runs table shows a `running` row and an `Agent c1 attempt 1` link, without a reload. Screenshot `/opt/cursor/artifacts/war-room/timeline-live.png`. Record `candidate_finished` with `--cand c1 --file` a report that holds one `dd-report` block, and pass `--data "$DATA"`. Within two seconds that row reads `finished`. Without `--data "$DATA"` the command writes `./data` and this War Room does not update.
+- **Hostile text.** On another fresh pick created the same way, with `--data "$DATA"` on every command: `node --experimental-strip-types src/cli/dd.ts record <id> candidate_launched --cand c2 --agent 'javascript:alert(1)' --data "$DATA"` and `node --experimental-strip-types src/cli/dd.ts record <id> lesson_recorded --topic xss --text '<img src=x onerror=alert(1)>' --data "$DATA"`. Open the page. The lesson shows those characters. The Decision log contains no `img` element and no link for that agent. Screenshot `/opt/cursor/artifacts/war-room/timeline-hostile.png`.
 
 ## Gotchas
 
 - The Runs table may scroll inside its own container. The page itself must not scroll sideways at 390 px.
 - Selftest agent ids are not Cursor agent ids. They stay text.
-- `dd record` does not check stage order. A fresh intake can take a candidate launch with no scouting report.
-- Record against the `DATA` directory from `/tmp/dd-verify/state.env`.
+- `node --experimental-strip-types src/cli/dd.ts record` does not check stage order. A fresh intake can take a candidate launch with no scouting report.
+- Source `/tmp/dd-verify/state.env` in the shell that records. `launch` does not export `DATA`. A record without `--data "$DATA"` writes `./data`.
+- `control.sh doctor` passes while this serve holds the port. The `port:` line from `node --experimental-strip-types src/cli/dd.ts doctor --data "$DATA" --port "$PORT"` reads `port: fail <port> in use`. That is the expected reading.
+- `Candidates` on New pick is a spinbutton, not a textbox.

@@ -15,7 +15,7 @@ How far down the open draft stack Boyd can merge right now, and which pull reque
 - `control.sh launch`, then `control.sh seed-ledger`. That prints `seeded ledger`.
 - The Big Board link `Ledger` goes to `#/ledger`. `Big Board` on the ledger view returns to `#/`.
 - `control.sh seed-ledger tuesday` appends the two projection lines and prints `seeded ledger tuesday`.
-- `control.sh seed-ledger polish` appends `test/fixtures/ledger/ledger-polish.jsonl` and prints `seeded ledger polish`. #1 is fresh, VERIFIED certainty 5 at f51dae8 and at 4edd03a. #10 is fresh, VERIFIED certainty 5 at ace89ea (`verified at ace89ea (certainty 5)`). #11 is fresh, VERIFIED certainty 5 at af1e78c. The summary is `11 open PRs · stack #1→#11 (10) · merge-safe through #11 · re-run none · 6 fresh, 4 docs-only · 1 off stack`.
+- `control.sh seed-ledger polish` appends `test/fixtures/ledger/ledger-polish.jsonl` and prints `seeded ledger polish`. Run it on a fresh launch. After `seed-swap`, `cleanup` and `launch` again first. #1 is fresh, VERIFIED certainty 5 at f51dae8 and at 4edd03a. #10 is fresh, VERIFIED certainty 5 at ace89ea (`verified at ace89ea (certainty 5)`). #11 is fresh, VERIFIED certainty 5 at af1e78c. The summary is `11 open PRs · stack #1→#11 (10) · merge-safe through #11 · re-run none · 6 fresh, 4 docs-only · 1 off stack`.
 
 ## Driving it with the browser
 
@@ -34,6 +34,7 @@ Preconditions:
 ## Gotchas
 
 - `seed-ledger` replaces each real pick's `events.jsonl` from `picks.jsonl`, imports `pulls.json` at `2026-10-19T13:45:00.000Z`, then records lines 10–21 of `ledger-real.jsonl`. The ledger file must match that fixture byte for byte. Run it after `launch`. Another seed adds picks that claim PRs; if the summary is wrong, run `control.sh cleanup` then `launch` first.
+- `seed-ledger polish` needs a fresh launch after `seed-swap`. `seed-swap` leaves the model picks in the data directory, and those logs claim pull requests, so the polish summary (`11 open PRs · stack #1→#11 (10) · merge-safe through #11 · re-run none · 6 fresh, 4 docs-only · 1 off stack`) will not match until `cleanup` and `launch` run again.
 - Launch's selftest picks stay out of the ledger (`ignored.selftest`). Rows come only from `pr` observations.
 - The panel paints the ledger JSON. It does not fetch. `app.js` loads `/api/ledger`. Nothing in the browser writes `ledger.jsonl`.
 - Log text stays text. A title cannot add an `img`, `script`, `iframe`, or `svg`, an `on*` attribute, or an `href` taken from anything but a `p-YYYYMMDD-NN` id or `https://github.com/BoydVC/<name>/pull/<integer>`.

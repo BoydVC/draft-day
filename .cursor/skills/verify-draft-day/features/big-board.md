@@ -21,11 +21,13 @@ Preconditions:
 - The seeded selftest has finished in this run's data directory.
 
 - **Open the board.** Load `$URL/`. The heading reads `War Room` and the region named `Big Board` is visible.
-- **Read the rows.** The table contains four pick links. A status chip reads `drafted`, a status chip reads `failed`, and the runs column is not blank.
+- **Read the rows.** Before `seed-ledger`, the table contains four pick links. A status chip reads `drafted`, a status chip reads `failed`, and the runs column is not blank. The intake chip's text is `intake` and CSS paints `INTAKE`.
 - **Proof.** Screenshot `/opt/cursor/artifacts/war-room/big-board.png` with the heading and the four rows visible. `GET $URL/api/board` returns the same four pick ids.
 
 ## Gotchas
 
+- The four selftest rows are on the board only before `seed-ledger`. That seed writes the season logs into this data directory, so a four-row check after it is false. Run this journey on a fresh launch.
 - Inbox rows use the word `queued` instead of a pick id. They are not the seeded picks.
+- Status chips use `text-transform: uppercase`. The intake chip paints `INTAKE` while its text stays `intake`.
 - A failed policy pick is expected. Its idea text is the refusal fixture from selftest, not a fourth product.
 - `board-empty` is not available after `selftest --keep`. Driving it needs a different empty data directory, and this journey does not claim that path.
