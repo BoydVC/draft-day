@@ -116,4 +116,4 @@ Committed copies of the eight frames shot for PR #14 live under `docs/screens/p1
 
 ## Order with the Season Ledger seed
 
-`seed-swap` leaves the model picks in the data directory, and those logs claim pull requests. `seed-ledger polish` after `seed-swap` does not reproduce the polish summary. That seed needs a fresh `control.sh launch` first.
+`seed-ledger polish` needs a fresh launch after `seed-swap`. `seed-swap` leaves the model picks in the data directory, and those logs claim the same pull requests as the season (`p-20261020-01` claims #5 beside `p-20261017-93`). The helper can still print `seeded ledger polish`, because the summary string does not change. The rows do: #5's verdict count becomes 5 instead of 3. A fresh `control.sh launch`, then `seed-ledger polish`, is the run whose #5 row lists only `p-20261017-93`.

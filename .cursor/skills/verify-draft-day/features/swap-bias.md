@@ -37,7 +37,7 @@ Preconditions:
 ## Gotchas
 
 - `seed-swap` replaces each pick's `events.jsonl` from `test/fixtures/ledger/picks.jsonl` and `test/fixtures/swap/models.jsonl`. `seed-swap hostile` also writes `test/fixtures/swap/hostile.jsonl`, skipping a pick id that is not `p-YYYYMMDD-NN`. Run it after `launch`. Another seed adds judged picks; if the counts are not two-pass 12 and flipped 6 (or 16 and 8 after `hostile`), run `control.sh cleanup` then `launch` first.
-- `seed-ledger polish` needs a fresh launch after `seed-swap`. The model picks stay in the data directory and claim pull requests, so the polish summary will not match in this same directory.
+- `seed-ledger polish` needs a fresh launch after `seed-swap`. The model picks stay in this data directory and claim the same pull requests. The polish helper can still print `seeded ledger polish` (the summary string does not change) while #5 lists `p-20261020-01` beside `p-20261017-93`. Run `control.sh cleanup` then `launch` before `seed-ledger polish`.
 - Launch's selftest picks stay out of the swap counts. The base seed is judged 13, two-pass 12, flipped 6. Hostile is judged 17, two-pass 16, flipped 8.
 - The strict sentence is display only. No pick's base changes.
 - The panel paints the stats JSON. It does not fetch. `app.js` loads `/api/stats`.

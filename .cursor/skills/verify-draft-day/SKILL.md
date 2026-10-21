@@ -50,7 +50,7 @@ Open `$URL` in the browser. The shell is `src/ui/index.html`. Prefer accessible 
 
 - The page heading is `War Room`. That `h1` stays `War Room` on a pick page. The pick id is `h2#pick-title`.
 - `New pick` is a form (`aria-label` `New pick`) with textbox `Idea`, textbox `Target`, spinbutton `Candidates` (`input type="number"`, not a textbox), and button `Add pick`. `Add pick` is disabled while a submit is in flight.
-- `Big Board` is a table. Pick ids are links. Inbox rows say `queued` in the Pick column. The four selftest rows are the board only before `seed-ledger`. Status chips use `text-transform: uppercase`, so the intake chip paints `INTAKE` while its text is `intake`.
+- `Big Board` is a table. Pick ids are links. Inbox rows say `queued` in the Pick column. On a fresh launch, before `seed-ledger`, the board is those four selftest rows. Status chips use `text-transform: uppercase`, so the intake chip paints `INTAKE` while its text is `intake`.
 - A pick link goes to `#/picks/<id>` without a reload. `Big Board` is the link back.
 
 Live updates use `EventSource` on `/api/events`. After `Add pick`, the new idea shows on the Big Board without a reload. Recording a pick event while a pick page is open refreshes that page the same way.
@@ -84,6 +84,6 @@ This kills the PID from `/tmp/dd-verify/state.env` and deletes that run's data d
 
 ## Helpers
 
-`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, `seed-timeline`, `seed-lessons`, `seed-replay`, `seed-linter`, `seed-bigboard`, `seed-ledger`, `seed-swap`, or `cleanup` from the repo root. It prints the URL on launch. `seed-timeline` loads `p-20261010-07`. `seed-ledger polish` records `test/fixtures/ledger/ledger-polish.jsonl` after the real season, so #1 is VERIFIED certainty 5 at f51dae8 and 4edd03a, #10 is VERIFIED certainty 5 at ace89ea, and #11 is VERIFIED certainty 5 at af1e78c. The summary is `11 open PRs · stack #1→#11 (10) · merge-safe through #11 · re-run none · 6 fresh, 4 docs-only · 1 off stack`. `seed-ledger polish` needs a fresh launch after `seed-swap`. `seed-swap` leaves model picks in the data directory, and those logs claim pull requests, so the polish summary will not match until `cleanup` and `launch` run again.
+`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, `seed-timeline`, `seed-lessons`, `seed-replay`, `seed-linter`, `seed-bigboard`, `seed-ledger`, `seed-swap`, or `cleanup` from the repo root. It prints the URL on launch. `seed-timeline` loads `p-20261010-07`. `seed-ledger polish` records `test/fixtures/ledger/ledger-polish.jsonl` after the real season, so #1 is VERIFIED certainty 5 at f51dae8 and 4edd03a, #10 is VERIFIED certainty 5 at ace89ea, and #11 is VERIFIED certainty 5 at af1e78c. The summary is `11 open PRs · stack #1→#11 (10) · merge-safe through #11 · re-run none · 6 fresh, 4 docs-only · 1 off stack`. `seed-ledger polish` needs a fresh launch after `seed-swap`. The model picks stay in the data directory and claim the same pull requests, so #5 lists `p-20261020-01` beside `p-20261017-93`. The helper can still print `seeded ledger polish`, because the summary string does not change. Run `cleanup` and `launch` first.
 
 Keep this map honest with `/maintain-verification-skill` when the War Room changes. One correction pass at a time.
