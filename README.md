@@ -4,6 +4,20 @@ Draft Day turns an idea into a verified **draft** pull request. You describe the
 
 This repository is the engine. It does not launch Cursor or GitHub calls. A driver (Grok Bot) reads `dd next` and records what happened.
 
+## How a pick works
+
+One pick, about a minute. The engine records the steps. A driver runs them. The War Room shows them.
+
+1. **Intake.** The idea arrives from chat or the New pick form. `dd intake` files it. The page queues the row and launches nothing.
+2. **Scouting report.** The report holds the restatement, the EARS lines, the rubric, and the angles. `dd lint-scout` checks that each line is gradeable. The panel is `#/picks/<id>/linter` ([fail at 390, dark](docs/screens/p6-linter/linter-fail-390-dark.png)).
+3. **Combine.** Several candidates build that same report, each on its own branch.
+4. **Film Room.** The judge scores the cards and names a base. Replay scrubs the log one event at a time ([event 11 of pick 94, 390 dark](docs/screens/p5-replay/replay-94-at11-390-dark.png)).
+5. **Trade.** The grafter ports one or two plays from the other cards onto the base and opens a draft pull request.
+6. **Physical.** The verify skill drives the journeys and checks the safety fact. Big Board stats then fold the season. The first tile is how often the reversed pass flipped the call ([390 dark](docs/screens/p11-swap-bias/stats-swap-390-dark.png)). At 600 px the same pick rows stack, with a label on each field ([600 dark](docs/screens/p11-swap-bias/stats-swap-600-dark.png)).
+7. **Draft pick.** The pull request stays a draft. The Season Ledger says how far down the stack a merge is safe ([390 dark](docs/screens/p10-polish/ledger-390-dark.png)). The committed polish seed records through the #11 verdict (`af1e78c`). Drafts opened after that seed sit outside `ledger-polish.jsonl`.
+
+Those frames are committed screenshots from the draft stack. The path stops at a draft pull request.
+
 ## Quickstart
 
 Requires Node.js 20 or newer. This tree was checked on Node 22. The project runs TypeScript directly with `node --experimental-strip-types`. There is no compile step and no runtime dependency.
@@ -67,7 +81,7 @@ A brand-new pick rests in `intake` until the scouting report is recorded. `scout
 
 | Command | What it does |
 |---|---|
-| `stats` | Big Board stats: angles, trades, verify rate, time per stage. Optional `--since` and `--until`. |
+| `stats` | Big Board stats: angles, trades, verify rate, swap bias, and time per stage. Optional `--since` and `--until`. |
 | `ledger` | Season ledger: merge call, re-run list, and one row per open pull request. |
 | `ledger import-prs` | Append a pulls file (`--at` is the observation time). |
 | `ledger record` | Append verdict and drift lines. A verdict outside a pick log must be recorded here. |
