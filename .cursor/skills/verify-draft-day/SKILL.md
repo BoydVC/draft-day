@@ -76,6 +76,6 @@ This kills the PID from `/tmp/dd-verify/state.env` and deletes that run's data d
 
 ## Helpers
 
-`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, or `cleanup` from the repo root. It prints the URL on launch.
+`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, `seed-timeline`, `seed-lessons`, or `cleanup` from the repo root. It prints the URL on launch.
 
 Keep this map honest with `/maintain-verification-skill` when the War Room changes. One correction pass at a time.
