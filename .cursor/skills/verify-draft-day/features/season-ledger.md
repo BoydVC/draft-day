@@ -15,7 +15,7 @@ How far down the open draft stack Boyd can merge right now, and which pull reque
 - `control.sh launch`, then `control.sh seed-ledger`. That prints `seeded ledger`.
 - The Big Board link `Ledger` goes to `#/ledger`. `Big Board` on the ledger view returns to `#/`.
 - `control.sh seed-ledger tuesday` appends the two projection lines and prints `seeded ledger tuesday`.
-- `control.sh seed-ledger polish` appends `test/fixtures/ledger/ledger-polish.jsonl` and prints `seeded ledger polish`. #1 is fresh, VERIFIED certainty 5 at f51dae8 and at 4edd03a. #11 is fresh, VERIFIED certainty 5 at af1e78c.
+- `control.sh seed-ledger polish` appends `test/fixtures/ledger/ledger-polish.jsonl` and prints `seeded ledger polish`. #1 is fresh, VERIFIED certainty 5 at f51dae8 and at 4edd03a. #10 is fresh, VERIFIED certainty 5 at ace89ea (`verified at ace89ea (certainty 5)`). #11 is fresh, VERIFIED certainty 5 at af1e78c. The summary is `11 open PRs · stack #1→#11 (10) · merge-safe through #11 · re-run none · 6 fresh, 4 docs-only · 1 off stack`.
 
 ## Driving it with the browser
 
