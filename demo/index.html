@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Draft Day</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app" data-phase="0">
+    <header class="top">
+      <div class="brand">
+        <span class="ball" aria-hidden="true">🏈</span>
+        <span class="name">Draft Day</span>
+        <span class="pipe">idea → spec → arena → PR</span>
+      </div>
+      <div class="top-right">
+        <span class="live"><span class="dot"></span> <span id="agents-live">6</span> agents live</span>
+        <button class="new-idea" type="button">+ New Idea</button>
+      </div>
+    </header>
+
+    <main class="board">
+      <!-- IDEAS -->
+      <section class="col" id="col-ideas">
+        <h2><span class="ico">💡</span> IDEAS <span class="count" id="ideas-count">4</span></h2>
+        <div class="cards" id="ideas-cards">
+          <article class="card idea" data-id="new" id="idea-new" hidden>
+            <div class="title">Webhook retry queue</div>
+            <div class="meta"><span class="badge queued">queued</span> · just now</div>
+          </article>
+          <article class="card idea" data-id="dark">
+            <div class="title">Dark mode for settings</div>
+            <div class="meta"><span class="badge queued">queued</span> · 2m ago</div>
+          </article>
+          <article class="card idea" data-id="csv">
+            <div class="title">CSV export for reports</div>
+            <div class="meta"><span class="badge queued">queued</span> · 9m ago</div>
+          </article>
+          <article class="card idea" data-id="cold">
+            <div class="title">Faster cold start</div>
+            <div class="meta"><span class="badge triage">triage</span></div>
+          </article>
+          <article class="card idea" data-id="keys">
+            <div class="title">Keyboard shortcuts sheet</div>
+            <div class="meta"><span class="badge triage">triage</span></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- SPECS -->
+      <section class="col" id="col-specs">
+        <h2><span class="ico">📝</span> SPECS <span class="count" id="specs-count">3</span></h2>
+        <div class="cards" id="specs-cards">
+          <article class="card spec" data-id="offline">
+            <div class="title">Offline sync v2</div>
+            <div class="meta">spec ready · 14 acceptance checks</div>
+          </article>
+          <article class="card spec active" data-id="billing" id="spec-billing">
+            <div class="title">Billing retry flow</div>
+            <div class="meta"><span id="billing-label">drafting · 18%</span></div>
+            <div class="bar"><div class="fill purple" id="billing-bar" style="width:18%"></div></div>
+          </article>
+          <article class="card spec" data-id="search">
+            <div class="title">Search ranking tweak</div>
+            <div class="meta">review</div>
+          </article>
+          <article class="card spec arriving" data-id="webhook" id="spec-webhook" hidden>
+            <div class="title">Webhook retry queue</div>
+            <div class="meta"><span class="badge drafting">drafting · 0%</span></div>
+            <div class="bar"><div class="fill purple" style="width:0%"></div></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- ARENA -->
+      <section class="col" id="col-arena">
+        <h2><span class="ico">⚔️</span> ARENA · OFFLINE SYNC V2</h2>
+        <div class="cards arena" id="arena-cards">
+          <article class="card cand" id="cand-a" data-score="72">
+            <div class="row">
+              <span class="cname">Candidate A</span>
+              <span class="score green" id="score-a">72</span>
+            </div>
+            <div class="bar"><div class="fill green" id="bar-a" style="width:72%"></div></div>
+            <div class="meta" id="meta-a">11/14 checks · 240 lines</div>
+          </article>
+          <article class="card cand" id="cand-b" data-score="61">
+            <div class="row">
+              <span class="cname">Candidate B</span>
+              <span class="score yellow" id="score-b">61</span>
+            </div>
+            <div class="bar"><div class="fill yellow" id="bar-b" style="width:61%"></div></div>
+            <div class="meta" id="meta-b">9/14 checks · 410 lines</div>
+          </article>
+          <article class="card cand" id="cand-c" data-score="28">
+            <div class="row">
+              <span class="cname">Candidate C</span>
+              <span class="score red" id="score-c">28</span>
+            </div>
+            <div class="bar"><div class="fill red" id="bar-c" style="width:28%"></div></div>
+            <div class="meta" id="meta-c">tests failing</div>
+          </article>
+          <article class="card cand running" id="cand-d" data-score="12">
+            <div class="row">
+              <span class="cname">Candidate D</span>
+              <span class="score blue" id="score-d">…</span>
+            </div>
+            <div class="bar"><div class="fill blue" id="bar-d" style="width:12%"></div></div>
+            <div class="meta" id="meta-d">running · 0m</div>
+          </article>
+        </div>
+      </section>
+
+      <!-- DRAFT PRS -->
+      <section class="col" id="col-prs">
+        <h2><span class="ico">✅</span> DRAFT PRS <span class="count" id="prs-count">3</span></h2>
+        <div class="cards" id="prs-cards">
+          <article class="card pr" id="pr-418">
+            <div class="title">#418 Offline sync v2</div>
+            <div class="meta" id="pr-418-meta"><span class="status pending">draft · CI running</span></div>
+          </article>
+          <article class="card pr">
+            <div class="title">#415 Retry on 429</div>
+            <div class="meta"><span class="status ok">verified · merged</span></div>
+          </article>
+          <article class="card pr">
+            <div class="title">#411 Empty-state copy</div>
+            <div class="meta"><span class="status warn">awaiting review</span></div>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="metrics">
+      <div>Ideas shipped this week <strong id="m-shipped">11</strong></div>
+      <div>Avg idea → PR <strong id="m-avg">47 min</strong></div>
+      <div>Arena win rate vs single-shot <strong class="green" id="m-win">+38%</strong></div>
+      <div>Checks passed <strong id="m-checks">96%</strong></div>
+    </footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
