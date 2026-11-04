@@ -366,9 +366,9 @@ test("R15 wiring", () => {
   const html = readFileSync(join(root, "src/ui/index.html"), "utf8");
   assert.match(http, /"\/replay\.js", "\/replay\.css"/);
   const sheets = [...html.matchAll(/<link\b[^>]*href="\/([^"]+\.css)"/g)].map((match) => match[1]);
-  assert.deepEqual(sheets, ["styles.css", "timeline.css", "lessons.css", "replay.css", "linter.css", "bigboard.css"]);
+  assert.deepEqual(sheets, ["styles.css", "timeline.css", "lessons.css", "replay.css", "linter.css", "bigboard.css", "ledger.css"]);
   const scripts = [...html.matchAll(/<script\b[^>]*src="\/([^"]+\.js)"/g)].map((match) => match[1]);
-  assert.deepEqual(scripts, ["timeline.js", "lessons.js", "replay.js", "linter.js", "bigboard.js", "app.js"]);
+  assert.deepEqual(scripts, ["timeline.js", "lessons.js", "replay.js", "linter.js", "bigboard.js", "ledger.js", "app.js"]);
 });
 
 test("R16 replay.js source rules", () => {

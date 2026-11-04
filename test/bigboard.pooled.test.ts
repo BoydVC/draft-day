@@ -48,11 +48,11 @@ const SHA: Record<string, string> = {
   "README.md": "d5593eb14d45bc0f79cc3042fc9b4521f2d07066ee6cf919c7331da74506644a",
 };
 const NAMED = new Set("black white red green blue gray grey orange yellow purple pink brown cyan magenta navy teal olive maroon silver lime aqua fuchsia".split(" "));
-const SHEETS = 'assert.deepEqual(sheets, ["styles.css", "timeline.css", "lessons.css", "replay.css", "linter.css", "bigboard.css"]);';
-const SCRIPTS = 'assert.deepEqual(scripts, ["timeline.js", "lessons.js", "replay.js", "linter.js", "bigboard.js", "app.js"]);';
+const SHEETS = 'assert.deepEqual(sheets, ["styles.css", "timeline.css", "lessons.css", "replay.css", "linter.css", "bigboard.css", "ledger.css"]);';
+const SCRIPTS = 'assert.deepEqual(scripts, ["timeline.js", "lessons.js", "replay.js", "linter.js", "bigboard.js", "ledger.js", "app.js"]);';
 const OLD_SHEETS = 'assert.deepEqual(sheets, ["styles.css", "timeline.css", "lessons.css", "replay.css", "linter.css"]);';
 const OLD_SCRIPTS = 'assert.deepEqual(scripts, ["timeline.js", "lessons.js", "replay.js", "linter.js", "app.js"]);';
-const SLICE = 'assert.deepEqual(scripts.slice(scriptAt, scriptAt + 4), ["replay.js", "linter.js", "bigboard.js", "app.js"]);';
+const SLICE = 'assert.deepEqual(scripts.slice(scriptAt, scriptAt + 5), ["replay.js", "linter.js", "bigboard.js", "ledger.js", "app.js"]);';
 const OLD_SLICE = 'assert.deepEqual(scripts.slice(scriptAt, scriptAt + 3), ["replay.js", "linter.js", "app.js"]);';
 
 interface ExpectedRow {
@@ -848,7 +848,7 @@ test("B16 wiring", () => {
   const sheets = [...html.matchAll(/<link\b[^>]*\bhref="\/([^"]+\.css)"/g)].map((match) => match[1]);
   const scripts = [...html.matchAll(/<script\b[^>]*\bsrc="\/([^"]+\.js)"/g)].map((match) => match[1]);
   assert.deepEqual(sheets.slice(sheets.indexOf("linter.css"), sheets.indexOf("linter.css") + 2), ["linter.css", "bigboard.css"]);
-  assert.deepEqual(scripts.slice(scripts.indexOf("linter.js"), scripts.indexOf("linter.js") + 3), ["linter.js", "bigboard.js", "app.js"]);
+  assert.deepEqual(scripts.slice(scripts.indexOf("linter.js"), scripts.indexOf("linter.js") + 4), ["linter.js", "bigboard.js", "ledger.js", "app.js"]);
   const files = http.split("\n").find((line) => line.includes("const files"));
   assert.ok(files, "static files array");
   assert.match(files, /"\/linter\.js", "\/linter\.css", "\/bigboard\.js", "\/bigboard\.css"/);

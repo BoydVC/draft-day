@@ -19,6 +19,13 @@ import {
   lessonWindow,
   lessonsJson,
   lessonsText,
+  ledgerJson,
+  ledgerLine,
+  ledgerText,
+  prEntriesFromPulls,
+  readLedger,
+  seasonLedger,
+  validLedgerAt,
   lintScoutingReport,
   lintText,
   loadConfig,
@@ -41,6 +48,7 @@ import {
   type Pick,
 } from "../core/index.ts";
 import { allocatePickId, commitPick, loadLogs, loadPicks, readEvents } from "../store/eventlog.ts";
+import { appendLedger, readLedgerFile } from "../store/ledger.ts";
 import { inboxCursor, readInbox } from "../store/inbox.ts";
 import { startServer } from "../server/http.ts";
 import { CLOSE, drive, HAPPY, POLICY, WALK, type DriverIo } from "../../test/fixtures/fake-driver.ts";
@@ -619,6 +627,72 @@ async function timelineCommand(paths: Paths, pickId: string | undefined): Promis
   return 0;
 }
 
+async function ledgerTargets(paths: Paths): Promise<string[]> {
+  let targets: string[];
+  try {
+    targets = await loadTargets(paths.targetsPath);
+  } catch (error) {
+    throw new Exit(error instanceof Error ? error.message : "bad targets", 1);
+  }
+  if (targets.length === 0) throw new Exit("no targets", 1);
+  return targets;
+}
+
+async function readLedgerSource(paths: Paths, file: string): Promise<string> {
+  if (file === "-") {
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+    return Buffer.concat(chunks).toString("utf8");
+  }
+  try {
+    return await readFile(resolve(paths.cwd, file), "utf8");
+  } catch {
+    throw new Exit(`cannot read ${file}`, 1);
+  }
+}
+
+async function ledgerCommand(paths: Paths, rest: string[], flags: Flags): Promise<number> {
+  const sub = rest[0];
+  const targets = await ledgerTargets(paths);
+  if (!sub) {
+    const ledger = seasonLedger(await loadLogs(paths.dataDir), await readLedgerFile(paths.dataDir, targets), targets[0] ?? "", Date.now());
+    if (paths.json) console.log(ledgerJson(ledger));
+    else console.log(ledgerText(ledger));
+    return 0;
+  }
+  if (sub === "import-prs") {
+    const file = rest[1];
+    if (!file) throw new Exit("import-prs needs a pulls file", 1);
+    const at = flag(flags, "at") ?? new Date().toISOString();
+    if (!validLedgerAt(at)) throw new Exit("bad at", 1);
+    let pulls: unknown;
+    try {
+      pulls = JSON.parse(await readLedgerSource(paths, file));
+    } catch (error) {
+      if (error instanceof Exit) throw error;
+      throw new Exit("not JSON", 1);
+    }
+    const parsed = prEntriesFromPulls(pulls, at, targets);
+    if (!parsed.ok) throw new Exit(parsed.reason, 1);
+    const result = await appendLedger(paths.dataDir, parsed.entries.map((entry) => ledgerLine(entry)));
+    console.log(`ledger +${result.added} (${result.already} already recorded)`);
+    return 0;
+  }
+  if (sub === "record") {
+    const file = rest[1];
+    if (!file) throw new Exit("record needs a file", 1);
+    const book = readLedger(await readLedgerSource(paths, file), targets);
+    if (book.skipped.length > 0) {
+      for (const skip of book.skipped) console.error(`line ${skip.line}: ${skip.reason}`);
+      return 1;
+    }
+    const result = await appendLedger(paths.dataDir, book.entries.map((row) => ledgerLine(row.entry)));
+    console.log(`ledger +${result.added} (${result.already} already recorded)`);
+    return 0;
+  }
+  throw new Exit(`unknown ledger command ${sub}`, 2);
+}
+
 function help(): string {
   return [
     "dd intake --idea TEXT --source chat --target BoydVC/draft-day [--n 3] [--approval ask]",
@@ -631,6 +705,9 @@ function help(): string {
     "dd brief <pickId> <candidate|judge|graft|physical> [cand]",
     "dd lessons [--since YYYY-MM-DD] [--until YYYY-MM-DD]",
     "dd stats [--since YYYY-MM-DD] [--until YYYY-MM-DD]",
+    "dd ledger [--json]",
+    "dd ledger import-prs <pulls.json> [--at ISO]",
+    "dd ledger record <file.jsonl|->",
     "dd lint-scout <file>|--pick <id>",
     "dd serve [--port 4420] [--host 127.0.0.1]",
     "dd doctor",
@@ -667,6 +744,8 @@ export async function main(argv: string[]): Promise<number> {
         return await lessons(paths, flags);
       case "stats":
         return await stats(paths, flags);
+      case "ledger":
+        return await ledgerCommand(paths, rest, flags);
       case "lint-scout":
         return await lintScout(paths, rest[0], flags);
       case "serve":

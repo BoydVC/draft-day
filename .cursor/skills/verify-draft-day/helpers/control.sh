@@ -211,6 +211,59 @@ PY
     rm -f "$body"
     echo "seeded bigboard"
     ;;
+  seed-ledger)
+    load_state
+    cd "$ROOT"
+    node -e 'const fs=require("fs"),p=require("path");const by=new Map();for(const line of fs.readFileSync(process.argv[1],"utf8").split("\n")){if(!line.trim())continue;const row=JSON.parse(line);if(!by.has(row.pickId))by.set(row.pickId,[]);by.get(row.pickId).push(row.event)}for(const [id,events] of by){const dir=p.join(process.argv[2],"picks",id);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(p.join(dir,"events.jsonl"),events.map((event)=>JSON.stringify(event)).join("\n")+"\n")}' "$ROOT/test/fixtures/ledger/picks.jsonl" "$DATA"
+    node --experimental-strip-types src/cli/dd.ts ledger import-prs test/fixtures/ledger/pulls.json --at 2026-10-19T13:45:00.000Z --data "$DATA"
+    sed -n '10,21p' "$ROOT/test/fixtures/ledger/ledger-real.jsonl" | node --experimental-strip-types src/cli/dd.ts ledger record - --data "$DATA"
+    if ! cmp -s "$DATA/ledger.jsonl" "$ROOT/test/fixtures/ledger/ledger-real.jsonl"; then
+      echo "seed-ledger: ledger.jsonl does not match ledger-real.jsonl" >&2
+      echo "run control.sh cleanup then launch first (other seeds add picks that claim PRs)" >&2
+      exit 1
+    fi
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/ledger")"
+    python3 - "$body" "$code" <<'PY'
+import json, sys
+code = sys.argv[2]
+want = "9 open PRs \u00b7 stack #1\u2192#9 (8) \u00b7 merge-safe through none \u00b7 re-run #1 \u00b7 3 fresh, 4 docs-only, 1 unverified \u00b7 1 off stack"
+if code != "200":
+    print(f"seed-ledger: GET /api/ledger returned {code}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add picks that claim PRs)", file=sys.stderr)
+    sys.exit(1)
+data = json.load(open(sys.argv[1]))
+summary = data.get("summary", "")
+if summary != want:
+    print(f"seed-ledger: summary was {summary}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add picks that claim PRs)", file=sys.stderr)
+    sys.exit(1)
+PY
+    rm -f "$body"
+    echo "seeded ledger"
+    if [[ "${2:-}" == "tuesday" ]]; then
+      sed -n '22,23p' "$ROOT/test/fixtures/ledger/ledger-tuesday.jsonl" | node --experimental-strip-types src/cli/dd.ts ledger record - --data "$DATA"
+      body="$(mktemp)"
+      code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/ledger")"
+      python3 - "$body" "$code" <<'PY'
+import json, sys
+code = sys.argv[2]
+want = "8 open PRs \u00b7 stack #1\u2192#9 (8) \u00b7 merge-safe through #9 \u00b7 re-run none \u00b7 4 fresh, 4 docs-only"
+if code != "200":
+    print(f"seed-ledger: GET /api/ledger returned {code}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add picks that claim PRs)", file=sys.stderr)
+    sys.exit(1)
+data = json.load(open(sys.argv[1]))
+summary = data.get("summary", "")
+if summary != want:
+    print(f"seed-ledger: summary was {summary}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add picks that claim PRs)", file=sys.stderr)
+    sys.exit(1)
+PY
+      rm -f "$body"
+      echo "seeded ledger tuesday"
+    fi
+    ;;
   cleanup)
     load_state
     if kill -0 "$PID" 2>/dev/null; then
@@ -230,7 +283,7 @@ PY
     echo "cleaned pid ${PID:-?} data ${DATA:-?}"
     ;;
   *)
-    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|seed-linter|seed-bigboard|cleanup" >&2
+    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|seed-linter|seed-bigboard|seed-ledger|cleanup" >&2
     exit 2
     ;;
 esac
