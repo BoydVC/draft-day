@@ -249,12 +249,14 @@ test("W5 no color literals", () => {
   const colorProp = /^(?:color|background|background-color|border|border-color|border-top|border-right|border-bottom|border-left|outline|outline-color|box-shadow|fill|stroke|caret-color|text-decoration-color|column-rule-color)$/i;
   const replayCss = readFileSync(join(root, "src/ui/replay.css"), "utf8");
   const linterCss = readFileSync(join(root, "src/ui/linter.css"), "utf8");
+  const bigboardCss = readFileSync(join(root, "src/ui/bigboard.css"), "utf8");
   const files: Array<[string, string]> = [
     ["styles.css", rest],
     ["timeline.css", timelineCss],
     ["lessons.css", lessonsCss],
     ["replay.css", replayCss],
     ["linter.css", linterCss],
+    ["bigboard.css", bigboardCss],
   ];
   for (const [name, css] of files) {
     const clean = css.replace(/\/\*[\s\S]*?\*\//g, "");
