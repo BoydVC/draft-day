@@ -112,7 +112,7 @@ Probes use `test/fixtures/phone/cdp-shot.mjs`. The tool sets an iPhone user agen
 | 390×844 dark, `until=2026-10-01` | `stats-swap-empty-390-dark.png` | `No judged picks yet`. |
 | 390×844 dark, `since=2026-10-18` | `stats-swap-window-390-dark.png` | `Reversed pass flipped 3 of 5 two-pass picks (60%)`. |
 
-Committed copies of the eight frames shot for PR #14 live under `docs/screens/p11-swap-bias/`. The 600 px frame is part of this shot list; those eight files are not re-shot here.
+Committed copies live under `docs/screens/p11-swap-bias/`: the eight frames shot for PR #14, plus `stats-swap-600-dark.png` (600×800 dark, pick rows stacked, one label per field). Those eight frames are not re-shot here.
 
 ## Order with the Season Ledger seed
 
