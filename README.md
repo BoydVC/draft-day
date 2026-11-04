@@ -1,5 +1,9 @@
 # Draft Day
 
+![Draft Day](screenshots/00-best-home.png)
+
+Draft Day: idea -> spec -> cloud agent arena -> verified draft PR
+
 Draft Day turns an idea into a verified **draft** pull request. You describe the change, the engine writes a scouting report, sends several candidates through the Combine, judges them on film, trades in a play or two, and puts the winner through a physical. The War Room shows every pick. Nothing here merges, deploys, or enables auto-merge.
 
 This repository is the engine. It does not launch Cursor or GitHub calls. A driver (Grok Bot) reads `dd next` and records what happened.
