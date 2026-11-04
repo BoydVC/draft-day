@@ -1,0 +1,191 @@
+[
+  {
+    "number": 9,
+    "title": "Draft Day Pick 7: Big Board stats (SPEC 008)",
+    "state": "open",
+    "draft": true,
+    "merged_at": null,
+    "head": {
+      "ref": "dd/p7-big-board",
+      "sha": "93dca59db747e8306ab460e38d7ddf978031987e",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    },
+    "base": {
+      "ref": "dd/p6-linter",
+      "sha": "dc38660f2f3fdaadcfd2e879693e24cb21a05eba",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    }
+  },
+  {
+    "number": 8,
+    "title": "Draft Day Pick 6: Scouting Report linter (SPEC 007)",
+    "state": "open",
+    "draft": true,
+    "merged_at": null,
+    "head": {
+      "ref": "dd/p6-linter",
+      "sha": "dc38660f2f3fdaadcfd2e879693e24cb21a05eba",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    },
+    "base": {
+      "ref": "dd/p5-replay",
+      "sha": "d1bd73c075173336f2d3a15b3a2ee288163b7b32",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    }
+  },
+  {
+    "number": 7,
+    "title": "Draft Day Pick 5: Replay mode (SPEC 006)",
+    "state": "open",
+    "draft": true,
+    "merged_at": null,
+    "head": {
+      "ref": "dd/p5-replay",
+      "sha": "d1bd73c075173336f2d3a15b3a2ee288163b7b32",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    },
+    "base": {
+      "ref": "dd/p4-phone",
+      "sha": "c6cfad415576c2c14653955aff972a6d8c613ab1",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    }
+  },
+  {
+    "number": 6,
+    "title": "Draft Day Pick 4: Phone War Room (SPEC 005)",
+    "state": "open",
+    "draft": true,
+    "merged_at": null,
+    "head": {
+      "ref": "dd/p4-phone",
+      "sha": "154cb7110684302a1724a094313fe371776dfd99",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    },
+    "base": {
+      "ref": "dd/p3-lessons",
+      "sha": "e242a533d04d68a5a4472bce283eb06866e79d96",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    }
+  },
+  {
+    "number": 5,
+    "title": "Draft Day Pick 3: Lessons + gardener (SPEC 004)",
+    "state": "open",
+    "draft": true,
+    "merged_at": null,
+    "head": {
+      "ref": "dd/p3-lessons",
+      "sha": "1f8610bbd5ddbe4d0f49dbfd319a1eec8a96689f",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    },
+    "base": {
+      "ref": "dd/p2-timeline",
+      "sha": "60b1625518f61de576205c73318afd54c3384798",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    }
+  },
+  {
+    "number": 4,
+    "title": "SPEC 004 pooled lessons cross-tests",
+    "state": "open",
+    "draft": true,
+    "merged_at": null,
+    "head": {
+      "ref": "dd/p3-lessons-judge",
+      "sha": "66e4fa03ba78a00c656c3e4f394b2ec1fd40c47c",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    },
+    "base": {
+      "ref": "dd/p2-timeline",
+      "sha": "60b1625518f61de576205c73318afd54c3384798",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    }
+  },
+  {
+    "number": 3,
+    "title": "Draft Day Pick 2: Pick timeline (SPEC 003)",
+    "state": "open",
+    "draft": true,
+    "merged_at": null,
+    "head": {
+      "ref": "dd/p2-timeline",
+      "sha": "8230d9b7390d3f55a6a44a2315a8288d3b937134",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    },
+    "base": {
+      "ref": "dd/p1-film-room",
+      "sha": "ecec54cd11a08d2b5ddb7b318db37237e76d3c99",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    }
+  },
+  {
+    "number": 2,
+    "title": "Draft Day Pick 1: Film Room scorecards (SPEC 002)",
+    "state": "open",
+    "draft": true,
+    "merged_at": null,
+    "head": {
+      "ref": "dd/p1-film-room",
+      "sha": "84ed4466d0b45b9067c47b3e16470be0a23ae98b",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    },
+    "base": {
+      "ref": "dd/scaffold",
+      "sha": "f51dae856e0018258732d09507de5e41429cc277",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    }
+  },
+  {
+    "number": 1,
+    "title": "Scaffold the Draft Day engine (SPEC 001)",
+    "state": "open",
+    "draft": true,
+    "merged_at": null,
+    "head": {
+      "ref": "dd/scaffold",
+      "sha": "f51dae856e0018258732d09507de5e41429cc277",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    },
+    "base": {
+      "ref": "main",
+      "sha": "868f77942d85f7d53008a819694161095e04bc12",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    }
+  }
+]

@@ -1,0 +1,781 @@
+{
+ "spec": "SPEC-009",
+ "import": {
+  "pulls": "pulls.json",
+  "at": "2026-10-19T13:45:00.000Z",
+  "allowlist": [
+   "BoydVC/draft-day"
+  ],
+  "equalsLines": {
+   "file": "ledger-real.jsonl",
+   "from": 1,
+   "to": 9
+  }
+ },
+ "rows": [
+  {
+   "case": "real",
+   "logs": [
+    "picks.jsonl"
+   ],
+   "ledger": "ledger-real.jsonl",
+   "allowlist": [
+    "BoydVC/draft-day"
+   ],
+   "repo": "BoydVC/draft-day",
+   "now": "2026-10-19T14:00:00.000Z",
+   "expected": {
+    "summary": "9 open PRs · stack #1→#9 (8) · merge-safe through none · re-run #1 · 3 fresh, 4 docs-only, 1 unverified · 1 off stack",
+    "open": 9,
+    "stack": [
+     1,
+     2,
+     3,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "offStack": [
+     4
+    ],
+    "mergeSafeThrough": null,
+    "rerun": [
+     1
+    ],
+    "notDraft": [],
+    "closed": [],
+    "merged": [],
+    "counts": {
+     "fresh": 3,
+     "docs-only": 4,
+     "stale": 0,
+     "failed": 0,
+     "unverified": 1
+    },
+    "rows": [
+     [
+      1,
+      1,
+      null,
+      "unverified",
+      null,
+      "f51dae8",
+      "",
+      0,
+      "no verdict"
+     ],
+     [
+      2,
+      2,
+      1,
+      "docs-only",
+      "ecec54c",
+      "84ed446",
+      "",
+      2,
+      "verified at ecec54c; head 84ed446 changed docs only (9 files)"
+     ],
+     [
+      3,
+      3,
+      2,
+      "docs-only",
+      "60b1625",
+      "8230d9b",
+      "",
+      2,
+      "verified at 60b1625; head 8230d9b changed docs only (9 files)"
+     ],
+     [
+      5,
+      4,
+      3,
+      "docs-only",
+      "e242a53",
+      "1f8610b",
+      "p-20261017-93",
+      3,
+      "verified at e242a53; head 1f8610b changed docs only (6 files)"
+     ],
+     [
+      6,
+      5,
+      5,
+      "docs-only",
+      "c6cfad4",
+      "154cb71",
+      "p-20261017-94",
+      3,
+      "verified at c6cfad4; head 154cb71 changed docs only (8 files)"
+     ],
+     [
+      7,
+      6,
+      6,
+      "fresh",
+      "d1bd73c",
+      "d1bd73c",
+      "p-20261017-95",
+      2,
+      "verified at d1bd73c (certainty 5)"
+     ],
+     [
+      8,
+      7,
+      7,
+      "fresh",
+      "dc38660",
+      "dc38660",
+      "p-20261018-96",
+      2,
+      "verified at dc38660 (certainty 5)"
+     ],
+     [
+      9,
+      8,
+      8,
+      "fresh",
+      "93dca59",
+      "93dca59",
+      "p-20261018-97",
+      1,
+      "verified at 93dca59 (certainty 5)"
+     ],
+     [
+      4,
+      null,
+      3,
+      "unverified",
+      null,
+      "66e4fa0",
+      "",
+      0,
+      "no verdict"
+     ]
+    ],
+    "skipped": {
+     "lines": [],
+     "logs": []
+    },
+    "ignored": {
+     "otherRepo": 0,
+     "selftest": 0,
+     "otherTarget": 0,
+     "badVerdicts": 0
+    }
+   }
+  },
+  {
+   "case": "tuesday",
+   "logs": [
+    "picks.jsonl"
+   ],
+   "ledger": "ledger-tuesday.jsonl",
+   "allowlist": [
+    "BoydVC/draft-day"
+   ],
+   "repo": "BoydVC/draft-day",
+   "now": "2026-10-20T15:00:00.000Z",
+   "expected": {
+    "summary": "8 open PRs · stack #1→#9 (8) · merge-safe through #9 · re-run none · 4 fresh, 4 docs-only",
+    "open": 8,
+    "stack": [
+     1,
+     2,
+     3,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "offStack": [],
+    "mergeSafeThrough": 9,
+    "rerun": [],
+    "notDraft": [],
+    "closed": [
+     4
+    ],
+    "merged": [],
+    "counts": {
+     "fresh": 4,
+     "docs-only": 4,
+     "stale": 0,
+     "failed": 0,
+     "unverified": 0
+    },
+    "rows": [
+     [
+      1,
+      1,
+      null,
+      "fresh",
+      "f51dae8",
+      "f51dae8",
+      "",
+      1,
+      "verified at f51dae8 (certainty 5)"
+     ],
+     [
+      2,
+      2,
+      1,
+      "docs-only",
+      "ecec54c",
+      "84ed446",
+      "",
+      2,
+      "verified at ecec54c; head 84ed446 changed docs only (9 files)"
+     ],
+     [
+      3,
+      3,
+      2,
+      "docs-only",
+      "60b1625",
+      "8230d9b",
+      "",
+      2,
+      "verified at 60b1625; head 8230d9b changed docs only (9 files)"
+     ],
+     [
+      5,
+      4,
+      3,
+      "docs-only",
+      "e242a53",
+      "1f8610b",
+      "p-20261017-93",
+      3,
+      "verified at e242a53; head 1f8610b changed docs only (6 files)"
+     ],
+     [
+      6,
+      5,
+      5,
+      "docs-only",
+      "c6cfad4",
+      "154cb71",
+      "p-20261017-94",
+      3,
+      "verified at c6cfad4; head 154cb71 changed docs only (8 files)"
+     ],
+     [
+      7,
+      6,
+      6,
+      "fresh",
+      "d1bd73c",
+      "d1bd73c",
+      "p-20261017-95",
+      2,
+      "verified at d1bd73c (certainty 5)"
+     ],
+     [
+      8,
+      7,
+      7,
+      "fresh",
+      "dc38660",
+      "dc38660",
+      "p-20261018-96",
+      2,
+      "verified at dc38660 (certainty 5)"
+     ],
+     [
+      9,
+      8,
+      8,
+      "fresh",
+      "93dca59",
+      "93dca59",
+      "p-20261018-97",
+      1,
+      "verified at 93dca59 (certainty 5)"
+     ]
+    ],
+    "skipped": {
+     "lines": [],
+     "logs": []
+    },
+    "ignored": {
+     "otherRepo": 0,
+     "selftest": 0,
+     "otherTarget": 0,
+     "badVerdicts": 0
+    }
+   }
+  },
+  {
+   "case": "edges",
+   "logs": [],
+   "ledger": "ledger-edges.jsonl",
+   "allowlist": [
+    "BoydVC/draft-day",
+    "BoydVC/bot-island"
+   ],
+   "repo": "BoydVC/draft-day",
+   "now": "2026-10-19T14:00:00.000Z",
+   "expected": {
+    "summary": "13 open PRs · stack #2→#9 (7) · merge-safe through #2 · re-run #3, #5, #6, #8, #9 · 2 fresh, 2 stale, 2 failed, 1 unverified · 6 off stack · NOT DRAFT #6",
+    "open": 13,
+    "stack": [
+     2,
+     3,
+     5,
+     6,
+     7,
+     8,
+     9
+    ],
+    "offStack": [
+     4,
+     10,
+     11,
+     14,
+     15,
+     16
+    ],
+    "mergeSafeThrough": 2,
+    "rerun": [
+     3,
+     5,
+     6,
+     8,
+     9
+    ],
+    "notDraft": [
+     6
+    ],
+    "closed": [
+     12
+    ],
+    "merged": [
+     1
+    ],
+    "counts": {
+     "fresh": 2,
+     "docs-only": 0,
+     "stale": 2,
+     "failed": 2,
+     "unverified": 1
+    },
+    "rows": [
+     [
+      2,
+      1,
+      null,
+      "fresh",
+      "dc18859",
+      "dc18859",
+      "",
+      1,
+      "verified at dc18859 (certainty 5)"
+     ],
+     [
+      3,
+      2,
+      2,
+      "failed",
+      "0e647f2",
+      "0e647f2",
+      "",
+      3,
+      "NOT_VERIFIED at 0e647f2"
+     ],
+     [
+      5,
+      3,
+      3,
+      "stale",
+      "328477c",
+      "9a636f7",
+      "",
+      1,
+      "verified at 328477c; head moved to 9a636f7 (2 files, not docs-only)"
+     ],
+     [
+      6,
+      4,
+      5,
+      "stale",
+      "d5ad696",
+      "78afa19",
+      "",
+      1,
+      "verified at d5ad696; head moved to 78afa19"
+     ],
+     [
+      7,
+      5,
+      6,
+      "fresh",
+      "4af33a2",
+      "4af33a2",
+      "",
+      1,
+      "verified at 4af33a2 (certainty 5)"
+     ],
+     [
+      8,
+      6,
+      7,
+      "unverified",
+      null,
+      "aebf2f7",
+      "",
+      1,
+      "last NOT_VERIFIED at 4ac4037; head moved to aebf2f7"
+     ],
+     [
+      9,
+      7,
+      8,
+      "failed",
+      null,
+      "c3d7dd3",
+      "",
+      1,
+      "INCONCLUSIVE at c3d7dd3"
+     ],
+     [
+      4,
+      null,
+      3,
+      "unverified",
+      null,
+      "2092de6",
+      "",
+      0,
+      "no verdict"
+     ],
+     [
+      10,
+      null,
+      null,
+      "unverified",
+      null,
+      "347014b",
+      "",
+      0,
+      "no verdict"
+     ],
+     [
+      11,
+      null,
+      10,
+      "unverified",
+      null,
+      "eac9602",
+      "",
+      0,
+      "no verdict"
+     ],
+     [
+      14,
+      null,
+      8,
+      "unverified",
+      null,
+      "01ac5e3",
+      "",
+      0,
+      "no verdict"
+     ],
+     [
+      15,
+      null,
+      16,
+      "unverified",
+      null,
+      "9b2196d",
+      "",
+      0,
+      "no verdict"
+     ],
+     [
+      16,
+      null,
+      15,
+      "unverified",
+      null,
+      "31235ca",
+      "",
+      0,
+      "no verdict"
+     ]
+    ],
+    "skipped": {
+     "lines": [],
+     "logs": []
+    },
+    "ignored": {
+     "otherRepo": 1,
+     "selftest": 0,
+     "otherTarget": 0,
+     "badVerdicts": 0
+    }
+   }
+  },
+  {
+   "case": "hostile",
+   "logs": [
+    "picks.jsonl",
+    "hostile-picks.jsonl"
+   ],
+   "ledger": "hostile.jsonl",
+   "allowlist": [
+    "BoydVC/draft-day"
+   ],
+   "repo": "BoydVC/draft-day",
+   "now": "2026-10-19T14:00:00.000Z",
+   "expected": {
+    "summary": "2 open PRs · stack #8→#9 (2) · merge-safe through #9 · re-run none · 2 fresh",
+    "open": 2,
+    "stack": [
+     8,
+     9
+    ],
+    "offStack": [],
+    "mergeSafeThrough": 9,
+    "rerun": [],
+    "notDraft": [],
+    "closed": [],
+    "merged": [],
+    "counts": {
+     "fresh": 2,
+     "docs-only": 0,
+     "stale": 0,
+     "failed": 0,
+     "unverified": 0
+    },
+    "rows": [
+     [
+      8,
+      1,
+      null,
+      "fresh",
+      "dc38660",
+      "dc38660",
+      "p-20261018-96",
+      2,
+      "verified at dc38660 (certainty 5)"
+     ],
+     [
+      9,
+      2,
+      8,
+      "fresh",
+      "93dca59",
+      "93dca59",
+      "p-20261018-97",
+      1,
+      "verified at 93dca59 (certainty 5)"
+     ]
+    ],
+    "skipped": {
+     "lines": [
+      [
+       1,
+       "not JSON"
+      ],
+      [
+       2,
+       "not an object"
+      ],
+      [
+       3,
+       "bad kind"
+      ],
+      [
+       4,
+       "unknown field"
+      ],
+      [
+       5,
+       "bad repo"
+      ],
+      [
+       6,
+       "bad repo"
+      ],
+      [
+       7,
+       "bad at"
+      ],
+      [
+       8,
+       "bad number"
+      ],
+      [
+       9,
+       "bad number"
+      ],
+      [
+       10,
+       "bad title"
+      ],
+      [
+       11,
+       "bad headRef"
+      ],
+      [
+       12,
+       "bad headRef"
+      ],
+      [
+       13,
+       "bad headSha"
+      ],
+      [
+       14,
+       "bad baseRef"
+      ],
+      [
+       15,
+       "bad draft"
+      ],
+      [
+       16,
+       "bad state"
+      ],
+      [
+       17,
+       "bad merged"
+      ],
+      [
+       18,
+       "bad verdict"
+      ],
+      [
+       19,
+       "bad ledger"
+      ],
+      [
+       20,
+       "bad certainty"
+      ],
+      [
+       21,
+       "bad agentId"
+      ],
+      [
+       22,
+       "bad note"
+      ],
+      [
+       23,
+       "bad toSha"
+      ],
+      [
+       24,
+       "bad files"
+      ],
+      [
+       25,
+       "bad files"
+      ],
+      [
+       26,
+       "bad files"
+      ]
+     ],
+     "logs": [
+      [
+       "p-20261019-73",
+       "id mismatch"
+      ]
+     ]
+    },
+    "ignored": {
+     "otherRepo": 0,
+     "selftest": 1,
+     "otherTarget": 1,
+     "badVerdicts": 1
+    }
+   }
+  },
+  {
+   "case": "picks-only",
+   "logs": [
+    "picks.jsonl"
+   ],
+   "ledger": null,
+   "allowlist": [
+    "BoydVC/draft-day"
+   ],
+   "repo": "BoydVC/draft-day",
+   "now": "2026-10-19T14:00:00.000Z",
+   "expected": {
+    "summary": "No open PRs",
+    "open": 0,
+    "stack": [],
+    "offStack": [],
+    "mergeSafeThrough": null,
+    "rerun": [],
+    "notDraft": [],
+    "closed": [],
+    "merged": [],
+    "counts": {
+     "fresh": 0,
+     "docs-only": 0,
+     "stale": 0,
+     "failed": 0,
+     "unverified": 0
+    },
+    "rows": [],
+    "skipped": {
+     "lines": [],
+     "logs": []
+    },
+    "ignored": {
+     "otherRepo": 0,
+     "selftest": 0,
+     "otherTarget": 0,
+     "badVerdicts": 0
+    }
+   }
+  },
+  {
+   "case": "empty",
+   "logs": [],
+   "ledger": null,
+   "allowlist": [
+    "BoydVC/draft-day"
+   ],
+   "repo": "BoydVC/draft-day",
+   "now": "2026-10-19T14:00:00.000Z",
+   "expected": {
+    "summary": "No open PRs",
+    "open": 0,
+    "stack": [],
+    "offStack": [],
+    "mergeSafeThrough": null,
+    "rerun": [],
+    "notDraft": [],
+    "closed": [],
+    "merged": [],
+    "counts": {
+     "fresh": 0,
+     "docs-only": 0,
+     "stale": 0,
+     "failed": 0,
+     "unverified": 0
+    },
+    "rows": [],
+    "skipped": {
+     "lines": [],
+     "logs": []
+    },
+    "ignored": {
+     "otherRepo": 0,
+     "selftest": 0,
+     "otherTarget": 0,
+     "badVerdicts": 0
+    }
+   }
+  }
+ ]
+}

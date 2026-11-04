@@ -1,0 +1,123 @@
+.dd-lessons {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dd-lessons h2 {
+  margin-bottom: 8px;
+}
+
+.dd-lessons h3 {
+  margin: 12px 0 4px;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.dd-lessons p,
+.dd-lessons li,
+.dd-lessons a {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.dd-lessons ul {
+  margin: 8px 0 0;
+  padding-left: 1.1em;
+  min-width: 0;
+}
+
+.dd-lessons li {
+  margin: 0.35em 0;
+}
+
+.dd-level {
+  display: inline-block;
+  margin: 0 0 4px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font: 700 12px/1.4 ui-sans-serif, system-ui, sans-serif;
+  background: var(--chip-review-bg);
+  color: var(--blue);
+}
+
+.dd-lead {
+  margin: 0 0 12px;
+}
+
+.dd-window-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+}
+
+.dd-clear {
+  background: transparent;
+  color: var(--gold);
+  border: 0;
+  border-radius: 0;
+  padding: 10px 0;
+  text-decoration: underline;
+  font: 600 15px/1 ui-sans-serif, system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.dd-lessons .dd-first {
+  display: flex;
+  flex-direction: column;
+  border: 2px solid var(--gold);
+  border-radius: 14px;
+  padding: 12px;
+  margin: 0 0 10px;
+  background: var(--glow);
+}
+
+.dd-first h3 { order: 1; margin: 0 0 6px; font-size: 1.2rem; line-height: 1.3; }
+.dd-first .dd-level { order: 2; }
+.dd-first .dd-where { order: 3; }
+.dd-first .dd-top-receipt { order: 4; }
+.dd-first .dd-counts { order: 5; }
+.dd-first .dd-check { order: 6; }
+.dd-first ul { order: 7; }
+
+.dd-top-receipt {
+  margin: 0 0 6px;
+}
+
+.dd-top-receipt a {
+  font: 700 1.05rem/1.35 ui-sans-serif, system-ui, sans-serif;
+  color: var(--gold);
+}
+
+.dd-lessons input[type="date"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+@media (min-width: 700px) {
+  #lesson-window {
+    grid-template-columns: minmax(0, 12rem) minmax(0, 12rem) auto;
+    align-items: end;
+  }
+}
+
+@media (max-width: 480px) {
+  .dd-lessons a,
+  .dd-lessons button,
+  .dd-lessons input {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .dd-lessons a {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .dd-level {
+    min-height: 32px;
+    padding: 6px 10px;
+    font-size: 16px;
+  }
+}

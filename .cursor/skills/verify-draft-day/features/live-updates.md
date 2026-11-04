@@ -26,6 +26,6 @@ Preconditions:
 
 ## Gotchas
 
-- `dd record` against a different `--data` directory updates a different server. Use the `DATA` value from `/tmp/dd-verify/state.env`.
+- A record against a different `--data` directory updates a different server. Source `/tmp/dd-verify/state.env` in that shell. `launch` does not export `DATA`, so a fresh shell's `--data "$DATA"` does not reach this War Room.
 - A full reload after the write does not count.
 - The lesson path is optional for a one-feature proof. Do not mark it verified because the inbox row appeared.

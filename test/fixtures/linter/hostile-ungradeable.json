@@ -1,0 +1,86 @@
+{
+  "restatement": "Hostile ungradeable fixture for SPEC 007.",
+  "acceptance": [
+    {
+      "id": "R1",
+      "when": "the Replay route opens for a fixture pick",
+      "shall": "show the Replay DOM at frame 1 equal to frameAt(timeline, 0)"
+    },
+    {
+      "id": "R2",
+      "when": "the hash carries ?at=<seq> or play=1",
+      "shall": "open at that frame or start playing per the playback rules"
+    },
+    {
+      "id": "R5",
+      "when": "Play is pressed",
+      "shall": "advance one frame per 1000 ms and stop on the last frame"
+    },
+    {
+      "id": "R14",
+      "when": "a hostile pick body is stepped through",
+      "shall": "keep server text as text and never draw an href outside links[]"
+    },
+    {
+      "id": "R19",
+      "when": "the Replay page is probed at phone and desktop widths",
+      "shall": "print ok:true with controls at least 44x44 at every width"
+    },
+    {
+      "id": "R20",
+      "when": "npm test runs after this change",
+      "shall": "still pass every earlier suite with guards byte-identical"
+    }
+  ],
+  "rubric": [
+    {
+      "id": "frames",
+      "name": "Frame fidelity",
+      "weight": 3,
+      "howToGrade": ""
+    },
+    {
+      "id": "deck",
+      "name": "Playback",
+      "weight": 3,
+      "howToGrade": "looks good overall"
+    },
+    {
+      "id": "screen",
+      "name": "Screens",
+      "weight": 2,
+      "howToGrade": "screenshots somewhere"
+    },
+    {
+      "id": "stack",
+      "name": "Stack",
+      "weight": 2,
+      "howToGrade": "git diff --name-only START...HEAD stays inside the touch map. Zero runtime deps. Score 0-4 with evidence from git diff --shortstat."
+    }
+  ],
+  "designSketch": "Boyd taps Replay on Pick 4, scrubs to Event 11, sees +2h 53m JUDGING Film Room, then presses Play.",
+  "verifyPlan": [
+    "seed-replay and probe ?at=11 at 390 dark",
+    "drive replay-film, replay-play, replay-live journeys",
+    "prove the safety fact through the harness"
+  ],
+  "safetyFact": "No pick body can make Replay request anything but one same-origin GET /api/picks/<id> per open or live update, render server text as markup, or store anything.",
+  "angles": [
+    "Frame engine: start from the frame rule; one pure function maps (timeline, index) to a frame; one playback record; one paint; smallest app.js hunks.",
+    "Broadcast booth: start from the demo video; scoreboard, lower-third caption, field of runs at 1280, thumb-reach control bar on phone.",
+    "Chapter cuts: start from the story; stage chapter nav jumps to each stage's first event; VoiceOver order is film, controls, chapters, lists."
+  ],
+  "forbidden": [
+    "Draft PRs only",
+    "Nothing KPD or collections",
+    "Zero runtime dependencies"
+  ],
+  "checks": {
+    "R1": "test/replay.test.ts:R1",
+    "R2": "test/replay.test.ts:R2",
+    "R5": "test/replay.test.ts:R5",
+    "R14": "test/replay.test.ts:R14",
+    "R19": "journey:replay-film",
+    "R20": "npm-test+VERIFY"
+  }
+}

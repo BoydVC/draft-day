@@ -53,6 +53,118 @@ export {
   type TimelineRun,
 } from "./timeline.ts";
 
+export {
+  CORRECTION_ORDER,
+  LOW_SCORE,
+  REPEAT_PICKS,
+  gardener,
+  lessonWindow,
+  lessonsJson,
+  lessonsText,
+  type CorrectionLevel,
+  type Finding,
+  type FindingKind,
+  type LessonGroup,
+  type LessonWindow,
+  type LessonsReport,
+  type PickLog,
+  type Proposal,
+  type Receipt,
+  type SkippedLog,
+} from "./lessons.ts";
+
+export {
+  CHECK_RE,
+  COLLISION_JACCARD,
+  GRADE_MIN_CHARS,
+  RULE_FAMILIES,
+  RULE_LEDGER,
+  STOPWORDS,
+  anglePairs,
+  earsCoverage,
+  gradeCriterion,
+  jaccard,
+  lintScoutingReport,
+  lintText,
+  parseLintDocument,
+  parseMarkdownScout,
+  tokenizeAngle,
+} from "./linter.ts";
+export type {
+  AnglePair,
+  CriterionGrade,
+  EarsRow,
+  LintDocument,
+  LintFinding,
+  LintParse,
+  LintReport,
+  RuleFamily,
+  RuleRow,
+  RuleSlice,
+} from "./linter.ts";
+
+export {
+  ANGLE_NAME_MAX,
+  DEFAULT_MODEL,
+  EXCLUDED_SOURCES,
+  METRIC_IDS,
+  MODEL_NAME_MAX,
+  STAGE_ORDER,
+  angleKey,
+  angleName,
+  bigBoardStats,
+  bigBoardText,
+  judgeModelName,
+  median,
+  statContainers,
+} from "./bigboard.ts";
+export type {
+  BigBoardStats,
+  MetricId,
+  Ratio,
+  StageRow,
+  SwapLabelRow,
+  SwapModelRow,
+  SwapPickRow,
+  SwapStats,
+  TradeRow,
+  WinRow,
+} from "./bigboard.ts";
+
+export {
+  DOCS_PREFIX,
+  FILES_MAX,
+  LEDGER_KINDS,
+  LEDGER_STATUSES,
+  MERGE_SAFE,
+  NOTE_MAX,
+  NUMBER_MAX,
+  PATH_MAX,
+  RERUN,
+  TITLE_MAX,
+  ledgerJson,
+  ledgerLine,
+  ledgerText,
+  parseLedgerEntry,
+  prEntriesFromPulls,
+  readLedger,
+  seasonLedger,
+  validLedgerAt,
+} from "./ledger.ts";
+export type {
+  DriftEntry,
+  LedgerBook,
+  LedgerEntry,
+  LedgerKind,
+  LedgerLevel,
+  LedgerRow,
+  LedgerStatus,
+  LedgerVerdictRef,
+  PrEntry,
+  SeasonLedger,
+  VerdictEntry,
+} from "./ledger.ts";
+
 export { asPickId, branchFor, formatPickId, isCandId, isPickId, pickIdPrefix } from "./ids.ts";
 
 export { brandStoredTarget, loadTargets, parseTargetRepo } from "./target.ts";

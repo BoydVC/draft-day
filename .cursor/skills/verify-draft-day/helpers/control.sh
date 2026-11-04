@@ -101,6 +101,256 @@ EOF
     fi
     echo "seeded p-20261010-07"
     ;;
+  seed-lessons)
+    load_state
+    node -e 'const fs=require("fs"),p=require("path");for(const l of fs.readFileSync(process.argv[1],"utf8").split("\n")){if(!l.trim())continue;const {pickId,event}=JSON.parse(l);const d=p.join(process.argv[2],"picks",pickId);fs.mkdirSync(d,{recursive:true});fs.appendFileSync(p.join(d,"events.jsonl"),JSON.stringify(event)+"\n")}' "$ROOT/test/fixtures/lessons/lessons-week.jsonl" "$DATA"
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/lessons?since=2026-10-11&until=2026-10-16")"
+    if [[ "$code" != "200" ]]; then
+      echo "seed-lessons: GET /api/lessons returned ${code}" >&2
+      rm -f "$body"
+      exit 1
+    fi
+    summary="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["summary"])' "$body")"
+    rm -f "$body"
+    if [[ "$summary" != "7 lessons from 5 picks · 27 findings · 6 one-offs" ]]; then
+      echo "seed-lessons: summary was ${summary}" >&2
+      exit 1
+    fi
+    echo "seeded lessons week"
+    ;;
+  seed-replay)
+    load_state
+    for id in p-20261017-93 p-20261017-94 p-20261017-98 p-20261017-99; do
+      mkdir -p "$DATA/picks/$id"
+      cp "$ROOT/test/fixtures/replay/${id}.events.jsonl" "$DATA/picks/$id/events.jsonl"
+    done
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/picks/p-20261017-94")"
+    summary="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["timeline"]["summary"])' "$body")"
+    if [[ "$code" != "200" || "$summary" != "drafted · 3h 41m · 7 runs" ]]; then
+      echo "seed-replay: p-20261017-94 ${code} ${summary}" >&2
+      rm -f "$body"
+      exit 1
+    fi
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/picks/p-20261017-93")"
+    summary="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["timeline"]["summary"])' "$body")"
+    rm -f "$body"
+    if [[ "$code" != "200" || "$summary" != "drafted · 5h 41m · 8 runs" ]]; then
+      echo "seed-replay: p-20261017-93 ${code} ${summary}" >&2
+      exit 1
+    fi
+    echo "seeded replay"
+    ;;
+  seed-linter)
+    load_state
+    DATA="$DATA" ROOT="$ROOT" node --experimental-strip-types --input-type=module <<'EOF'
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+const data = process.env.DATA;
+const root = process.env.ROOT;
+const picks = [
+  ["p-20261018-61", "hostile-missing-ears.json", "Hostile missing EARS bindings"],
+  ["p-20261018-62", "good-replay.json", "Clean replay scout"],
+];
+for (const [id, file, idea] of picks) {
+  const report = JSON.parse(readFileSync(join(root, "test/fixtures/linter", file), "utf8"));
+  const dir = join(data, "picks", id);
+  mkdirSync(dir, { recursive: true });
+  const events = [
+    { seq: 1, ts: "2026-10-18T12:00:00.000Z", type: "pick_created", by: "seed-linter", key: "pick", payload: { id, idea, source: "seed", target: "BoydVC/draft-day", n: 3, approval: "ask" } },
+    { seq: 2, ts: "2026-10-18T12:01:00.000Z", type: "scouting_report_written", by: "seed-linter", key: "report", payload: { report } },
+  ];
+  writeFileSync(join(dir, "events.jsonl"), events.map((event) => JSON.stringify(event)).join("\n") + "\n");
+}
+EOF
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/picks/p-20261018-61")"
+    if [[ "$code" != "200" ]]; then
+      echo "seed-linter: GET /api/picks/p-20261018-61 returned ${code}" >&2
+      rm -f "$body"
+      exit 1
+    fi
+    python3 - "$body" "$ROOT/test/fixtures/linter/hostile-missing-ears.json" <<'PY'
+import json, sys
+body = json.load(open(sys.argv[1]))
+want = json.load(open(sys.argv[2]))
+if body.get("report") != want:
+    raise SystemExit("seed-linter: report fields do not match hostile-missing-ears.json")
+PY
+    code="$(curl -s -o "$body" -w "%{http_code}" -H "content-type: application/json" --data-binary @"$ROOT/test/fixtures/linter/good-replay.json" "${URL}/api/lint-scout")"
+    ok="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("ok"))' "$body")"
+    rm -f "$body"
+    if [[ "$code" != "200" || "$ok" != "True" ]]; then
+      echo "seed-linter: POST /api/lint-scout ${code} ok=${ok}" >&2
+      exit 1
+    fi
+    echo "seeded linter"
+    ;;
+  seed-bigboard)
+    load_state
+    node -e 'const fs=require("fs"),p=require("path");const by=new Map();for(const line of fs.readFileSync(process.argv[1],"utf8").split("\n")){if(!line.trim())continue;const row=JSON.parse(line);if(!by.has(row.pickId))by.set(row.pickId,[]);by.get(row.pickId).push(row.event)}for(const [id,events] of by){const dir=p.join(process.argv[2],"picks",id);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(p.join(dir,"events.jsonl"),events.map((event)=>JSON.stringify(event)).join("\n")+"\n")}' "$ROOT/test/fixtures/bigboard/league.jsonl" "$DATA"
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/stats")"
+    if [[ "$code" != "200" ]]; then
+      echo "seed-bigboard: GET /api/stats returned ${code}" >&2
+      rm -f "$body"
+      exit 1
+    fi
+    python3 - "$body" <<'PY'
+import json, sys
+want = "13 picks · 9 drafted · verified 9/10 (2 first try) · 10 trades grafted"
+data = json.load(open(sys.argv[1]))
+summary = data.get("summary", "")
+excluded = (data.get("excluded") or {}).get("selftest")
+if summary != want or excluded != 4:
+    print(f"seed-bigboard: summary was {summary}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add picks)", file=sys.stderr)
+    sys.exit(1)
+PY
+    rm -f "$body"
+    echo "seeded bigboard"
+    ;;
+  seed-ledger)
+    load_state
+    cd "$ROOT"
+    node -e 'const fs=require("fs"),p=require("path");const by=new Map();for(const line of fs.readFileSync(process.argv[1],"utf8").split("\n")){if(!line.trim())continue;const row=JSON.parse(line);if(!by.has(row.pickId))by.set(row.pickId,[]);by.get(row.pickId).push(row.event)}for(const [id,events] of by){const dir=p.join(process.argv[2],"picks",id);fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(p.join(dir,"events.jsonl"),events.map((event)=>JSON.stringify(event)).join("\n")+"\n")}' "$ROOT/test/fixtures/ledger/picks.jsonl" "$DATA"
+    node --experimental-strip-types src/cli/dd.ts ledger import-prs test/fixtures/ledger/pulls.json --at 2026-10-19T13:45:00.000Z --data "$DATA"
+    sed -n '10,21p' "$ROOT/test/fixtures/ledger/ledger-real.jsonl" | node --experimental-strip-types src/cli/dd.ts ledger record - --data "$DATA"
+    if ! cmp -s "$DATA/ledger.jsonl" "$ROOT/test/fixtures/ledger/ledger-real.jsonl"; then
+      echo "seed-ledger: ledger.jsonl does not match ledger-real.jsonl" >&2
+      echo "run control.sh cleanup then launch first (other seeds add picks that claim PRs)" >&2
+      exit 1
+    fi
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/ledger")"
+    python3 - "$body" "$code" <<'PY'
+import json, sys
+code = sys.argv[2]
+want = "9 open PRs \u00b7 stack #1\u2192#9 (8) \u00b7 merge-safe through none \u00b7 re-run #1 \u00b7 3 fresh, 4 docs-only, 1 unverified \u00b7 1 off stack"
+if code != "200":
+    print(f"seed-ledger: GET /api/ledger returned {code}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add picks that claim PRs)", file=sys.stderr)
+    sys.exit(1)
+data = json.load(open(sys.argv[1]))
+summary = data.get("summary", "")
+if summary != want:
+    print(f"seed-ledger: summary was {summary}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add picks that claim PRs)", file=sys.stderr)
+    sys.exit(1)
+PY
+    rm -f "$body"
+    echo "seeded ledger"
+    if [[ "${2:-}" == "polish" ]]; then
+      node --experimental-strip-types src/cli/dd.ts ledger record test/fixtures/ledger/ledger-polish.jsonl --data "$DATA"
+      body="$(mktemp)"
+      code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/ledger")"
+      python3 - "$body" "$code" <<'PY'
+import json, sys
+code = sys.argv[2]
+want = "11 open PRs \u00b7 stack #1\u2192#11 (10) \u00b7 merge-safe through #11 \u00b7 re-run none \u00b7 6 fresh, 4 docs-only \u00b7 1 off stack"
+if code != "200":
+    print(f"seed-ledger: GET /api/ledger returned {code}", file=sys.stderr)
+    sys.exit(1)
+data = json.load(open(sys.argv[1]))
+summary = data.get("summary", "")
+if summary != want:
+    print(f"seed-ledger: summary was {summary}", file=sys.stderr)
+    sys.exit(1)
+rows = {row["number"]: row for row in data.get("rows", [])}
+one = rows.get(1, {})
+ten = rows.get(10, {})
+eleven = rows.get(11, {})
+seq = one.get("sequence") or []
+shas = {item.get("headSha", "")[:7] for item in seq if item.get("verdict") == "VERIFIED" and item.get("certainty") == 5}
+if one.get("status") != "fresh" or "f51dae8" not in shas or "4edd03a" not in shas:
+    print(f"seed-ledger: #1 was {one.get('status')} {one.get('why')}", file=sys.stderr)
+    sys.exit(1)
+if ten.get("status") != "fresh" or not str(ten.get("why", "")).startswith("verified at ace89ea (certainty 5)"):
+    print(f"seed-ledger: #10 was {ten.get('status')} {ten.get('why')}", file=sys.stderr)
+    sys.exit(1)
+if eleven.get("status") != "fresh" or not str(eleven.get("why", "")).startswith("verified at af1e78c (certainty 5)"):
+    print(f"seed-ledger: #11 was {eleven.get('status')} {eleven.get('why')}", file=sys.stderr)
+    sys.exit(1)
+PY
+      rm -f "$body"
+      echo "seeded ledger polish"
+    fi
+    if [[ "${2:-}" == "tuesday" ]]; then
+      sed -n '22,23p' "$ROOT/test/fixtures/ledger/ledger-tuesday.jsonl" | node --experimental-strip-types src/cli/dd.ts ledger record - --data "$DATA"
+      body="$(mktemp)"
+      code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/ledger")"
+      python3 - "$body" "$code" <<'PY'
+import json, sys
+code = sys.argv[2]
+want = "8 open PRs \u00b7 stack #1\u2192#9 (8) \u00b7 merge-safe through #9 \u00b7 re-run none \u00b7 4 fresh, 4 docs-only"
+if code != "200":
+    print(f"seed-ledger: GET /api/ledger returned {code}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add picks that claim PRs)", file=sys.stderr)
+    sys.exit(1)
+data = json.load(open(sys.argv[1]))
+summary = data.get("summary", "")
+if summary != want:
+    print(f"seed-ledger: summary was {summary}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add picks that claim PRs)", file=sys.stderr)
+    sys.exit(1)
+PY
+      rm -f "$body"
+      echo "seeded ledger tuesday"
+    fi
+    ;;
+  seed-swap)
+    load_state
+    DATA="$DATA" ROOT="$ROOT" HOSTILE="${2:-}" node --input-type=module <<'EOF'
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+const safe = /^p-\d{8}-\d{2}$/;
+const files = [
+  join(process.env.ROOT, "test/fixtures/ledger/picks.jsonl"),
+  join(process.env.ROOT, "test/fixtures/swap/models.jsonl"),
+];
+if (process.env.HOSTILE === "hostile") files.push(join(process.env.ROOT, "test/fixtures/swap/hostile.jsonl"));
+const by = new Map();
+for (const file of files) {
+  for (const line of readFileSync(file, "utf8").split("\n")) {
+    if (!line.trim()) continue;
+    const row = JSON.parse(line);
+    if (!safe.test(String(row.pickId))) continue;
+    if (!by.has(row.pickId)) by.set(row.pickId, []);
+    by.get(row.pickId).push(row.event);
+  }
+}
+for (const [id, events] of by) {
+  const dir = join(process.env.DATA, "picks", id);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "events.jsonl"), events.map((event) => JSON.stringify(event)).join("\n") + "\n");
+}
+EOF
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/stats")"
+    if [[ "$code" != "200" ]]; then
+      echo "seed-swap: GET /api/stats returned ${code}" >&2
+      rm -f "$body"
+      exit 1
+    fi
+    python3 - "$body" "${2:-}" <<'PY'
+import json, sys
+data = json.load(open(sys.argv[1]))
+swap = data.get("swap") or {}
+hostile = sys.argv[2] == "hostile"
+want = {"twoPass": 16, "flipped": 8, "judged": 17} if hostile else {"twoPass": 12, "flipped": 6, "judged": 13}
+if any(swap.get(key) != value for key, value in want.items()):
+    print(f"seed-swap: swap was twoPass {swap.get('twoPass')} flipped {swap.get('flipped')} judged {swap.get('judged')}", file=sys.stderr)
+    print("run control.sh cleanup then launch first (other seeds add judged picks)", file=sys.stderr)
+    sys.exit(1)
+PY
+    rm -f "$body"
+    if [[ "${2:-}" == "hostile" ]]; then
+      echo "seeded swap hostile"
+    else
+      echo "seeded swap"
+    fi
+    ;;
   cleanup)
     load_state
     if kill -0 "$PID" 2>/dev/null; then
@@ -120,7 +370,7 @@ EOF
     echo "cleaned pid ${PID:-?} data ${DATA:-?}"
     ;;
   *)
-    echo "usage: control.sh launch|doctor|seed-timeline|cleanup" >&2
+    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|seed-linter|seed-bigboard|seed-ledger|seed-swap|cleanup" >&2
     exit 2
     ;;
 esac

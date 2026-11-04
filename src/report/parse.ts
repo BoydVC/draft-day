@@ -287,6 +287,19 @@ export function parseScoutingReport(text: string): ParseResult<import("../core/t
     if (weight !== 1 && weight !== 2 && weight !== 3) return fail("criterion weight must be 1, 2, or 3");
     criteria.push({ id: item.id, name: item.name, weight, howToGrade: item.howToGrade });
   }
+  let checks: Record<string, string> | undefined;
+  if (isRecord(value.checks)) {
+    const map: Record<string, string> = {};
+    let plain = true;
+    for (const [key, item] of Object.entries(value.checks)) {
+      if (typeof item !== "string") {
+        plain = false;
+        break;
+      }
+      map[key] = item;
+    }
+    if (plain) checks = map;
+  }
   return {
     ok: true,
     value: {
@@ -298,6 +311,7 @@ export function parseScoutingReport(text: string): ParseResult<import("../core/t
       safetyFact: value.safetyFact,
       angles,
       forbidden,
+      ...(checks ? { checks } : {}),
     },
   };
 }

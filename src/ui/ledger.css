@@ -1,0 +1,209 @@
+.dd-ledger {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dd-ledger.panel {
+  margin: 4px 0 12px;
+  padding: 8px 10px max(8px, env(safe-area-inset-bottom));
+}
+
+.dd-ledger h2,
+.dd-ledger h3,
+.dd-ledger p,
+.dd-ledger li,
+.dd-ledger span,
+.dd-ledger summary,
+.dd-ledger details {
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.dd-ledger h3 {
+  margin: 10px 0 4px;
+  font: 600 13px/1.2 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.04em;
+  color: var(--gold);
+}
+
+.dd-ledger p {
+  margin: 0 0 6px;
+}
+
+.dd-ledger .dd-call {
+  margin: 0 0 2px;
+  color: var(--ink);
+  font: 700 1.7rem/1.12 ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.dd-ledger[data-merge-safe="none"] .dd-call {
+  color: var(--amber);
+}
+
+.dd-ledger[data-open="0"] .dd-call {
+  color: var(--ink);
+}
+
+.dd-ledger[data-rerun=""][data-open]:not([data-open="0"]):not([data-merge-safe="none"]) .dd-call {
+  color: var(--green);
+}
+
+.dd-ledger .dd-next {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font: 600 1.05rem/1.3 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger .dd-summary {
+  margin: 0 0 4px;
+  color: var(--muted);
+  font: 600 0.82rem/1.3 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger .dd-legend {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font: 500 0.82rem/1.35 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger ol,
+.dd-ledger ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dd-ledger .dd-row {
+  margin: 0 0 4px;
+  padding: 0 0 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.dd-ledger summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  position: relative;
+  padding-left: 16px;
+  list-style: none;
+  cursor: pointer;
+  min-width: 48px;
+  min-height: 48px;
+}
+
+.dd-ledger summary::-webkit-details-marker {
+  display: none;
+}
+
+.dd-ledger summary::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 20px;
+  border-width: 5px 0 5px 6px;
+  border-style: solid;
+  border-color: transparent transparent transparent var(--gold);
+}
+
+.dd-ledger details[open] > summary::before {
+  top: 22px;
+  border-width: 6px 5px 0 5px;
+  border-color: var(--gold) transparent transparent transparent;
+}
+
+.dd-ledger .dd-pos {
+  font: 700 15px/1 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger .dd-status {
+  font: 700 15px/1.2 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger .dd-status[data-status="fresh"] { color: var(--chip-done-ink); }
+.dd-ledger .dd-status[data-status="docs-only"] { color: var(--chip-review-ink); }
+.dd-ledger .dd-status[data-status="stale"] { color: var(--chip-work-ink); }
+.dd-ledger .dd-status[data-status="failed"] { color: var(--chip-stop-ink); }
+.dd-ledger .dd-status[data-status="unverified"] { color: var(--muted); }
+.dd-ledger .dd-status[data-status="unknown"] { color: var(--chip-stop-ink); }
+
+.dd-ledger .dd-why,
+.dd-ledger .dd-title {
+  flex: 1 1 100%;
+}
+
+.dd-ledger .dd-why {
+  color: var(--ink);
+  font: 600 0.95rem/1.3 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger .dd-title,
+.dd-ledger .dd-kicker,
+.dd-ledger .dd-audit {
+  color: var(--muted);
+  font: 600 0.9rem/1.3 ui-sans-serif, system-ui, sans-serif;
+}
+
+.dd-ledger .dd-kicker {
+  margin: 6px 0 2px;
+  color: var(--gold);
+  letter-spacing: 0.04em;
+}
+
+.dd-ledger .dd-seq {
+  margin: 0 0 4px;
+  padding-left: 1.1rem;
+  list-style: decimal;
+}
+
+.dd-ledger .dd-audit p,
+.dd-ledger .dd-audit li {
+  margin: 0 0 4px;
+}
+
+.dd-ledger a,
+a[href="#/ledger"],
+p.back:has(+ [aria-label="Season ledger"]) a,
+[aria-label="Season ledger"] a {
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 12px 14px;
+  line-height: 1.2;
+  flex: 0 0 auto;
+}
+
+.dd-ledger a {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--card);
+  text-decoration: none;
+}
+
+p.back:has(+ [aria-label="Season ledger"]) {
+  margin: 2px 0 4px;
+}
+
+p.back:has(a[href="#/ledger"]) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .dd-ledger .dd-row {
+    animation: dd-ledger-in 280ms ease;
+  }
+}
+
+@keyframes dd-ledger-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

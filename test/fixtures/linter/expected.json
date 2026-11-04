@@ -1,0 +1,124 @@
+{
+  "good-replay.json": {
+    "fixture": "good-replay.json",
+    "ok": true,
+    "summary": "pass",
+    "hardCount": 0,
+    "softCount": 0,
+    "hardKinds": [],
+    "earsMissing": [],
+    "angleCollisions": [],
+    "criteriaSoft": [],
+    "criteriaHard": []
+  },
+  "good-lessons.json": {
+    "fixture": "good-lessons.json",
+    "ok": true,
+    "summary": "pass",
+    "hardCount": 0,
+    "softCount": 0,
+    "hardKinds": [],
+    "earsMissing": [],
+    "angleCollisions": [],
+    "criteriaSoft": [],
+    "criteriaHard": []
+  },
+  "hostile-collide-angles.json": {
+    "fixture": "hostile-collide-angles.json",
+    "ok": false,
+    "summary": "fail · 1 hard",
+    "hardCount": 1,
+    "softCount": 0,
+    "hardKinds": [
+      "angles:0-1"
+    ],
+    "earsMissing": [],
+    "angleCollisions": [
+      "0-1"
+    ],
+    "criteriaSoft": [],
+    "criteriaHard": []
+  },
+  "hostile-missing-ears.json": {
+    "fixture": "hostile-missing-ears.json",
+    "ok": false,
+    "summary": "fail · 5 hard",
+    "hardCount": 5,
+    "softCount": 0,
+    "hardKinds": [
+      "ears:R14",
+      "ears:R19",
+      "ears:R2",
+      "ears:R20",
+      "ears:R5"
+    ],
+    "earsMissing": [
+      "R2",
+      "R5",
+      "R14",
+      "R19",
+      "R20"
+    ],
+    "angleCollisions": [],
+    "criteriaSoft": [],
+    "criteriaHard": []
+  },
+  "hostile-ungradeable.json": {
+    "fixture": "hostile-ungradeable.json",
+    "ok": false,
+    "summary": "fail · 3 hard",
+    "hardCount": 3,
+    "softCount": 0,
+    "hardKinds": [
+      "criterion:deck",
+      "criterion:frames",
+      "criterion:screen"
+    ],
+    "earsMissing": [],
+    "angleCollisions": [],
+    "criteriaSoft": [],
+    "criteriaHard": [
+      "frames",
+      "deck",
+      "screen"
+    ]
+  },
+  "hostile-markup.json": {
+    "fixture": "hostile-markup.json",
+    "ok": true,
+    "summary": "pass",
+    "hardCount": 0,
+    "softCount": 0,
+    "hardKinds": [],
+    "earsMissing": [],
+    "angleCollisions": [],
+    "criteriaSoft": [],
+    "criteriaHard": []
+  },
+  "hostile-soft.json": {
+    "fixture": "hostile-soft.json",
+    "ok": true,
+    "summary": "pass with 1 soft warning",
+    "hardCount": 0,
+    "softCount": 1,
+    "hardKinds": [],
+    "earsMissing": [],
+    "angleCollisions": [],
+    "criteriaSoft": [
+      "tests"
+    ],
+    "criteriaHard": []
+  },
+  "good-markdown.md": {
+    "fixture": "good-markdown.md",
+    "ok": true,
+    "summary": "pass",
+    "hardCount": 0,
+    "softCount": 0,
+    "hardKinds": [],
+    "earsMissing": [],
+    "angleCollisions": [],
+    "criteriaSoft": [],
+    "criteriaHard": []
+  }
+}

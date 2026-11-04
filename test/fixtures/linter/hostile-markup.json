@@ -1,0 +1,99 @@
+{
+  "restatement": "\"><img src=x onerror=alert(1)> Replay the film.",
+  "acceptance": [
+    {
+      "id": "R1",
+      "when": "<img src=x onerror=\"alert(4)\"> the Replay route opens",
+      "shall": "show the Replay DOM at frame 1 equal to frameAt(timeline, 0)"
+    },
+    {
+      "id": "R2",
+      "when": "the hash carries ?at=<seq> or play=1",
+      "shall": "open at that frame or start playing per the playback rules"
+    },
+    {
+      "id": "R5",
+      "when": "Play is pressed",
+      "shall": "advance one frame per 1000 ms and stop on the last frame"
+    },
+    {
+      "id": "R14",
+      "when": "a hostile pick body is stepped through",
+      "shall": "keep server text as text and never draw an href outside links[]"
+    },
+    {
+      "id": "R19",
+      "when": "the Replay page is probed at phone and desktop widths",
+      "shall": "print ok:true with controls at least 44x44 at every width"
+    },
+    {
+      "id": "R20",
+      "when": "npm test runs after this change",
+      "shall": "still pass every earlier suite with guards byte-identical"
+    }
+  ],
+  "rubric": [
+    {
+      "id": "frames",
+      "name": "Frame fidelity on real logs",
+      "weight": 3,
+      "howToGrade": "Run pooled R1-R4 against the five fixtures through frameAt(). 4 = every frame equals frameAt(). 2 = one wrong run state. 0 = browser formats a duration. Evidence: node --test test/replay.pooled.test.ts or file:line."
+    },
+    {
+      "id": "deck",
+      "name": "Playback discipline",
+      "weight": 3,
+      "howToGrade": "Drive R5-R8 with the fake clock. 4 = one timer, focus preserved, leave stops play. 1 = two timers or a timer after leaving. Evidence: test/replay.test.ts:R5-R8."
+    },
+    {
+      "id": "screen",
+      "name": "Game-film screens",
+      "weight": 3,
+      "howToGrade": "Run cdp-shot.mjs on ?at=1,11,20 at 390/430/1280 light and dark. 4 = every probe ok:true and a stranger can read the film in 5 seconds. 0 = sideways scroll or a control under 44x44 at 1280. Screenshots required for 3 or 4."
+    },
+    {
+      "id": "safety",
+      "name": "Same-origin, text-only safety",
+      "weight": 2,
+      "howToGrade": "Re-run the safety-fact proof with hostile titles and javascript: agent ids. Grep replay.js for innerHTML and localStorage. Any markup or off-origin request = 0. Evidence: test/replay.test.ts:R14. Score 0-4."
+    },
+    {
+      "id": "tests",
+      "name": "Harness-backed tests",
+      "weight": 2,
+      "howToGrade": "test/replay.test.ts drives replay-harness.mjs. Expected values come from frameAt() and the spec literals. Break one rule by hand and a candidate test must fail. Score 0-4."
+    },
+    {
+      "id": "stack",
+      "name": "Clean stack, small diff",
+      "weight": 2,
+      "howToGrade": "git diff --name-only START...HEAD stays inside the touch map. One files line in http.ts. Zero runtime deps. Compare diff.added+removed. Score 0-4 with evidence from git diff --shortstat."
+    }
+  ],
+  "designSketch": "Boyd taps Replay on Pick 4, scrubs to Event 11, sees +2h 53m JUDGING Film Room, then presses Play.",
+  "verifyPlan": [
+    "seed-replay and probe ?at=11 at 390 dark",
+    "drive replay-film, replay-play, replay-live journeys",
+    "prove the safety fact through the harness"
+  ],
+  "safetyFact": "No pick body can make Replay request anything but one same-origin GET /api/picks/<id> per open or live update, render server text as markup, or store anything.",
+  "angles": [
+    "<script>alert(2)</script> Frame engine angle with enough distinct tokens about pure functions and paint.",
+    "Broadcast booth scoreboard lower-third caption thumb-reach bar phone safe-area tokens.",
+    "javascript:alert(3) Chapter cuts story navigation VoiceOver order chapters lists."
+  ],
+  "forbidden": [
+    "Draft PRs only",
+    "Nothing KPD or collections",
+    "Zero runtime dependencies",
+    "<img src=x onerror=alert(5)>"
+  ],
+  "checks": {
+    "R1": "test/replay.test.ts:R1",
+    "R2": "test/replay.test.ts:R2",
+    "R5": "test/replay.test.ts:R5",
+    "R14": "test/replay.test.ts:R14",
+    "R19": "journey:replay-film",
+    "R20": "npm-test+VERIFY"
+  }
+}

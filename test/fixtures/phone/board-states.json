@@ -1,0 +1,16 @@
+{
+  "picks": [
+    { "id": "p-20261017-01", "idea": "Add a status legend to the War Room", "status": "drafted", "stage": "Draft Pick", "target": "BoydVC/draft-day", "runs": 7, "failReason": null, "updatedAt": "2026-10-17T14:00:00.000Z", "walkover": false },
+    { "id": "p-20261017-02", "idea": "Refused by the policy screen (fixture text)", "status": "failed", "stage": "Failed", "target": "BoydVC/draft-day", "runs": 0, "failReason": "policy", "updatedAt": "2026-10-17T14:00:01.000Z", "walkover": false },
+    { "id": "p-20261017-03", "idea": "Show the pick timeline on the pick page with a much longer idea sentence that has to wrap on a phone screen without pushing the page sideways", "status": "awaiting_go", "stage": "Scouting Report", "target": "BoydVC/draft-day", "runs": 0, "failReason": null, "updatedAt": "2026-10-17T14:00:02.000Z", "walkover": false },
+    { "id": "p-20261017-04", "idea": "Group repeated judge findings", "status": "combine", "stage": "Combine", "target": "BoydVC/draft-day", "runs": 3, "failReason": null, "updatedAt": "2026-10-17T14:00:03.000Z", "walkover": false },
+    { "id": "p-20261017-05", "idea": "Explain the Film Room base in one sentence", "status": "judging", "stage": "Film Room", "target": "BoydVC/draft-day", "runs": 4, "failReason": null, "updatedAt": "2026-10-17T14:00:04.000Z", "walkover": false },
+    { "id": "p-20261017-06", "idea": "Phone War Room", "status": "grafting", "stage": "Trade", "target": "BoydVC/draft-day", "runs": 5, "failReason": null, "updatedAt": "2026-10-17T14:00:05.000Z", "walkover": false },
+    { "id": "p-20261017-07", "idea": "Replay mode", "status": "physical", "stage": "Physical", "target": "BoydVC/draft-day", "runs": 6, "failReason": null, "updatedAt": "2026-10-17T14:00:06.000Z", "walkover": false },
+    { "id": "p-20261017-08", "idea": "Scouting Report linter", "status": "cancelled", "stage": "Cancelled", "target": "BoydVC/draft-day", "runs": 0, "failReason": null, "updatedAt": "2026-10-17T14:00:07.000Z", "walkover": false },
+    { "id": "p-20261017-09", "idea": "Big Board stats", "status": "intake", "stage": "Intake", "target": "BoydVC/draft-day", "runs": 0, "failReason": null, "updatedAt": "2026-10-17T14:00:08.000Z", "walkover": false }
+  ],
+  "inbox": [
+    { "offset": 1, "idea": "Show the run count in the page title", "target": "BoydVC/draft-day", "n": 3, "source": "warroom", "status": "intake", "stage": "Inbox" }
+  ]
+}

@@ -5,9 +5,17 @@ import { dirname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   assertCandidateCount,
+  bigBoardStats,
+  gardener,
   isPickId,
+  lessonWindow,
+  lessonsJson,
+  lintScoutingReport,
   loadConfig,
   loadTargets,
+  ledgerJson,
+  seasonLedger,
+  parseLintDocument,
   parseTargetRepo,
   filmRoom,
   reduce,
@@ -19,7 +27,8 @@ import {
 } from "../core/index.ts";
 import type { DraftEvent } from "../core/events.ts";
 import { appendInbox, inboxCursor, readInbox } from "../store/inbox.ts";
-import { loadPicks, readEvents, signature } from "../store/eventlog.ts";
+import { loadLogs, loadPicks, readEvents, signature } from "../store/eventlog.ts";
+import { readLedgerFile } from "../store/ledger.ts";
 import { forwardIntake } from "./relay.ts";
 
 const UI_DIR = join(dirname(fileURLToPath(import.meta.url)), "../ui");
@@ -84,6 +93,25 @@ function pickView(pick: Pick, events: DraftEvent[], now: number) {
     lessons: pick.lessons,
     timeline: timeline(events, now),
   };
+}
+
+function jsonContent(req: IncomingMessage): boolean {
+  const header = req.headers["content-type"];
+  if (typeof header !== "string") return false;
+  return header.split(";")[0]?.trim().toLowerCase() === "application/json";
+}
+
+function originAllowed(req: IncomingMessage): boolean {
+  const origin = req.headers.origin;
+  if (origin === undefined) return true;
+  if (typeof origin !== "string") return false;
+  const host = req.headers.host;
+  if (typeof host !== "string" || host.length === 0) return false;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
 }
 
 function contentType(file: string): string {
@@ -196,6 +224,14 @@ export async function startServer(options: ServerOptions): Promise<{
     }
 
     if (req.method === "POST" && path === "/api/intake") {
+      if (!jsonContent(req)) {
+        send(res, 415, { error: "content-type must be application/json" });
+        return;
+      }
+      if (!originAllowed(req)) {
+        send(res, 403, { error: "origin not allowed" });
+        return;
+      }
       let config: Config;
       let targets: string[];
       try {
@@ -253,7 +289,60 @@ export async function startServer(options: ServerOptions): Promise<{
       return;
     }
 
-    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css"];
+    if (req.method === "GET" && path === "/api/lessons") {
+      const parsed = lessonWindow(url.searchParams.get("since"), url.searchParams.get("until"));
+      if (!parsed.ok) {
+        send(res, 400, { error: parsed.error });
+        return;
+      }
+      const payload = `${lessonsJson(gardener(await loadLogs(options.dataDir), parsed.value))}\n`;
+      res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+      res.end(payload);
+      return;
+    }
+
+    if (req.method === "GET" && path === "/api/stats") {
+      const parsed = lessonWindow(url.searchParams.get("since"), url.searchParams.get("until"));
+      if (!parsed.ok) {
+        send(res, 400, { error: parsed.error });
+        return;
+      }
+      const payload = `${JSON.stringify(bigBoardStats(await loadLogs(options.dataDir), parsed.value))}\n`;
+      res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+      res.end(payload);
+      return;
+    }
+
+    if (req.method === "POST" && path === "/api/lint-scout") {
+      let text = "";
+      try {
+        text = await readBody(req);
+      } catch (error) {
+        send(res, 400, { error: error instanceof Error ? error.message : "bad body" });
+        return;
+      }
+      const parsed = parseLintDocument(text);
+      if (!parsed.ok) {
+        send(res, 400, { error: parsed.error });
+        return;
+      }
+      send(res, 200, lintScoutingReport(parsed.value));
+      return;
+    }
+
+    if (req.method === "GET" && path === "/api/ledger") {
+      const targets = await loadTargets(options.targetsPath);
+      if (targets.length === 0) {
+        send(res, 500, { error: "no targets" });
+        return;
+      }
+      const payload = `${ledgerJson(seasonLedger(await loadLogs(options.dataDir), await readLedgerFile(options.dataDir, targets), targets[0] ?? "", Date.now()))}\n`;
+      res.writeHead(200, { "content-type": "application/json", "cache-control": "no-store" });
+      res.end(payload);
+      return;
+    }
+
+    const files = ["/", "/index.html", "/app.js", "/styles.css", "/timeline.js", "/timeline.css", "/lessons.js", "/lessons.css", "/replay.js", "/replay.css", "/linter.js", "/linter.css", "/bigboard.js", "/bigboard.css", "/ledger.js", "/ledger.css"];
     if (req.method === "GET" && files.includes(path)) {
       const file = path === "/" || path === "/index.html" ? "index.html" : path.slice(1);
       const full = normalize(join(UI_DIR, file));

@@ -5,7 +5,9 @@ description: Drive the Draft Day War Room in a browser against a disposable data
 
 # Verify Draft Day
 
-The War Room is a loopback web UI served by `dd serve`. There is no login and no database. Two runs can sit side by side when each has its own `--data` directory and `--port`. Do not drive a server you did not start.
+The War Room is a loopback web UI served by `node --experimental-strip-types src/cli/dd.ts serve`. There is no login and no database. Two runs can sit side by side when each has its own `--data` directory and `--port`. Do not drive a server you did not start.
+
+GNU `dd` is on `PATH` and is not this project. A copied `dd intake` exits 1 with `unrecognized option`. Every project command is `node --experimental-strip-types src/cli/dd.ts`.
 
 Evidence lives in `/opt/cursor/artifacts/war-room/`. Cleanup never deletes that directory.
 
@@ -22,9 +24,15 @@ The helper:
 1. Makes an empty data directory under `/tmp`.
 2. Runs `node --experimental-strip-types src/cli/dd.ts selftest --keep --data "$DATA"` so the board already has a drafted happy pick, a policy refusal, a walkover, and a close Film Room pick.
 3. Starts `node --experimental-strip-types src/cli/dd.ts serve --data "$DATA" --host 127.0.0.1 --port "$PORT"`.
-4. Waits until the log line `War Room listening on http://127.0.0.1:$PORT` appears and `GET /api/board` returns JSON.
+4. Waits until the log line `War Room listening on http://127.0.0.1:$PORT` appears and `GET /api/board` returns HTTP 200. It does not read pick ids. An empty data directory satisfies that wait with `"picks": []`.
 
-Ready means the Big Board lists those four picks. A process that merely accepts a socket is not ready. The helper writes `/tmp/dd-verify/state.env` with `DATA`, `PORT`, `PID`, and `URL`.
+The four seeded picks are on the board because `selftest --keep` finished before `serve`. Confirm those ids in the Big Board journey. A process that merely accepts a socket is not ready. The helper writes `/tmp/dd-verify/state.env` with `DATA`, `PORT`, `PID`, and `URL` and does not export them. A new shell has empty `DATA` and `URL` until:
+
+```bash
+set -a
+source /tmp/dd-verify/state.env
+set +a
+```
 
 Override the port with `PORT=45921 .cursor/skills/verify-draft-day/helpers/control.sh launch` when 45920 is taken.
 
@@ -34,11 +42,14 @@ Override the port with `PORT=45921 .cursor/skills/verify-draft-day/helpers/contr
 .cursor/skills/verify-draft-day/helpers/control.sh doctor
 ```
 
-Doctor is read-only. It passes only when all of these are true:
+`control.sh doctor` is not read-only. `node --experimental-strip-types src/cli/dd.ts doctor --data "$DATA" --port "$PORT"` writes `$DATA/.doctor-write` and deletes it to prove the directory is writable. That command exits 1 while this War Room holds the port.
+
+`control.sh doctor` prints `doctor: pass` only when all of these are true:
 
 - the recorded PID is alive and is the server this run started
 - `GET $URL/api/board` returns 200 and a `picks` array
-- `dd doctor --data "$DATA" --port "$PORT"` prints `node:`, `data:`, `config:`, `targets:`, and `port:` lines
+- the `node`, `data`, `config`, and `targets` lines say `pass`
+- the `port` line is present and reads `port: fail <port> in use` (expected; that failed line is why `node --experimental-strip-types src/cli/dd.ts doctor` exits 1)
 
 Run doctor before driving whenever the page looks wrong.
 
@@ -47,11 +58,16 @@ Run doctor before driving whenever the page looks wrong.
 Open `$URL` in the browser. The shell is `src/ui/index.html`. Prefer accessible names.
 
 - The page heading is `War Room`.
-- `New pick` is a form (`aria-label` `New pick`) with textbox `Idea`, textbox `Target`, textbox `Candidates`, and button `Add pick`.
-- `Big Board` is a table. Pick ids are links. Inbox rows say `queued` in the Pick column.
+- `New pick` is a form (`aria-label` `New pick`) with textbox `Idea`, textbox `Target`, spinbutton or select `Candidates`, and button `Add pick`. `Add pick` is disabled while a submit is in flight.
+- `Big Board` is a table. Pick ids are links. Inbox rows say `queued` in the Pick column. Status chips and `th` use `text-transform: uppercase`, so a screenshot paints `DRAFTED` and `PICK` while `textContent` and the accessible name stay `drafted` and `Pick`. Check `textContent`.
 - A pick link goes to `#/picks/<id>` without a reload. `Big Board` is the link back.
 
 Live updates use `EventSource` on `/api/events`. After `Add pick`, the new idea shows on the Big Board without a reload. Recording a pick event while a pick page is open refreshes that page the same way.
+
+- On a pick page, `Replay` goes to `#/picks/<id>/replay`. Replay has `Pick page` and `Big Board`, plus `First event`, `Previous event`, `Play` (it reads `Pause` while the film is moving), `Next event`, `Last event`, and the `Event` slider.
+- On a pick page, `Lint` goes to `#/picks/<id>/linter`. The Scouting linter shows the summary, rubric gradeability, EARS coverage, angle pairs, hard findings, and soft warnings. The `Lint document` box and the `Lint` button re-check a pasted JSON or markdown report.
+- On the Big Board, `Stats` goes to `#/stats`. Big Board stats shows the summary, win rate by angle, win rate by slot, trades per pick, verify pass rate, and time per stage. `Since` and `Until` with `Apply` narrow the window. `Big Board` goes back to `#/`. The Swap bias section shows how often the reversed pass flipped, which picks would have no base if both passes had to agree, and the flip rate per judge model.
+- On the Big Board, `Ledger` goes to `#/ledger`. The Season ledger leads with the merge call and one re-run sentence, then the summary, a one-line legend, merge order, and anything off the stack. Each row is a closed disclosure of that PR's verdict sequence. `Big Board` goes back to `#/`.
 
 ## Evidence
 
@@ -76,6 +92,6 @@ This kills the PID from `/tmp/dd-verify/state.env` and deletes that run's data d
 
 ## Helpers
 
-`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, or `cleanup` from the repo root. It prints the URL on launch.
+`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, `seed-timeline`, `seed-lessons`, `seed-replay`, `seed-linter`, `seed-bigboard`, `seed-ledger`, `seed-swap`, or `cleanup` from the repo root. It prints the URL on launch. `seed-ledger polish` records `test/fixtures/ledger/ledger-polish.jsonl` after the real season, so #1 is VERIFIED certainty 5 at f51dae8 and 4edd03a, #10 is VERIFIED certainty 5 at ace89ea, and #11 is VERIFIED certainty 5 at af1e78c. The summary is `11 open PRs · stack #1→#11 (10) · merge-safe through #11 · re-run none · 6 fresh, 4 docs-only · 1 off stack`.
 
 Keep this map honest with `/maintain-verification-skill` when the War Room changes. One correction pass at a time.

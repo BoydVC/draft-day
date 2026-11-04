@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { createServer } from "node:http";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -6,19 +7,36 @@ import { realpathSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import {
   assertCandidateCount,
+  bigBoardStats,
+  bigBoardText,
   branchFor,
   eventKey,
   filmRoom,
+  gardener,
   isCandId,
   isEventType,
   isPickId,
   labelMapForPass,
+  lessonWindow,
+  lessonsJson,
+  lessonsText,
+  ledgerJson,
+  ledgerLine,
+  ledgerText,
+  prEntriesFromPulls,
+  readLedger,
+  seasonLedger,
+  validLedgerAt,
+  lintScoutingReport,
+  lintText,
   loadConfig,
   timeline,
   loadTargets,
   nextAction,
   parseCandidateReport,
   parseJudgement,
+  parseLintDocument,
+  parseMarkdownScout,
   parseScoutingReport,
   parseTargetRepo,
   parseVerdict,
@@ -27,9 +45,11 @@ import {
   type Config,
   type DraftEvent,
   type EventType,
+  type LintDocument,
   type Pick,
 } from "../core/index.ts";
-import { allocatePickId, commitPick, loadPicks, readEvents } from "../store/eventlog.ts";
+import { allocatePickId, commitPick, loadLogs, loadPicks, readEvents, withLock } from "../store/eventlog.ts";
+import { appendLedger, readLedgerFile } from "../store/ledger.ts";
 import { inboxCursor, readInbox } from "../store/inbox.ts";
 import { startServer } from "../server/http.ts";
 import { CLOSE, drive, HAPPY, POLICY, WALK, type DriverIo } from "../../test/fixtures/fake-driver.ts";
@@ -116,6 +136,29 @@ function countOf(events: readonly DraftEvent[], type: EventType, cand?: string):
   return events.filter((event) => event.type === type && (cand === undefined || event.payload.cand === cand)).length;
 }
 
+function lastOf(events: readonly DraftEvent[], types: readonly EventType[], cand?: string): EventType | undefined {
+  let found: EventType | undefined;
+  for (const event of events) {
+    if (!types.includes(event.type)) continue;
+    if (cand !== undefined && event.payload.cand !== cand) continue;
+    found = event.type;
+  }
+  return found;
+}
+
+function explicitSlot(value: unknown): number | undefined | "bad" {
+  if (value === undefined || value === false) return undefined;
+  const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
+  if (!Number.isInteger(n) || n < 1 || n > 99) return "bad";
+  return n;
+}
+
+function slotOrNext(slot: number | undefined, open: boolean, seen: number): number {
+  if (slot !== undefined) return slot;
+  if (open) return Math.max(1, seen);
+  return seen + 1;
+}
+
 async function fileText(flags: Flags): Promise<string | undefined> {
   const path = flag(flags, "file") || flag(flags, "report");
   if (!path) return undefined;
@@ -143,11 +186,17 @@ function normalize(
     const cand = String(raw.cand ?? "");
     if (!isCandId(cand)) return { error: `unknown candidate ${cand}` };
     if (type === "candidate_dropped") return { payload: { cand, reason: String(raw.reason ?? "dropped") } };
-    if (type === "candidate_failed") {
-      return { payload: { cand, attempt: countOf(events, "candidate_failed", cand) + 1 } };
-    }
-    if (type === "candidate_launched") {
-      const attempt = countOf(events, "candidate_launched", cand) + 1;
+    if (type === "candidate_failed" || type === "candidate_launched") {
+      const slot = explicitSlot(raw.attempt);
+      if (slot === "bad") return { error: "bad attempt" };
+      if (type === "candidate_failed") {
+        const seen = countOf(events, "candidate_failed", cand);
+        const open = lastOf(events, ["candidate_launched", "candidate_failed", "candidate_finished"], cand) === "candidate_failed";
+        return { payload: { cand, attempt: slotOrNext(slot, open, seen) } };
+      }
+      const seen = countOf(events, "candidate_launched", cand);
+      const open = lastOf(events, ["candidate_launched", "candidate_failed", "candidate_finished"], cand) === "candidate_launched";
+      const attempt = slotOrNext(slot, open, seen);
       return {
         payload: {
           cand,
@@ -164,7 +213,11 @@ function normalize(
     return { payload: { cand, attempt: countOf(events, "candidate_launched", cand) || 1, report: parsed.value } };
   }
   if (type === "judge_launched") {
-    const pass = pick.judgeLaunches + 1;
+    const slot = explicitSlot(raw.pass ?? raw.attempt);
+    if (slot === "bad") return { error: "bad attempt" };
+    const seen = countOf(events, "judge_launched");
+    const open = lastOf(events, ["judge_launched", "judgement_recorded"]) === "judge_launched";
+    const pass = slotOrNext(slot, open, seen);
     const finished = pick.candidates.filter((cand) => cand.status === "finished").map((cand) => cand.id);
     const map = labelMapForPass(pick.id, finished, pass);
     const labels: Record<string, string> = {};
@@ -219,10 +272,25 @@ function normalize(
     const text = typeof raw.fileText === "string" ? raw.fileText : JSON.stringify(raw.physical ?? raw);
     const parsed = parseVerdict(text);
     if (!parsed.ok) return parsed;
-    const attempt = pick.verdicts.length + 1;
-    return { payload: { attempt, headSha: parsed.value.headSha, physical: parsed.value } };
+    const digest = createHash("sha256").update(text).digest("hex");
+    const slot = explicitSlot(raw.attempt);
+    if (slot === "bad") return { error: "bad attempt" };
+    const sameFile = events.find((event) => event.type === "verdict_recorded" && event.payload.digest === digest);
+    if (sameFile) return { payload: sameFile.payload };
+    if (slot !== undefined) {
+      const sameAttempt = events.find((event) => event.type === "verdict_recorded" && event.payload.attempt === slot);
+      if (sameAttempt) return { payload: sameAttempt.payload };
+    }
+    const attempt = slot ?? pick.verdicts.length + 1;
+    return { payload: { attempt, headSha: parsed.value.headSha, physical: parsed.value, digest } };
   }
-  if (type === "fix_requested") return { payload: { loop: pick.fixLoops + 1, agentId: pick.graftAgentId ?? "" } };
+  if (type === "fix_requested") {
+    const slot = explicitSlot(raw.loop ?? raw.attempt);
+    if (slot === "bad") return { error: "bad attempt" };
+    const seen = countOf(events, "fix_requested");
+    const open = lastOf(events, ["fix_requested", "verdict_recorded"]) === "fix_requested";
+    return { payload: { loop: slotOrNext(slot, open, seen), agentId: pick.graftAgentId ?? "" } };
+  }
   if (type === "draft_pr_confirmed") {
     const prNumber = Number(raw.prNumber ?? pick.physical?.prNumber ?? pick.graft?.prNumber);
     if (!Number.isInteger(prNumber)) return { error: "prNumber is required" };
@@ -300,20 +368,23 @@ async function createPick(
 
 async function intake(paths: Paths, flags: Flags): Promise<number> {
   if (flags["from-inbox"] === true) {
-    const cursor = await inboxCursor(paths.dataDir);
-    const lines = await readInbox(paths.dataDir);
-    const fresh = lines.filter((line) => line.offset > cursor);
-    const created = [];
-    for (const line of fresh) {
-      const pick = await createPick(paths, {
-        idea: line.idea,
-        source: line.source,
-        target: line.target,
-        n: line.n,
-        inboxOffset: line.offset,
-      });
-      created.push({ pickId: pick.id, status: pick.status, inboxOffset: line.offset });
-    }
+    const created = await withLock(join(paths.dataDir, "inbox.lock"), async () => {
+      const cursor = await inboxCursor(paths.dataDir);
+      const lines = await readInbox(paths.dataDir);
+      const fresh = lines.filter((line) => line.offset > cursor);
+      const picks = [];
+      for (const line of fresh) {
+        const pick = await createPick(paths, {
+          idea: line.idea,
+          source: line.source,
+          target: line.target,
+          n: line.n,
+          inboxOffset: line.offset,
+        });
+        picks.push({ pickId: pick.id, status: pick.status, inboxOffset: line.offset });
+      }
+      return picks;
+    });
     emit(paths, { picks: created }, created.map((pick) => `${pick.pickId} ${pick.status}`).join("\n") || "inbox empty");
     return 0;
   }
@@ -356,6 +427,9 @@ async function recordCommand(paths: Paths, pickId: string | undefined, typeName:
     ...(flag(flags, "second-read") ? { secondRead: flag(flags, "second-read") } : {}),
     ...(flag(flags, "note") ? { note: flag(flags, "note") } : {}),
     ...(flag(flags, "model") ? { model: flag(flags, "model") } : {}),
+    ...(flag(flags, "attempt") ? { attempt: flag(flags, "attempt") } : {}),
+    ...(flag(flags, "pass") ? { pass: flag(flags, "pass") } : {}),
+    ...(flag(flags, "loop") ? { loop: flag(flags, "loop") } : {}),
   };
   const { noop, pick } = await recordObject(paths, pickId, typeName, raw, flag(flags, "by") ?? "dd");
   emit(paths, { ok: true, noop, pickId: pick.id, status: pick.status });
@@ -410,19 +484,48 @@ async function brief(paths: Paths, pickId: string | undefined, role: string | un
   return 0;
 }
 
-async function lessons(paths: Paths): Promise<number> {
-  const picks = await loadPicks(paths.dataDir);
-  const groups = new Map<string, { topic: string; count: number; texts: string[] }>();
-  for (const pick of picks) {
-    for (const lesson of pick.lessons) {
-      const group = groups.get(lesson.topic) ?? { topic: lesson.topic, count: 0, texts: [] };
-      group.count += 1;
-      group.texts.push(lesson.text);
-      groups.set(lesson.topic, group);
+async function lintScout(paths: Paths, file: string | undefined, flags: Flags): Promise<number> {
+  const pickId = flag(flags, "pick");
+  let doc: LintDocument;
+  if (pickId) {
+    const { pick } = await loadOne(paths, pickId);
+    if (!pick.report) throw new Exit("pick has no scouting report");
+    doc = pick.report;
+  } else if (file) {
+    let text: string;
+    try {
+      text = await readFile(resolve(paths.cwd, file), "utf8");
+    } catch {
+      throw new Exit(`cannot read ${file}`);
     }
-  }
-  const lessonsOut = [...groups.values()];
-  emit(paths, { lessons: lessonsOut }, lessonsOut.map((group) => `${group.topic} (${group.count})`).join("\n") || "no lessons");
+    if (file.endsWith(".md") || text.trimStart().startsWith("#")) doc = parseMarkdownScout(text);
+    else {
+      const parsed = parseLintDocument(text);
+      if (!parsed.ok) throw new Exit(parsed.error);
+      doc = parsed.value;
+    }
+  } else throw new Exit("lint-scout needs a file or --pick <id>");
+  const report = lintScoutingReport(doc);
+  if (paths.json) console.log(JSON.stringify(report));
+  else console.log(lintText(report));
+  return report.ok ? 0 : 1;
+}
+
+async function lessons(paths: Paths, flags: Flags): Promise<number> {
+  const parsed = lessonWindow(flags.since, flags.until);
+  if (!parsed.ok) throw new Exit(parsed.error);
+  const report = gardener(await loadLogs(paths.dataDir), parsed.value);
+  if (paths.json) console.log(lessonsJson(report));
+  else console.log(lessonsText(report));
+  return 0;
+}
+
+async function stats(paths: Paths, flags: Flags): Promise<number> {
+  const parsed = lessonWindow(flags.since, flags.until);
+  if (!parsed.ok) throw new Exit(parsed.error);
+  const report = bigBoardStats(await loadLogs(paths.dataDir), parsed.value);
+  if (paths.json) console.log(JSON.stringify(report));
+  else console.log(bigBoardText(report));
   return 0;
 }
 
@@ -579,17 +682,88 @@ async function timelineCommand(paths: Paths, pickId: string | undefined): Promis
   return 0;
 }
 
+async function ledgerTargets(paths: Paths): Promise<string[]> {
+  let targets: string[];
+  try {
+    targets = await loadTargets(paths.targetsPath);
+  } catch (error) {
+    throw new Exit(error instanceof Error ? error.message : "bad targets", 1);
+  }
+  if (targets.length === 0) throw new Exit("no targets", 1);
+  return targets;
+}
+
+async function readLedgerSource(paths: Paths, file: string): Promise<string> {
+  if (file === "-") {
+    const chunks: Buffer[] = [];
+    for await (const chunk of process.stdin) chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk);
+    return Buffer.concat(chunks).toString("utf8");
+  }
+  try {
+    return await readFile(resolve(paths.cwd, file), "utf8");
+  } catch {
+    throw new Exit(`cannot read ${file}`, 1);
+  }
+}
+
+async function ledgerCommand(paths: Paths, rest: string[], flags: Flags): Promise<number> {
+  const sub = rest[0];
+  const targets = await ledgerTargets(paths);
+  if (!sub) {
+    const ledger = seasonLedger(await loadLogs(paths.dataDir), await readLedgerFile(paths.dataDir, targets), targets[0] ?? "", Date.now());
+    if (paths.json) console.log(ledgerJson(ledger));
+    else console.log(ledgerText(ledger));
+    return 0;
+  }
+  if (sub === "import-prs") {
+    const file = rest[1];
+    if (!file) throw new Exit("import-prs needs a pulls file", 1);
+    const at = flag(flags, "at") ?? new Date().toISOString();
+    if (!validLedgerAt(at)) throw new Exit("bad at", 1);
+    let pulls: unknown;
+    try {
+      pulls = JSON.parse(await readLedgerSource(paths, file));
+    } catch (error) {
+      if (error instanceof Exit) throw error;
+      throw new Exit("not JSON", 1);
+    }
+    const parsed = prEntriesFromPulls(pulls, at, targets);
+    if (!parsed.ok) throw new Exit(parsed.reason, 1);
+    const result = await appendLedger(paths.dataDir, parsed.entries.map((entry) => ledgerLine(entry)));
+    console.log(`ledger +${result.added} (${result.already} already recorded)`);
+    return 0;
+  }
+  if (sub === "record") {
+    const file = rest[1];
+    if (!file) throw new Exit("record needs a file", 1);
+    const book = readLedger(await readLedgerSource(paths, file), targets);
+    if (book.skipped.length > 0) {
+      for (const skip of book.skipped) console.error(`line ${skip.line}: ${skip.reason}`);
+      return 1;
+    }
+    const result = await appendLedger(paths.dataDir, book.entries.map((row) => ledgerLine(row.entry)));
+    console.log(`ledger +${result.added} (${result.already} already recorded)`);
+    return 0;
+  }
+  throw new Exit(`unknown ledger command ${sub}`, 2);
+}
+
 function help(): string {
   return [
     "dd intake --idea TEXT --source chat --target BoydVC/draft-day [--n 3] [--approval ask]",
     "dd intake --from-inbox",
     "dd next <pickId>",
-    "dd record <pickId> <event> [--file path] [--cand c1] [--agent id]",
+    "dd record <pickId> <event> [--file path] [--cand c1] [--agent id] [--attempt N]",
     "dd show <pickId>",
     "dd timeline <pickId>",
     "dd board",
     "dd brief <pickId> <candidate|judge|graft|physical> [cand]",
-    "dd lessons",
+    "dd lessons [--since YYYY-MM-DD] [--until YYYY-MM-DD]",
+    "dd stats [--since YYYY-MM-DD] [--until YYYY-MM-DD]",
+    "dd ledger [--json]",
+    "dd ledger import-prs <pulls.json> [--at ISO]",
+    "dd ledger record <file.jsonl|->",
+    "dd lint-scout <file>|--pick <id>",
     "dd serve [--port 4420] [--host 127.0.0.1]",
     "dd doctor",
     "dd selftest [--keep]",
@@ -622,7 +796,13 @@ export async function main(argv: string[]): Promise<number> {
       case "brief":
         return await brief(paths, rest[0], rest[1], rest[2]);
       case "lessons":
-        return await lessons(paths);
+        return await lessons(paths, flags);
+      case "stats":
+        return await stats(paths, flags);
+      case "ledger":
+        return await ledgerCommand(paths, rest, flags);
+      case "lint-scout":
+        return await lintScout(paths, rest[0], flags);
       case "serve":
         return await serve(paths, flags);
       case "doctor":
