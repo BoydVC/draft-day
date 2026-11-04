@@ -34,6 +34,7 @@ This directory is the maintained source for verifying the War Room. Read the ind
 - [Replay](./replay.md) plays a pick's Decision log one event at a time, with a clock, a status chip, and the runs and stages so far.
 - [Linter](./linter.md) checks a scouting report for gradeable rubric lines, EARS bindings, and distinct angles.
 - [Big Board stats](./big-board-stats.md) counts which angles win, how many trades a pick takes, and how often the physical verifies.
+- [Swap bias](./swap-bias.md) shows how often the reversed pass flipped the call and which picks would have no base if both passes had to agree.
 - [Season ledger](./season-ledger.md) says how far down the stack Boyd can merge and which PRs need a physical first.
 - [Pick page](./pick-page.md) shows the scouting report, candidates, scorecard, trades, physical, and decision log.
 - [Film Room](./film-room.md) shows the Scorecard: base, swap, pass toggle, and the reason sentence.

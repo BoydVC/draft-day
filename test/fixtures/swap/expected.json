@@ -1,0 +1,1387 @@
+{
+ "spec": "SPEC-010-swap-bias.md",
+ "projection": "swapFor(bigBoardStats(logs, window, now).swap)",
+ "rows": [
+  {
+   "name": "season",
+   "fixtures": [
+    "test/fixtures/ledger/picks.jsonl"
+   ],
+   "window": null,
+   "note": "real Picks 3-7 (P3 and P7 flipped)",
+   "now": "2026-10-20T00:00:00.000Z",
+   "expect": {
+    "judged": 5,
+    "single": 0,
+    "twoPass": 5,
+    "consistent": 3,
+    "flipped": 2,
+    "rate": 0.4,
+    "tieRule": 2,
+    "strict": [
+     "p-20261017-93",
+     "p-20261018-97"
+    ],
+    "labels": [
+     [
+      "A",
+      5,
+      10
+     ],
+     [
+      "B",
+      3,
+      10
+     ],
+     [
+      "C",
+      2,
+      10
+     ]
+    ],
+    "models": [
+     [
+      "account default",
+      "account default",
+      5,
+      2
+     ]
+    ],
+    "rows": [
+     [
+      "p-20261017-93",
+      "flipped",
+      [
+       "c1",
+       "c2"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261017-94",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261017-95",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261018-96",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261018-97",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "league",
+   "fixtures": [
+    "test/fixtures/bigboard/league.jsonl"
+   ],
+   "window": null,
+   "note": "Pick 7's league: 13 picks, 8 judged, 2 single-pass",
+   "now": "2026-10-20T00:00:00.000Z",
+   "expect": {
+    "judged": 8,
+    "single": 2,
+    "twoPass": 6,
+    "consistent": 5,
+    "flipped": 1,
+    "rate": 0.167,
+    "tieRule": 1,
+    "strict": [
+     "p-20261017-93"
+    ],
+    "labels": [
+     [
+      "A",
+      5,
+      14
+     ],
+     [
+      "B",
+      5,
+      14
+     ],
+     [
+      "C",
+      4,
+      13
+     ]
+    ],
+    "models": [
+     [
+      "account default",
+      "account default",
+      6,
+      1
+     ]
+    ],
+    "rows": [
+     [
+      "p-20261010-07",
+      "consistent",
+      [
+       "c2",
+       "c2"
+      ],
+      "c2",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261011-01",
+      "single",
+      [
+       "c2"
+      ],
+      "c2",
+      [
+       "account default"
+      ]
+     ],
+     [
+      "p-20261012-01",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261015-01",
+      "single",
+      [
+       "c1"
+      ],
+      "c1",
+      [
+       "account default"
+      ]
+     ],
+     [
+      "p-20261017-93",
+      "flipped",
+      [
+       "c1",
+       "c2"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261017-94",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261017-95",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261018-96",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "league-oct17",
+   "fixtures": [
+    "test/fixtures/bigboard/league.jsonl"
+   ],
+   "window": {
+    "since": "2026-10-17",
+    "until": null
+   },
+   "note": "window since Oct 17",
+   "now": "2026-10-20T00:00:00.000Z",
+   "expect": {
+    "judged": 4,
+    "single": 0,
+    "twoPass": 4,
+    "consistent": 3,
+    "flipped": 1,
+    "rate": 0.25,
+    "tieRule": 1,
+    "strict": [
+     "p-20261017-93"
+    ],
+    "labels": [
+     [
+      "A",
+      3,
+      8
+     ],
+     [
+      "B",
+      3,
+      8
+     ],
+     [
+      "C",
+      2,
+      8
+     ]
+    ],
+    "models": [
+     [
+      "account default",
+      "account default",
+      4,
+      1
+     ]
+    ],
+    "rows": [
+     [
+      "p-20261017-93",
+      "flipped",
+      [
+       "c1",
+       "c2"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261017-94",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261017-95",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261018-96",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "models",
+   "fixtures": [
+    "test/fixtures/swap/models.jsonl"
+   ],
+   "window": null,
+   "note": "judge models: same, cross-family, spelled two ways, missing, pass 2 all gates failed, single, selftest",
+   "now": "2026-10-20T00:00:00.000Z",
+   "expect": {
+    "judged": 8,
+    "single": 1,
+    "twoPass": 7,
+    "consistent": 3,
+    "flipped": 4,
+    "rate": 0.571,
+    "tieRule": 3,
+    "strict": [
+     "p-20261020-01",
+     "p-20261020-05",
+     "p-20261020-07",
+     "p-20261020-09"
+    ],
+    "labels": [
+     [
+      "A",
+      7,
+      14
+     ],
+     [
+      "B",
+      4,
+      14
+     ],
+     [
+      "C",
+      3,
+      14
+     ]
+    ],
+    "models": [
+     [
+      "claude-opus-4.5",
+      "claude-opus-4.5",
+      2,
+      2
+     ],
+     [
+      "grok-4",
+      "grok-4",
+      2,
+      0
+     ],
+     [
+      "claude-opus-4.5 + grok-4",
+      "claude-opus-4.5 + grok-4",
+      1,
+      0
+     ],
+     [
+      "grok-4 + account default",
+      "grok-4 + account default",
+      1,
+      1
+     ],
+     [
+      "grok-4 + claude-opus-4.5",
+      "grok-4 + claude-opus-4.5",
+      1,
+      1
+     ]
+    ],
+    "rows": [
+     [
+      "p-20261020-01",
+      "flipped",
+      [
+       "c1",
+       "c2"
+      ],
+      "c1",
+      [
+       "claude-opus-4.5",
+       "claude-opus-4.5"
+      ]
+     ],
+     [
+      "p-20261020-02",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4",
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-03",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "claude-opus-4.5",
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-04",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "Grok-4",
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-05",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4",
+       "claude-opus-4.5"
+      ]
+     ],
+     [
+      "p-20261020-06",
+      "single",
+      [
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-07",
+      "flipped",
+      [
+       "c1",
+       null
+      ],
+      "c1",
+      [
+       "claude-opus-4.5",
+       "claude-opus-4.5"
+      ]
+     ],
+     [
+      "p-20261020-09",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4",
+       "account default"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "season-models",
+   "fixtures": [
+    "test/fixtures/ledger/picks.jsonl",
+    "test/fixtures/swap/models.jsonl"
+   ],
+   "window": null,
+   "note": "real season plus the model picks",
+   "now": "2026-10-20T00:00:00.000Z",
+   "expect": {
+    "judged": 13,
+    "single": 1,
+    "twoPass": 12,
+    "consistent": 6,
+    "flipped": 6,
+    "rate": 0.5,
+    "tieRule": 5,
+    "strict": [
+     "p-20261017-93",
+     "p-20261018-97",
+     "p-20261020-01",
+     "p-20261020-05",
+     "p-20261020-07",
+     "p-20261020-09"
+    ],
+    "labels": [
+     [
+      "A",
+      12,
+      24
+     ],
+     [
+      "B",
+      7,
+      24
+     ],
+     [
+      "C",
+      5,
+      24
+     ]
+    ],
+    "models": [
+     [
+      "account default",
+      "account default",
+      5,
+      2
+     ],
+     [
+      "claude-opus-4.5",
+      "claude-opus-4.5",
+      2,
+      2
+     ],
+     [
+      "grok-4",
+      "grok-4",
+      2,
+      0
+     ],
+     [
+      "claude-opus-4.5 + grok-4",
+      "claude-opus-4.5 + grok-4",
+      1,
+      0
+     ],
+     [
+      "grok-4 + account default",
+      "grok-4 + account default",
+      1,
+      1
+     ],
+     [
+      "grok-4 + claude-opus-4.5",
+      "grok-4 + claude-opus-4.5",
+      1,
+      1
+     ]
+    ],
+    "rows": [
+     [
+      "p-20261017-93",
+      "flipped",
+      [
+       "c1",
+       "c2"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261017-94",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261017-95",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261018-96",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261018-97",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261020-01",
+      "flipped",
+      [
+       "c1",
+       "c2"
+      ],
+      "c1",
+      [
+       "claude-opus-4.5",
+       "claude-opus-4.5"
+      ]
+     ],
+     [
+      "p-20261020-02",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4",
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-03",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "claude-opus-4.5",
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-04",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "Grok-4",
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-05",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4",
+       "claude-opus-4.5"
+      ]
+     ],
+     [
+      "p-20261020-06",
+      "single",
+      [
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-07",
+      "flipped",
+      [
+       "c1",
+       null
+      ],
+      "c1",
+      [
+       "claude-opus-4.5",
+       "claude-opus-4.5"
+      ]
+     ],
+     [
+      "p-20261020-09",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4",
+       "account default"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "hostile",
+   "fixtures": [
+    "test/fixtures/swap/hostile.jsonl"
+   ],
+   "window": null,
+   "note": "markup, controls, 200-char, non-string and blank judgeModel; bad id; id mismatch",
+   "now": "2026-10-20T00:00:00.000Z",
+   "expect": {
+    "judged": 4,
+    "single": 0,
+    "twoPass": 4,
+    "consistent": 2,
+    "flipped": 2,
+    "rate": 0.5,
+    "tieRule": 2,
+    "strict": [
+     "p-20261020-21",
+     "p-20261020-26"
+    ],
+    "labels": [
+     [
+      "A",
+      4,
+      8
+     ],
+     [
+      "B",
+      3,
+      8
+     ],
+     [
+      "C",
+      1,
+      8
+     ]
+    ],
+    "models": [
+     [
+      "account default",
+      "account default",
+      2,
+      1
+     ],
+     [
+      "<img src=x onerror=alert(1)> + javascript:alert(1)",
+      "<img src=x onerror=alert(1)> + javascript:alert(1)",
+      1,
+      1
+     ],
+     [
+      "grok -4�� + xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "grok -4�� + xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      1,
+      0
+     ]
+    ],
+    "rows": [
+     [
+      "p-20261020-21",
+      "flipped",
+      [
+       "c1",
+       "c2"
+      ],
+      "c1",
+      [
+       "<img src=x onerror=alert(1)>",
+       "javascript:alert(1)"
+      ]
+     ],
+     [
+      "p-20261020-22",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok -4��",
+       "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      ]
+     ],
+     [
+      "p-20261020-23",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261020-26",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "season-models-hostile",
+   "fixtures": [
+    "test/fixtures/ledger/picks.jsonl",
+    "test/fixtures/swap/models.jsonl",
+    "test/fixtures/swap/hostile.jsonl"
+   ],
+   "window": null,
+   "note": "what seed-swap hostile serves",
+   "now": "2026-10-20T00:00:00.000Z",
+   "expect": {
+    "judged": 17,
+    "single": 1,
+    "twoPass": 16,
+    "consistent": 8,
+    "flipped": 8,
+    "rate": 0.5,
+    "tieRule": 7,
+    "strict": [
+     "p-20261017-93",
+     "p-20261018-97",
+     "p-20261020-01",
+     "p-20261020-05",
+     "p-20261020-07",
+     "p-20261020-09",
+     "p-20261020-21",
+     "p-20261020-26"
+    ],
+    "labels": [
+     [
+      "A",
+      16,
+      32
+     ],
+     [
+      "B",
+      10,
+      32
+     ],
+     [
+      "C",
+      6,
+      32
+     ]
+    ],
+    "models": [
+     [
+      "account default",
+      "account default",
+      7,
+      3
+     ],
+     [
+      "claude-opus-4.5",
+      "claude-opus-4.5",
+      2,
+      2
+     ],
+     [
+      "grok-4",
+      "grok-4",
+      2,
+      0
+     ],
+     [
+      "<img src=x onerror=alert(1)> + javascript:alert(1)",
+      "<img src=x onerror=alert(1)> + javascript:alert(1)",
+      1,
+      1
+     ],
+     [
+      "claude-opus-4.5 + grok-4",
+      "claude-opus-4.5 + grok-4",
+      1,
+      0
+     ],
+     [
+      "grok -4�� + xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "grok -4�� + xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      1,
+      0
+     ],
+     [
+      "grok-4 + account default",
+      "grok-4 + account default",
+      1,
+      1
+     ],
+     [
+      "grok-4 + claude-opus-4.5",
+      "grok-4 + claude-opus-4.5",
+      1,
+      1
+     ]
+    ],
+    "rows": [
+     [
+      "p-20261017-93",
+      "flipped",
+      [
+       "c1",
+       "c2"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261017-94",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261017-95",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261018-96",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261018-97",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261020-01",
+      "flipped",
+      [
+       "c1",
+       "c2"
+      ],
+      "c1",
+      [
+       "claude-opus-4.5",
+       "claude-opus-4.5"
+      ]
+     ],
+     [
+      "p-20261020-02",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4",
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-03",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "claude-opus-4.5",
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-04",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "Grok-4",
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-05",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4",
+       "claude-opus-4.5"
+      ]
+     ],
+     [
+      "p-20261020-06",
+      "single",
+      [
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-07",
+      "flipped",
+      [
+       "c1",
+       null
+      ],
+      "c1",
+      [
+       "claude-opus-4.5",
+       "claude-opus-4.5"
+      ]
+     ],
+     [
+      "p-20261020-09",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261020-21",
+      "flipped",
+      [
+       "c1",
+       "c2"
+      ],
+      "c1",
+      [
+       "<img src=x onerror=alert(1)>",
+       "javascript:alert(1)"
+      ]
+     ],
+     [
+      "p-20261020-22",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok -4��",
+       "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      ]
+     ],
+     [
+      "p-20261020-23",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261020-26",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "season-models-oct18",
+   "fixtures": [
+    "test/fixtures/ledger/picks.jsonl",
+    "test/fixtures/swap/models.jsonl"
+   ],
+   "window": {
+    "since": "2026-10-18",
+    "until": null
+   },
+   "note": "seed-swap with Since 2026-10-18",
+   "now": "2026-10-20T00:00:00.000Z",
+   "expect": {
+    "judged": 5,
+    "single": 0,
+    "twoPass": 5,
+    "consistent": 2,
+    "flipped": 3,
+    "rate": 0.6,
+    "tieRule": 3,
+    "strict": [
+     "p-20261018-97",
+     "p-20261020-05",
+     "p-20261020-09"
+    ],
+    "labels": [
+     [
+      "A",
+      8,
+      10
+     ],
+     [
+      "B",
+      0,
+      10
+     ],
+     [
+      "C",
+      2,
+      10
+     ]
+    ],
+    "models": [
+     [
+      "account default",
+      "account default",
+      2,
+      1
+     ],
+     [
+      "grok-4",
+      "Grok-4",
+      1,
+      0
+     ],
+     [
+      "grok-4 + account default",
+      "grok-4 + account default",
+      1,
+      1
+     ],
+     [
+      "grok-4 + claude-opus-4.5",
+      "grok-4 + claude-opus-4.5",
+      1,
+      1
+     ]
+    ],
+    "rows": [
+     [
+      "p-20261018-96",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261018-97",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "account default",
+       "account default"
+      ]
+     ],
+     [
+      "p-20261020-04",
+      "consistent",
+      [
+       "c1",
+       "c1"
+      ],
+      "c1",
+      [
+       "Grok-4",
+       "grok-4"
+      ]
+     ],
+     [
+      "p-20261020-05",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4",
+       "claude-opus-4.5"
+      ]
+     ],
+     [
+      "p-20261020-09",
+      "flipped",
+      [
+       "c2",
+       "c1"
+      ],
+      "c1",
+      [
+       "grok-4",
+       "account default"
+      ]
+     ]
+    ]
+   }
+  },
+  {
+   "name": "empty",
+   "fixtures": [],
+   "window": null,
+   "note": "no logs",
+   "now": "2026-10-20T00:00:00.000Z",
+   "expect": {
+    "judged": 0,
+    "single": 0,
+    "twoPass": 0,
+    "consistent": 0,
+    "flipped": 0,
+    "rate": null,
+    "tieRule": 0,
+    "strict": [],
+    "labels": [],
+    "models": [],
+    "rows": []
+   }
+  }
+ ]
+}
