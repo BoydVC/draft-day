@@ -273,9 +273,7 @@ function pickView(pick) {
     physicalBits.push(el("p", { class: "empty" }, ["Physical has not run."]));
   }
 
-  const log = pick.events?.length
-    ? pick.events.map((event) => el("li", {}, [`${event.ts} ${event.summary}`]))
-    : [el("li", { class: "empty" }, ["No events."])];
+  const log = globalThis.draftDayTimeline(pick.timeline, el);
 
   return el("article", { "data-pick-id": pick.id }, [
     el("p", { class: "back" }, [el("a", { href: "#/" }, ["Big Board"])]),
@@ -294,7 +292,7 @@ function pickView(pick) {
     section("Candidates", [el("div", { class: "cards" }, cards)]),
     section("Trades", [el("ul", {}, trades)]),
     section("Physical", physicalBits),
-    section("Decision log", [el("ol", { class: "events" }, log)]),
+    section("Decision log", [log]),
   ]);
 }
 
