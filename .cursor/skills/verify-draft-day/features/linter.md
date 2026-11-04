@@ -28,7 +28,12 @@ Preconditions:
 - **Fail.** For 390×844 dark, 390×844 light, and 1280×800 light: `node test/fixtures/phone/cdp-shot.mjs --url "$URL/#/picks/p-20261018-61/linter" --width W --height H --scheme S --shot /opt/cursor/artifacts/war-room/linter-fail-W-S.png`. Each JSON line has `"ok":true`, `"offOrigin":[]`, and `scrollWidth` at most the width. Every Linter control and link is at least 44×44, including at 1280.
 - **Pass.** The same tool on `"$URL/#/picks/p-20261018-62/linter"` at 390×844 dark, 1280×800 light, and 1280×800 dark (`linter-pass-W-S.png`). Each line is `"ok":true`.
 - **Pick page.** `"$URL/#/picks/p-20261018-61"` at 390×844 dark (`pick-lint-link-390-dark.png`). The line is `"ok":true` and the page shows `Lint`.
-- **Paste.** From the fail panel at 390×844 dark, put `test/fixtures/linter/good-replay.json` into the `Lint document` box, press `Lint`, and screenshot `linter-paste-390-dark.png` once `data-ok="true"`.
+- **Paste.** `cdp-shot.mjs` has no type or click flag. `--before` is the paste, and it has to be an async function: a bare `await` is a `SyntaxError` in that page script. The driver does not fail the shot when `--before` throws, so exit 0 with `"ok":true` can still be the fail panel. From the fail panel at 390×844 dark, put `test/fixtures/linter/good-replay.json` into the `Lint document` box, press `Lint`, and screenshot `/opt/cursor/artifacts/war-room/linter-paste-390-dark.png` once `data-ok="true"`. The summary chip in the probe JSON changes from `fail · 5 hard` to `pass` (the chip is CSS-uppercased).
+
+```bash
+GOOD=$(python3 -c 'import json,pathlib; print(json.dumps(pathlib.Path("test/fixtures/linter/good-replay.json").read_text()))')
+node test/fixtures/phone/cdp-shot.mjs --url "$URL/#/picks/p-20261018-61/linter" --width 390 --height 844 --scheme dark --shot /opt/cursor/artifacts/war-room/linter-paste-390-dark.png --before "(async () => { const box=document.querySelector('[aria-label=\"Lint document\"]'); box.value=${GOOD}; document.querySelector('#linter-paste button').click(); await new Promise((resolve, reject) => { const started = Date.now(); const timer = setInterval(() => { const ok = document.querySelector('[aria-label=\"Scouting linter\"]')?.getAttribute('data-ok'); if (ok === 'true') { clearInterval(timer); resolve(ok); } else if (Date.now() - started > 3000) { clearInterval(timer); reject(new Error('data-ok stayed ' + ok)); } }, 50); }); })()"
+```
 
 ## Gotchas
 
