@@ -69,15 +69,17 @@ function rowEl(row, repo, el) {
   const picks = Array.isArray(row && row.picks) ? row.picks : [];
   const position = row && row.position != null ? String(row.position) : "";
   const status = row && row.status ? String(row.status) : "";
+  const statusAttrs = { class: "dd-status", "data-status": status };
+  if (status === "docs-only") statusAttrs.title = "docs-only change since verify (still safe)";
   const summary = [
     el("span", { class: "dd-pos" }, [position === "" ? "-" : position]),
     prLink(repo, row && row.number, el),
-    el("span", { class: "dd-status", "data-status": status }, [status]),
+    el("span", statusAttrs, [status]),
     el("span", { class: "dd-why" }, [row && typeof row.why === "string" ? row.why : ""]),
     el("span", { class: "dd-title" }, [row && typeof row.title === "string" ? row.title : ""]),
   ];
   for (const id of picks) summary.push(pickLink(id, el));
-  return el("details", {
+  const rowAttrs = {
     class: "dd-row",
     "data-pr": String(row && row.number != null ? row.number : ""),
     "data-position": position,
@@ -85,7 +87,9 @@ function rowEl(row, repo, el) {
     "data-head": short(row && row.headSha),
     "data-verified": short(row && row.verifiedSha),
     "data-picks": picks.join(","),
-  }, [
+  };
+  if (position === "" && Number(row && row.number) === 4) rowAttrs.title = "#4 is not in the stack";
+  return el("details", rowAttrs, [
     el("summary", {}, summary),
     el("div", { class: "dd-audit" }, [
       el("p", { class: "dd-kicker" }, ["Verdict sequence"]),
@@ -119,15 +123,31 @@ function draftDayLedger(ledger, el) {
   const next = rerun.length === 0
     ? (mergeSafe !== null && open > 0 ? "Nothing to re-run. The stack is clear." : "Nothing to re-run.")
     : ["Re-run ", ...joinBits(rerun.map((number) => prLink(repo, number, el))), " before you merge."];
+  const offNumbers = off.map((row) => Number(row && row.number)).filter((number) => Number.isInteger(number));
+  const legendBits = [
+    "The number in parentheses is how many pull requests are in the stack.",
+    "docs-only means a docs-only change since verify (still safe).",
+  ];
+  if (offNumbers.indexOf(4) !== -1) legendBits.push("#4 is not in the stack.");
+  else if (off.length) legendBits.push("Off stack means that pull request is not in the stack.");
   const children = [
     el("h2", { class: "dd-call" }, kids(call)),
     el("p", { class: "dd-next", "aria-label": "Re-run list" }, kids(next)),
-    el("p", { class: "dd-summary", "data-ledger": "summary" }, [typeof body.summary === "string" ? body.summary : ""]),
+    el("p", {
+      class: "dd-summary",
+      "data-ledger": "summary",
+      title: "docs-only means a docs-only change since verify (still safe). Off stack means the pull request is not in the stack.",
+    }, [typeof body.summary === "string" ? body.summary : ""]),
+  ];
+  if (open > 0) {
+    children.push(el("p", { class: "dd-legend", "data-ledger": "legend" }, [legendBits.join(" ")]));
+  }
+  children.push(
     el("h3", {}, ["Merge order"]),
     el("ol", { "aria-label": "Merge order" }, stack.map((row) => rowEl(row, repo, el))),
     el("h3", {}, ["Off the stack"]),
     el("ul", { "aria-label": "Off the stack" }, off.map((row) => rowEl(row, repo, el))),
-  ];
+  );
   if (notDraft.length) {
     children.push(el("div", { role: "alert", "aria-label": "Not draft" }, [
       el("h3", {}, ["Not draft"]),

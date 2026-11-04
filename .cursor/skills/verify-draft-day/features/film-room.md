@@ -29,7 +29,7 @@ Preconditions:
 - **Phone.** Set the viewport to 390×844, still on the Scorecard. The columns stack in one column, the base column leads, and the reason stays readable without a horizontal scrollbar. Screenshot `/opt/cursor/artifacts/war-room/film-room-phone.png`.
 - **Single pass.** Open the happy-path pick (`Add a status legend to the War Room`). The Scorecard chip reads `Single pass`. There are no Pass 1 / Pass 2 buttons. Screenshot `/opt/cursor/artifacts/war-room/film-room-single.png`.
 - **Live.** In `$DATA`, `dd intake` a new pick, then `dd record` the scouting report, approval, three `candidate_finished` reports, and `judge_launched`. Open `#/picks/<id>` and confirm the Scorecard says it has not been scored. Then `dd record <id> judgement_recorded --file judgement.md`. Within 2 seconds the Scorecard renders without a reload. Screenshot `/opt/cursor/artifacts/war-room/film-room-live.png`.
-- **Disagree.** That same judgement names a judge `base` label that loses, and the record command passes `--second-read disagree --note "…"`. The Scorecard shows `Judge picked <cand>; the board picked <cand>.` and the note. Screenshot `/opt/cursor/artifacts/war-room/film-room-disagree.png`.
+- **Disagree.** That same judgement names a judge `base` label that loses, and the record command passes `--second-read disagree --note "…"`. When that candidate failed a gate, the Scorecard says `The judge preferred <cand>, but <cand> failed a gate, so <cand> (passed every gate) is the base.` Otherwise it says `The judge preferred <cand>. The board kept <cand>.` The second-read note is still shown. Screenshot `/opt/cursor/artifacts/war-room/film-room-disagree.png`.
 
 ## Gotchas
 

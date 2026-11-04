@@ -15,6 +15,7 @@ How far down the open draft stack Boyd can merge right now, and which pull reque
 - `control.sh launch`, then `control.sh seed-ledger`. That prints `seeded ledger`.
 - The Big Board link `Ledger` goes to `#/ledger`. `Big Board` on the ledger view returns to `#/`.
 - `control.sh seed-ledger tuesday` appends the two projection lines and prints `seeded ledger tuesday`.
+- `control.sh seed-ledger polish` appends `test/fixtures/ledger/ledger-polish.jsonl` and prints `seeded ledger polish`. #1 is fresh, VERIFIED certainty 5 at f51dae8 and at 4edd03a. #10 is fresh, VERIFIED certainty 5 at ace89ea (`verified at ace89ea (certainty 5)`). #11 is fresh, VERIFIED certainty 5 at af1e78c. The summary is `11 open PRs · stack #1→#11 (10) · merge-safe through #11 · re-run none · 6 fresh, 4 docs-only · 1 off stack`.
 
 ## Driving it with the browser
 
@@ -25,7 +26,7 @@ Preconditions:
 - Screenshots go under `/opt/cursor/artifacts/war-room/`. The probe is `test/fixtures/phone/probe.js`, driven by `test/fixtures/phone/cdp-shot.mjs`.
 
 - **Empty.** Before seeding, `node test/fixtures/phone/cdp-shot.mjs --url "$URL/#/ledger" --width 390 --height 844 --scheme dark --shot /opt/cursor/artifacts/war-room/ledger-empty-390-dark.png`. The summary is `No open PRs`. The line is `"ok":true`.
-- **Phone.** After `seed-ledger`, the same tool on `"$URL/#/ledger"` at 390×844 dark (`ledger-390-dark.png`), 390×844 light (`ledger-390-light.png`), and 430×932 dark (`ledger-430-dark.png`). Each JSON line has `"ok":true`, `"offOrigin":[]`, and `scrollWidth` at most the width. The summary is `9 open PRs · stack #1→#9 (8) · merge-safe through none · re-run #1 · 3 fresh, 4 docs-only, 1 unverified · 1 off stack`.
+- **Phone.** After `seed-ledger`, the same tool on `"$URL/#/ledger"` at 390×844 dark (`ledger-390-dark.png`), 390×844 light (`ledger-390-light.png`), and 430×932 dark (`ledger-430-dark.png`). Each JSON line has `"ok":true`, `"offOrigin":[]`, and `scrollWidth` at most the width. The summary is `9 open PRs · stack #1→#9 (8) · merge-safe through none · re-run #1 · 3 fresh, 4 docs-only, 1 unverified · 1 off stack`. The legend under it says a docs-only change since verify is still safe, and that #4 is not in the stack.
 - **Desktop.** The same tool on `"$URL/#/ledger"` at 1280×800 light (`ledger-1280-light.png`) and 1280×800 dark (`ledger-1280-dark.png`). Each line is `"ok":true`. Every ledger control and link is at least 44×44.
 - **Tuesday.** After `seed-ledger tuesday`, `"$URL/#/ledger"` at 390×844 dark (`ledger-tuesday-390-dark.png`). The summary is `8 open PRs · stack #1→#9 (8) · merge-safe through #9 · re-run none · 4 fresh, 4 docs-only`.
 - **Link.** `"$URL/#/"` at 390×844 dark (`board-ledger-link-390-dark.png`). The line is `"ok":true` and the page shows `Ledger`.

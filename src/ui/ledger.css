@@ -63,6 +63,12 @@
   font: 600 0.82rem/1.3 ui-sans-serif, system-ui, sans-serif;
 }
 
+.dd-ledger .dd-legend {
+  margin: 0 0 8px;
+  color: var(--muted);
+  font: 500 0.82rem/1.35 ui-sans-serif, system-ui, sans-serif;
+}
+
 .dd-ledger ol,
 .dd-ledger ul {
   margin: 0;

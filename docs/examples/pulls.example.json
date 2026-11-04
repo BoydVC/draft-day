@@ -1,0 +1,19 @@
+[
+  {
+    "number": 12,
+    "title": "Example open draft",
+    "state": "open",
+    "draft": true,
+    "merged_at": null,
+    "head": {
+      "ref": "dd/p10-polish",
+      "sha": "f538403f4271eef15b25b35f113ba81a6b23d54d"
+    },
+    "base": {
+      "ref": "main",
+      "repo": {
+        "full_name": "BoydVC/draft-day"
+      }
+    }
+  }
+]

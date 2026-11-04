@@ -17,6 +17,11 @@ function chip(status) {
   return el("span", { class: "chip", "data-status": status }, [status]);
 }
 
+function withNextStep(message, status) {
+  const http = Number.isInteger(status) ? `HTTP ${status}.` : "HTTP status unavailable.";
+  return `${message} Is \`dd serve\` still running? Try reload. ${http}`;
+}
+
 function route() {
   const hash = location.hash.replace(/^#/, "");
   const lessons = hash.match(/^\/lessons(?:\?(.*))?$/);
@@ -261,6 +266,13 @@ function cellText(cell) {
   return cell.evidence ? `${cell.score} "${cell.evidence}"` : String(cell.score);
 }
 
+function failedGate(line) {
+  if (!line) return false;
+  if (line.gatePass === false) return true;
+  const gates = line.gates || {};
+  return gates.build === "fail" || gates.tests === "fail" || gates.journey === "fail";
+}
+
 function judgeSentence(room) {
   if (!room.judgeDisagrees && room.secondRead !== "disagree") return "";
   let judgeCand = null;
@@ -273,7 +285,15 @@ function judgeSentence(room) {
     }
   }
   if (!judgeCand || !room.base) return "";
-  return `Judge picked ${judgeCand}; the board picked ${room.base}.`;
+  let judgeLine = null;
+  for (const pass of room.passes) {
+    const line = (pass.lines || []).find((item) => item.cand === judgeCand);
+    if (line) judgeLine = line;
+  }
+  if (failedGate(judgeLine)) {
+    return `The judge preferred ${judgeCand}, but ${judgeCand} failed a gate, so ${room.base} (passed every gate) is the base.`;
+  }
+  return `The judge preferred ${judgeCand}. The board kept ${room.base}.`;
 }
 
 function unstableSentence(room) {
@@ -538,7 +558,7 @@ async function render(options) {
       try {
         response = await fetch(query ? `/api/stats?${query}` : "/api/stats");
       } catch {
-        statsError("Could not load Big Board stats.");
+        statsError(withNextStep("Could not load Big Board stats.", null));
         return;
       }
       if (!response.ok) {
@@ -549,7 +569,7 @@ async function render(options) {
         } catch {
           message = "Could not load Big Board stats.";
         }
-        statsError(message);
+        statsError(withNextStep(message, response.status));
         return;
       }
       let body = null;
@@ -559,7 +579,7 @@ async function render(options) {
         body = null;
       }
       if (!body) {
-        statsError("Could not load Big Board stats.");
+        statsError(withNextStep("Could not load Big Board stats.", response.status));
         return;
       }
       app.replaceChildren();
@@ -581,7 +601,7 @@ async function render(options) {
       try {
         response = await fetch("/api/ledger");
       } catch {
-        ledgerError("Could not load the season ledger.");
+        ledgerError(withNextStep("Could not load the season ledger.", null));
         return;
       }
       if (!response.ok) {
@@ -592,7 +612,7 @@ async function render(options) {
         } catch {
           message = "Could not load the season ledger.";
         }
-        ledgerError(message);
+        ledgerError(withNextStep(message, response.status));
         return;
       }
       let body = null;
@@ -602,7 +622,7 @@ async function render(options) {
         body = null;
       }
       if (!body) {
-        ledgerError("Could not load the season ledger.");
+        ledgerError(withNextStep("Could not load the season ledger.", response.status));
         return;
       }
       app.replaceChildren();
