@@ -36,23 +36,94 @@ function route() {
   return { name: "board" };
 }
 
+const INTAKE_TABLE = [
+  { key: "inflight", phase: "sending", keepIdea: true, sentence: "Sending…" },
+  { key: "ok", phase: "done", keepIdea: false, sentence: "Queued in the inbox. Nothing launches from this page." },
+  { key: "policy", phase: "done", keepIdea: false, sentence: "Queued in the inbox. Policy will refuse it ({policy})." },
+  { key: "error", phase: "failed", keepIdea: true, sentence: "{error}" },
+  { key: "unreachable", phase: "failed", keepIdea: true, sentence: "Could not reach the War Room. Check the Big Board before trying again." },
+];
+
+const intake = {
+  phase: "idle",
+  idea: "",
+  target: "BoydVC/draft-day",
+  n: "3",
+  status: "",
+};
+
+function intakeOutcome(answer, thrown) {
+  let key = "unreachable";
+  if (answer && answer.inflight) key = "inflight";
+  else if (thrown || !answer || answer.badjson) key = "unreachable";
+  else if (typeof answer.error === "string") key = "error";
+  else if (typeof answer.policy === "string" && answer.policy) key = "policy";
+  else key = "ok";
+  const row = INTAKE_TABLE.find((item) => item.key === key);
+  let sentence = row.sentence;
+  if (key === "policy") sentence = row.sentence.split("{policy}").join(answer.policy);
+  if (key === "error") sentence = answer.error;
+  return { phase: row.phase, sentence, keepIdea: row.keepIdea };
+}
+
+function paintIntake() {
+  const statusNode = document.getElementById("form-status");
+  if (statusNode) statusNode.textContent = intake.status;
+  const ideaNode = document.getElementById("idea");
+  if (ideaNode) ideaNode.value = intake.idea;
+  const add = document.getElementById("add-pick");
+  if (add) add.disabled = intake.phase === "sending";
+}
+
+function applyOutcome(answer, thrown, idea) {
+  const next = intakeOutcome(answer, thrown);
+  intake.phase = next.phase;
+  intake.status = next.sentence;
+  intake.idea = next.keepIdea ? idea : "";
+  paintIntake();
+  return next;
+}
+
 function formPanel() {
   const idea = el("textarea", { id: "idea", name: "idea", required: "true" });
-  const target = el("input", { id: "target", name: "target", value: "BoydVC/draft-day", required: "true" });
-  const n = el("input", { id: "n", name: "n", type: "number", min: "1", max: "5", value: "3" });
+  idea.value = intake.idea;
+  const target = el("input", {
+    id: "target",
+    name: "target",
+    value: intake.target,
+    required: "true",
+    autocapitalize: "none",
+    autocorrect: "off",
+    spellcheck: "false",
+    autocomplete: "off",
+  });
+  const n = el("input", {
+    id: "n",
+    name: "n",
+    type: "number",
+    min: "1",
+    max: "5",
+    value: intake.n,
+    inputmode: "numeric",
+  });
   const status = el("p", { id: "form-status", role: "status" });
+  status.textContent = intake.status;
   const form = el("form", { id: "new-pick", "aria-label": "New pick" }, [
     el("div", {}, [el("label", { for: "idea" }, ["Idea"]), idea]),
     el("div", { class: "row" }, [
       el("div", {}, [el("label", { for: "target" }, ["Target"]), target]),
       el("div", {}, [el("label", { for: "n" }, ["Candidates"]), n]),
     ]),
-    el("button", { type: "submit" }, ["Add pick"]),
+    el("button", { id: "add-pick", type: "submit", disabled: intake.phase === "sending" ? "" : null }, ["Add pick"]),
     status,
   ]);
   form.addEventListener("submit", (event) => {
     event.preventDefault();
-    void submitPick(idea, target, n, status);
+    if (intake.phase === "sending") return;
+    intake.target = target.value;
+    intake.n = n.value;
+    applyOutcome({ inflight: true }, null, idea.value);
+    void submitPick();
   });
   return el("section", { class: "panel", "aria-label": "New pick" }, [
     el("h2", {}, ["New pick"]),
@@ -60,48 +131,58 @@ function formPanel() {
   ]);
 }
 
-async function submitPick(idea, target, n, status) {
-  status.textContent = "Sending…";
-  const response = await fetch("/api/intake", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
-      idea: idea.value,
-      target: target.value,
-      n: Number(n.value),
-      source: "warroom",
-    }),
-  });
-  const body = await response.json();
-  if (!response.ok) {
-    status.textContent = body.error || "Could not queue the pick";
-    return;
+async function submitPick() {
+  const idea = intake.idea;
+  const target = intake.target;
+  const n = Number(intake.n);
+  let answer = null;
+  let thrown = null;
+  try {
+    const response = await fetch("/api/intake", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ idea, target, n, source: "warroom" }),
+    });
+    let body = null;
+    try {
+      body = await response.json();
+    } catch (error) {
+      thrown = error;
+    }
+    if (!thrown) {
+      if (!response.ok) answer = body && typeof body.error === "string" ? { error: body.error } : { badjson: true };
+      else answer = { policy: body && typeof body.policy === "string" ? body.policy : null };
+    }
+  } catch (error) {
+    thrown = error;
   }
-  idea.value = "";
-  status.textContent = body.policy
-    ? `Queued in the inbox. Policy will refuse it (${body.policy}).`
-    : "Queued in the inbox.";
-  await render({ soft: true });
+  const next = applyOutcome(answer, thrown, idea);
+  if (next.phase !== "done") return;
+  try {
+    await render({ soft: true });
+  } catch {
+    paintIntake();
+  }
 }
 
 function boardTable(data) {
   const rows = [];
   for (const pick of data.picks) {
     rows.push(el("tr", { "data-pick-id": pick.id }, [
-      el("td", {}, [el("a", { href: `#/picks/${pick.id}` }, [pick.id])]),
-      el("td", {}, [pick.idea]),
-      el("td", {}, [pick.stage]),
-      el("td", {}, [chip(pick.status)]),
-      el("td", {}, [String(pick.runs)]),
+      el("td", { "data-label": "Pick" }, [el("a", { href: `#/picks/${pick.id}` }, [pick.id])]),
+      el("td", { "data-label": "Idea" }, [pick.idea]),
+      el("td", { "data-label": "Stage" }, [pick.stage]),
+      el("td", { "data-label": "Status" }, [chip(pick.status)]),
+      el("td", { "data-label": "Runs" }, [String(pick.runs)]),
     ]));
   }
   for (const item of data.inbox) {
     rows.push(el("tr", { "data-inbox": String(item.offset) }, [
-      el("td", {}, ["queued"]),
-      el("td", {}, [item.idea]),
-      el("td", {}, [item.stage]),
-      el("td", {}, [chip(item.status)]),
-      el("td", {}, ["0"]),
+      el("td", { "data-label": "Pick" }, ["queued"]),
+      el("td", { "data-label": "Idea" }, [item.idea]),
+      el("td", { "data-label": "Stage" }, [item.stage]),
+      el("td", { "data-label": "Status" }, [chip(item.status)]),
+      el("td", { "data-label": "Runs" }, ["0"]),
     ]));
   }
   const body = rows.length

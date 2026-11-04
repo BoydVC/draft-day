@@ -47,7 +47,7 @@ Run doctor before driving whenever the page looks wrong.
 Open `$URL` in the browser. The shell is `src/ui/index.html`. Prefer accessible names.
 
 - The page heading is `War Room`.
-- `New pick` is a form (`aria-label` `New pick`) with textbox `Idea`, textbox `Target`, textbox `Candidates`, and button `Add pick`.
+- `New pick` is a form (`aria-label` `New pick`) with textbox `Idea`, textbox `Target`, spinbutton or select `Candidates`, and button `Add pick`. `Add pick` is disabled while a submit is in flight.
 - `Big Board` is a table. Pick ids are links. Inbox rows say `queued` in the Pick column.
 - A pick link goes to `#/picks/<id>` without a reload. `Big Board` is the link back.
 
