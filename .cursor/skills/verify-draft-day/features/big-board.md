@@ -21,13 +21,13 @@ Preconditions:
 - The seeded selftest has finished in this run's data directory.
 
 - **Open the board.** Load `$URL/`. The heading reads `War Room` and the region named `Big Board` is visible.
-- **Read the rows.** The table contains four pick links. A status chip reads `drafted`, a status chip reads `failed`, and the runs column is not blank.
+- **Read the rows.** On a fresh launch, before `seed-ledger`, the table contains four pick links. A status chip reads `drafted`, a status chip reads `failed`, and the runs column is not blank. The intake chip's text is `intake` and CSS paints `INTAKE`.
 - **Proof.** Screenshot `/opt/cursor/artifacts/war-room/big-board.png` with the heading and the four rows visible. `GET $URL/api/board` returns the same four pick ids.
 
 ## Gotchas
 
-- The four pick links are true immediately after `launch`, before any `seed-*`. `seed-replay` adds four fixture picks (eight on the board). `seed-lessons` adds five week picks. `seed-timeline`, `seed-linter`, `seed-bigboard`, and `seed-ledger` add more. Run this journey on a fresh launch.
+- The four pick links are true immediately after `launch`, before any `seed-*`. `seed-replay` adds four fixture picks (eight on the board). `seed-lessons` adds five week picks. `seed-timeline`, `seed-linter`, `seed-bigboard`, and `seed-ledger` add more. `seed-ledger` writes the season logs into this data directory, so a four-row check after it is false. Run this journey on a fresh launch.
 - Inbox rows use the word `queued` instead of a pick id. They are not the seeded picks.
-- Status chips and column headers are CSS-uppercased. DOM text stays `drafted` and `Pick`.
+- Status chips and column headers are CSS-uppercased. DOM text stays `drafted` and `Pick`. The intake chip paints `INTAKE` while its text stays `intake`.
 - A failed policy pick is expected. Its idea text is the refusal fixture from selftest, not a fourth product.
 - `board-empty` is not available after `selftest --keep`. Driving it needs a different empty data directory, and this journey does not claim that path.
