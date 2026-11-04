@@ -44,6 +44,7 @@ export interface ScoutingReport {
   safetyFact: string;
   angles: string[];
   forbidden: string[];
+  checks?: Record<string, string>;
 }
 
 export interface CandidateReport {

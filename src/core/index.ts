@@ -73,6 +73,36 @@ export {
   type SkippedLog,
 } from "./lessons.ts";
 
+export {
+  CHECK_RE,
+  COLLISION_JACCARD,
+  GRADE_MIN_CHARS,
+  RULE_FAMILIES,
+  RULE_LEDGER,
+  STOPWORDS,
+  anglePairs,
+  earsCoverage,
+  gradeCriterion,
+  jaccard,
+  lintScoutingReport,
+  lintText,
+  parseLintDocument,
+  parseMarkdownScout,
+  tokenizeAngle,
+} from "./linter.ts";
+export type {
+  AnglePair,
+  CriterionGrade,
+  EarsRow,
+  LintDocument,
+  LintFinding,
+  LintParse,
+  LintReport,
+  RuleFamily,
+  RuleRow,
+  RuleSlice,
+} from "./linter.ts";
+
 export { asPickId, branchFor, formatPickId, isCandId, isPickId, pickIdPrefix } from "./ids.ts";
 
 export { brandStoredTarget, loadTargets, parseTargetRepo } from "./target.ts";

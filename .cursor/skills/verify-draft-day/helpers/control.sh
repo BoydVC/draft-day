@@ -142,6 +142,51 @@ EOF
     fi
     echo "seeded replay"
     ;;
+  seed-linter)
+    load_state
+    DATA="$DATA" ROOT="$ROOT" node --experimental-strip-types --input-type=module <<'EOF'
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+const data = process.env.DATA;
+const root = process.env.ROOT;
+const picks = [
+  ["p-20261018-61", "hostile-missing-ears.json", "Hostile missing EARS bindings"],
+  ["p-20261018-62", "good-replay.json", "Clean replay scout"],
+];
+for (const [id, file, idea] of picks) {
+  const report = JSON.parse(readFileSync(join(root, "test/fixtures/linter", file), "utf8"));
+  const dir = join(data, "picks", id);
+  mkdirSync(dir, { recursive: true });
+  const events = [
+    { seq: 1, ts: "2026-10-18T12:00:00.000Z", type: "pick_created", by: "seed-linter", key: "pick", payload: { id, idea, source: "seed", target: "BoydVC/draft-day", n: 3, approval: "ask" } },
+    { seq: 2, ts: "2026-10-18T12:01:00.000Z", type: "scouting_report_written", by: "seed-linter", key: "report", payload: { report } },
+  ];
+  writeFileSync(join(dir, "events.jsonl"), events.map((event) => JSON.stringify(event)).join("\n") + "\n");
+}
+EOF
+    body="$(mktemp)"
+    code="$(curl -s -o "$body" -w "%{http_code}" "${URL}/api/picks/p-20261018-61")"
+    if [[ "$code" != "200" ]]; then
+      echo "seed-linter: GET /api/picks/p-20261018-61 returned ${code}" >&2
+      rm -f "$body"
+      exit 1
+    fi
+    python3 - "$body" "$ROOT/test/fixtures/linter/hostile-missing-ears.json" <<'PY'
+import json, sys
+body = json.load(open(sys.argv[1]))
+want = json.load(open(sys.argv[2]))
+if body.get("report") != want:
+    raise SystemExit("seed-linter: report fields do not match hostile-missing-ears.json")
+PY
+    code="$(curl -s -o "$body" -w "%{http_code}" -H "content-type: application/json" --data-binary @"$ROOT/test/fixtures/linter/good-replay.json" "${URL}/api/lint-scout")"
+    ok="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("ok"))' "$body")"
+    rm -f "$body"
+    if [[ "$code" != "200" || "$ok" != "True" ]]; then
+      echo "seed-linter: POST /api/lint-scout ${code} ok=${ok}" >&2
+      exit 1
+    fi
+    echo "seeded linter"
+    ;;
   cleanup)
     load_state
     if kill -0 "$PID" 2>/dev/null; then
@@ -161,7 +206,7 @@ EOF
     echo "cleaned pid ${PID:-?} data ${DATA:-?}"
     ;;
   *)
-    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|cleanup" >&2
+    echo "usage: control.sh launch|doctor|seed-timeline|seed-lessons|seed-replay|seed-linter|cleanup" >&2
     exit 2
     ;;
 esac

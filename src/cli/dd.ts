@@ -17,12 +17,16 @@ import {
   lessonWindow,
   lessonsJson,
   lessonsText,
+  lintScoutingReport,
+  lintText,
   loadConfig,
   timeline,
   loadTargets,
   nextAction,
   parseCandidateReport,
   parseJudgement,
+  parseLintDocument,
+  parseMarkdownScout,
   parseScoutingReport,
   parseTargetRepo,
   parseVerdict,
@@ -31,6 +35,7 @@ import {
   type Config,
   type DraftEvent,
   type EventType,
+  type LintDocument,
   type Pick,
 } from "../core/index.ts";
 import { allocatePickId, commitPick, loadLogs, loadPicks, readEvents } from "../store/eventlog.ts";
@@ -414,6 +419,33 @@ async function brief(paths: Paths, pickId: string | undefined, role: string | un
   return 0;
 }
 
+async function lintScout(paths: Paths, file: string | undefined, flags: Flags): Promise<number> {
+  const pickId = flag(flags, "pick");
+  let doc: LintDocument;
+  if (pickId) {
+    const { pick } = await loadOne(paths, pickId);
+    if (!pick.report) throw new Exit("pick has no scouting report");
+    doc = pick.report;
+  } else if (file) {
+    let text: string;
+    try {
+      text = await readFile(resolve(paths.cwd, file), "utf8");
+    } catch {
+      throw new Exit(`cannot read ${file}`);
+    }
+    if (file.endsWith(".md") || text.trimStart().startsWith("#")) doc = parseMarkdownScout(text);
+    else {
+      const parsed = parseLintDocument(text);
+      if (!parsed.ok) throw new Exit(parsed.error);
+      doc = parsed.value;
+    }
+  } else throw new Exit("lint-scout needs a file or --pick <id>");
+  const report = lintScoutingReport(doc);
+  if (paths.json) console.log(JSON.stringify(report));
+  else console.log(lintText(report));
+  return report.ok ? 0 : 1;
+}
+
 async function lessons(paths: Paths, flags: Flags): Promise<number> {
   const parsed = lessonWindow(flags.since, flags.until);
   if (!parsed.ok) throw new Exit(parsed.error);
@@ -587,6 +619,7 @@ function help(): string {
     "dd board",
     "dd brief <pickId> <candidate|judge|graft|physical> [cand]",
     "dd lessons [--since YYYY-MM-DD] [--until YYYY-MM-DD]",
+    "dd lint-scout <file>|--pick <id>",
     "dd serve [--port 4420] [--host 127.0.0.1]",
     "dd doctor",
     "dd selftest [--keep]",
@@ -620,6 +653,8 @@ export async function main(argv: string[]): Promise<number> {
         return await brief(paths, rest[0], rest[1], rest[2]);
       case "lessons":
         return await lessons(paths, flags);
+      case "lint-scout":
+        return await lintScout(paths, rest[0], flags);
       case "serve":
         return await serve(paths, flags);
       case "doctor":
