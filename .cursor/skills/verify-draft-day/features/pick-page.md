@@ -23,7 +23,7 @@ Preconditions:
 
 - **Open the pick.** Choose the link whose text is that pick id. The URL hash is `#/picks/<id>` and the page heading is that id. A status chip reads `drafted`.
 - **Read the report.** The region named `Scouting report` contains the restatement about the War Room showing each pick.
-- **Read the scorecard.** The region named `Scorecard` has a table with a Criterion column and label columns. The base line names a candidate.
+- **Read the scorecard.** The region named `Scorecard` shows one column per finished candidate, headed with the candidate and its label, plus that candidate's angle. On this pick the chip reads `Single pass` and the base column is marked `BASE`.
 - **Read the physical.** The region named `Physical` contains `VERIFIED` and a `Draft PR` link.
 - **Return.** Choose `Big Board`. The hash is empty or `#/` and the table is back.
 - **Proof.** Screenshot `/opt/cursor/artifacts/war-room/pick-page.png` while the scorecard and the drafted chip are visible.

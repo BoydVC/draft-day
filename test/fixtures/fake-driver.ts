@@ -6,6 +6,15 @@ import {
   type ScoutingReport,
 } from "../../src/core/index.ts";
 
+export interface CardPlan {
+  score?: number;
+  scores?: number[];
+  gates?: { build: "pass" | "fail" | "n/a"; tests: "pass" | "fail" | "n/a"; journey: "pass" | "fail" | "n/a" };
+  cross?: { passed: number; total: number };
+  diff?: { files: number; added: number; removed: number };
+  evidence?: string;
+}
+
 export interface Scenario {
   name: string;
   idea: string;
@@ -16,6 +25,7 @@ export interface Scenario {
   verdicts: Array<"NOT_VERIFIED" | "INCONCLUSIVE" | "VERIFIED">;
   expect: "drafted" | "failed";
   policy?: boolean;
+  cards?: Array<Record<string, CardPlan>>;
 }
 
 export interface DriverIo {
@@ -110,24 +120,87 @@ export const POLICY: Scenario = {
   policy: true,
 };
 
+const PASS = { build: "pass" as const, tests: "pass" as const, journey: "pass" as const };
+
+export const CLOSE: Scenario = {
+  name: "close",
+  idea: "Show the scorecard pass toggle on the pick page",
+  approval: "ask",
+  n: 3,
+  results: { c1: ["finish"], c2: ["finish"], c3: ["finish"] },
+  scores: { c1: 4, c2: 4, c3: 4 },
+  verdicts: ["VERIFIED"],
+  expect: "drafted",
+  cards: [
+    {
+      c1: { score: 4, cross: { passed: 10, total: 12 }, diff: { files: 7, added: 240, removed: 31 }, evidence: "pass 1 holds" },
+      c2: { scores: [4, 4, 2], cross: { passed: 11, total: 12 }, diff: { files: 6, added: 180, removed: 20 }, evidence: "pass 1 close" },
+      c3: {
+        score: 4,
+        gates: { build: "pass", tests: "pass", journey: "fail" },
+        cross: { passed: 9, total: 12 },
+        diff: { files: 9, added: 400, removed: 10 },
+        evidence: "journey failed",
+      },
+    },
+    {
+      c1: { scores: [4, 4, 2], cross: { passed: 10, total: 12 }, diff: { files: 7, added: 240, removed: 31 }, evidence: "pass 2 slipped" },
+      c2: { score: 4, cross: { passed: 11, total: 12 }, diff: { files: 6, added: 180, removed: 20 }, evidence: "pass 2 holds" },
+      c3: {
+        score: 4,
+        gates: { build: "pass", tests: "pass", journey: "fail" },
+        cross: { passed: 9, total: 12 },
+        diff: { files: 9, added: 400, removed: 10 },
+        evidence: "journey failed",
+      },
+    },
+  ],
+};
+
+function planWeighted(cand: string, plan: CardPlan | undefined, scenario: Scenario, pick: Pick): number {
+  const rubric = pick.report?.rubric ?? [];
+  const weight = rubric.reduce((sum, item) => sum + item.weight, 0);
+  if (weight === 0) return plan?.score ?? scenario.scores[cand] ?? 0;
+  let total = 0;
+  rubric.forEach((criterion, index) => {
+    const score = plan?.scores?.[index] ?? plan?.score ?? scenario.scores[cand] ?? 0;
+    total += score * criterion.weight;
+  });
+  return total / weight;
+}
+
 function judgement(pick: Pick, pass: number, scenario: Scenario) {
   const finished = pick.candidates.filter((cand) => cand.status === "finished").map((cand) => cand.id);
   const map = labelMapForPass(pick.id, finished, pass);
   const labelOf = (cand: string) => Object.entries(map.labels).find((entry) => entry[1] === cand)?.[0] ?? "A";
-  const ranked = [...finished].sort((a, b) => (scenario.scores[b] ?? 0) - (scenario.scores[a] ?? 0));
-  const base = ranked[0] ?? "c1";
-  const cards = finished.map((cand) => ({
-    label: labelOf(cand),
-    gates: { build: "pass", tests: "pass", journey: "pass" },
-    crossTests: { passed: 2, total: 2 },
-    scores: (pick.report?.rubric ?? []).map((criterion) => ({
+  const planFor = scenario.cards?.[pass - 1];
+  const rubric = pick.report?.rubric ?? [];
+  const cards = finished.map((cand) => {
+    const plan = planFor?.[cand];
+    const gates = plan?.gates ?? PASS;
+    const cross = plan?.cross ?? { passed: 2, total: 2 };
+    const scores = rubric.map((criterion, index) => ({
       criterionId: criterion.id,
-      score: scenario.scores[cand] ?? 1,
-      evidence: `${cand} ${criterion.id} output`,
-    })),
-  }));
-  const loser = ranked[ranked.length - 1];
-  const trades = loser && loser !== base
+      score: plan?.scores?.[index] ?? plan?.score ?? scenario.scores[cand] ?? 1,
+      evidence: plan?.evidence ?? `${criterion.name} scored on pass ${pass}`,
+    }));
+    return {
+      label: labelOf(cand),
+      gates,
+      crossTests: cross,
+      scores,
+      ...(plan?.diff ? { diff: plan.diff } : {}),
+    };
+  });
+  const ranked = [...finished]
+    .filter((cand) => {
+      const gates = planFor?.[cand]?.gates ?? PASS;
+      return gates.build !== "fail" && gates.tests !== "fail" && gates.journey !== "fail";
+    })
+    .sort((a, b) => planWeighted(b, planFor?.[b], scenario, pick) - planWeighted(a, planFor?.[a], scenario, pick) || (a < b ? -1 : 1));
+  const base = ranked[0] ?? finished[0] ?? "c1";
+  const loser = [...finished].reverse().find((cand) => cand !== base);
+  const trades = loser
     ? [{ from: labelOf(loser), what: "Keep the smaller status helper", pointers: ["src/ui/app.js"], why: "One place to render a chip" }]
     : [];
   return {

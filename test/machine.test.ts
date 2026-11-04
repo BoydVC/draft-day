@@ -10,6 +10,7 @@ import {
   followUpEvents,
   judgeBrief,
   lookupTransition,
+  filmRoom,
   nextAction,
   reduce,
   type DraftEvent,
@@ -232,10 +233,15 @@ test("A8 a close score asks for a reversed pass and sets swapConsistent", () => 
     ev("judge_launched", { pass: 1, order: ["c1", "c2"], labels: { A: "c1", B: "c2" } }),
     ev("judgement_recorded", { pass: 1, order: ["A", "B"], cards: [card("A", 4), card("B", 4)], base: "c1", runnerUps: ["c2"], trades: [], swapConsistent: null }),
     ev("judge_launched", { pass: 2, order: ["c2", "c1"], labels: { A: "c2", B: "c1" }, reversed: true }),
-    ev("judgement_recorded", { pass: 2, order: ["A", "B"], cards: [card("A", 4), card("B", 4)], base: "c2", runnerUps: ["c1"], trades: [], swapConsistent: null }),
+    ev("judgement_recorded", { pass: 2, order: ["A", "B"], cards: [card("A", 4), card("B", 1)], base: "c2", runnerUps: ["c1"], trades: [], swapConsistent: null }),
   ]);
   assert.equal(split.judgement?.swapConsistent, false);
   assert.equal(split.judgement?.base, "c1");
+  const room = filmRoom(split);
+  assert.equal(room?.swap, "flipped");
+  assert.notEqual(room?.passes[0]?.winner, room?.passes[1]?.winner);
+  assert.equal(room?.tieRule?.winner, "c1");
+  assert.equal(room?.tieRule?.deciding, "risks");
 });
 
 test("A9 two fix replies then a failed draft stays unconfirmed", () => {

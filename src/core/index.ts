@@ -7,23 +7,31 @@ export {
 export type {
   CandId,
   Candidate,
+  CandidateLine,
   CandidateReport,
   Config,
   Criterion,
+  CriterionCell,
+  DiffStat,
   Ears,
+  FilmRoom,
   Gate,
   GraftState,
   Judgement,
+  JudgePass,
   Label,
   Lesson,
   NextAction,
+  PassView,
   Physical,
   Pick,
   PickId,
   PickStatus,
   Scorecard,
   ScoutingReport,
+  SwapState,
   TargetRepo,
+  TieKey,
   Trade,
   Verdict,
 } from "./types.ts";
@@ -52,15 +60,9 @@ export {
 } from "./budget.ts";
 export type { Limits } from "./budget.ts";
 
-export {
-  assembleJudgement,
-  labelMapForPass,
-  passesHardGates,
-  tieBreak,
-  topTwoWithinTen,
-  weightedScore,
-  withinTenPercent,
-} from "./score.ts";
+export { labelMapForPass, passesHardGates, weightedScore, withinTenPercent } from "./score.ts";
+
+export { assembleJudgement, filmRoom } from "./filmroom.ts";
 
 export {
   GO_TIMEOUT_MS,
@@ -91,5 +93,6 @@ export {
   parseJudgement,
   parseScoutingReport,
   parseVerdict,
+  validateJudgementContext,
 } from "../report/parse.ts";
 export type { ParsedJudgement } from "../report/parse.ts";

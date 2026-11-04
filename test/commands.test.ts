@@ -28,6 +28,7 @@ test("A13 selftest exits 0 only when every pick lands", async () => {
   assert.match(result.stdout, /happy p-\d{8}-\d{2} drafted/);
   assert.match(result.stdout, /policy p-\d{8}-\d{2} failed/);
   assert.match(result.stdout, /walkover p-\d{8}-\d{2} drafted/);
+  assert.match(result.stdout, /close p-\d{8}-\d{2} drafted/);
 });
 
 test("A14 doctor prints one line per check", async () => {
