@@ -53,6 +53,8 @@ Open `$URL` in the browser. The shell is `src/ui/index.html`. Prefer accessible 
 
 Live updates use `EventSource` on `/api/events`. After `Add pick`, the new idea shows on the Big Board without a reload. Recording a pick event while a pick page is open refreshes that page the same way.
 
+- On a pick page, `Replay` goes to `#/picks/<id>/replay`. Replay has `Pick page` and `Big Board`, plus `First event`, `Previous event`, `Play` (it reads `Pause` while the film is moving), `Next event`, `Last event`, and the `Event` slider.
+
 ## Evidence
 
 Capture the action and the resulting state.
@@ -76,6 +78,6 @@ This kills the PID from `/tmp/dd-verify/state.env` and deletes that run's data d
 
 ## Helpers
 
-`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, `seed-timeline`, `seed-lessons`, or `cleanup` from the repo root. It prints the URL on launch.
+`helpers/control.sh` is the only helper. Invoke it as `launch`, `doctor`, `seed-timeline`, `seed-lessons`, `seed-replay`, or `cleanup` from the repo root. It prints the URL on launch.
 
 Keep this map honest with `/maintain-verification-skill` when the War Room changes. One correction pass at a time.
