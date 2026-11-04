@@ -1,0 +1,19 @@
+{
+  "name": "draft-day",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Draft Day: an idea in, a verified draft pull request out.",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dd": "node --experimental-strip-types src/cli/dd.ts",
+    "test": "node --experimental-strip-types --test test/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "typescript": "^5.8.3"
+  }
+}
