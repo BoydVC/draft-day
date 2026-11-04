@@ -5,7 +5,9 @@ description: Drive the Draft Day War Room in a browser against a disposable data
 
 # Verify Draft Day
 
-The War Room is a loopback web UI served by `dd serve`. There is no login and no database. Two runs can sit side by side when each has its own `--data` directory and `--port`. Do not drive a server you did not start.
+The War Room is a loopback web UI served by `node --experimental-strip-types src/cli/dd.ts serve`. There is no login and no database. Two runs can sit side by side when each has its own `--data` directory and `--port`. Do not drive a server you did not start.
+
+GNU `dd` is on `PATH` and is not this project. A copied `dd intake` exits 1 with `unrecognized option`. Every project command is `node --experimental-strip-types src/cli/dd.ts`.
 
 Evidence lives in `/opt/cursor/artifacts/war-room/`. Cleanup never deletes that directory.
 
@@ -22,9 +24,15 @@ The helper:
 1. Makes an empty data directory under `/tmp`.
 2. Runs `node --experimental-strip-types src/cli/dd.ts selftest --keep --data "$DATA"` so the board already has a drafted happy pick, a policy refusal, a walkover, and a close Film Room pick.
 3. Starts `node --experimental-strip-types src/cli/dd.ts serve --data "$DATA" --host 127.0.0.1 --port "$PORT"`.
-4. Waits until the log line `War Room listening on http://127.0.0.1:$PORT` appears and `GET /api/board` returns JSON.
+4. Waits until the log line `War Room listening on http://127.0.0.1:$PORT` appears and `GET /api/board` returns HTTP 200. It does not read pick ids. An empty data directory satisfies that wait with `"picks": []`.
 
-Ready means the Big Board lists those four picks. A process that merely accepts a socket is not ready. The helper writes `/tmp/dd-verify/state.env` with `DATA`, `PORT`, `PID`, and `URL`.
+The four seeded picks are on the board because `selftest --keep` finished before `serve`. Confirm those ids in the Big Board journey. A process that merely accepts a socket is not ready. The helper writes `/tmp/dd-verify/state.env` with `DATA`, `PORT`, `PID`, and `URL` and does not export them. A new shell has empty `DATA` and `URL` until:
+
+```bash
+set -a
+source /tmp/dd-verify/state.env
+set +a
+```
 
 Override the port with `PORT=45921 .cursor/skills/verify-draft-day/helpers/control.sh launch` when 45920 is taken.
 
@@ -34,11 +42,14 @@ Override the port with `PORT=45921 .cursor/skills/verify-draft-day/helpers/contr
 .cursor/skills/verify-draft-day/helpers/control.sh doctor
 ```
 
-Doctor is read-only. It passes only when all of these are true:
+`control.sh doctor` is not read-only. `node --experimental-strip-types src/cli/dd.ts doctor --data "$DATA" --port "$PORT"` writes `$DATA/.doctor-write` and deletes it to prove the directory is writable. That command exits 1 while this War Room holds the port.
+
+`control.sh doctor` prints `doctor: pass` only when all of these are true:
 
 - the recorded PID is alive and is the server this run started
 - `GET $URL/api/board` returns 200 and a `picks` array
-- `dd doctor --data "$DATA" --port "$PORT"` prints `node:`, `data:`, `config:`, `targets:`, and `port:` lines
+- the `node`, `data`, `config`, and `targets` lines say `pass`
+- the `port` line is present and reads `port: fail <port> in use` (expected; that failed line is why `node --experimental-strip-types src/cli/dd.ts doctor` exits 1)
 
 Run doctor before driving whenever the page looks wrong.
 
@@ -48,7 +59,7 @@ Open `$URL` in the browser. The shell is `src/ui/index.html`. Prefer accessible 
 
 - The page heading is `War Room`.
 - `New pick` is a form (`aria-label` `New pick`) with textbox `Idea`, textbox `Target`, spinbutton or select `Candidates`, and button `Add pick`. `Add pick` is disabled while a submit is in flight.
-- `Big Board` is a table. Pick ids are links. Inbox rows say `queued` in the Pick column.
+- `Big Board` is a table. Pick ids are links. Inbox rows say `queued` in the Pick column. Status chips and `th` use `text-transform: uppercase`, so a screenshot paints `DRAFTED` and `PICK` while `textContent` and the accessible name stay `drafted` and `Pick`. Check `textContent`.
 - A pick link goes to `#/picks/<id>` without a reload. `Big Board` is the link back.
 
 Live updates use `EventSource` on `/api/events`. After `Add pick`, the new idea shows on the Big Board without a reload. Recording a pick event while a pick page is open refreshes that page the same way.

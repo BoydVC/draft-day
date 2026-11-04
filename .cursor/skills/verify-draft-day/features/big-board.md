@@ -26,6 +26,8 @@ Preconditions:
 
 ## Gotchas
 
+- The four pick links are true immediately after `launch`, before any `seed-*`. `seed-replay` adds four fixture picks (eight on the board). `seed-lessons` adds five week picks. `seed-timeline`, `seed-linter`, `seed-bigboard`, and `seed-ledger` add more. Run this journey on a fresh launch.
 - Inbox rows use the word `queued` instead of a pick id. They are not the seeded picks.
+- Status chips and column headers are CSS-uppercased. DOM text stays `drafted` and `Pick`.
 - A failed policy pick is expected. Its idea text is the refusal fixture from selftest, not a fourth product.
 - `board-empty` is not available after `selftest --keep`. Driving it needs a different empty data directory, and this journey does not claim that path.
