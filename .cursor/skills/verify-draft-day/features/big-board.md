@@ -26,8 +26,8 @@ Preconditions:
 
 ## Gotchas
 
-- The four selftest rows are the board on a fresh launch, before `seed-ledger`. That seed writes the season logs into this data directory, so a four-row check after it is false. Run this journey on a fresh launch.
+- The four pick links are true immediately after `launch`, before any `seed-*`. `seed-replay` adds four fixture picks (eight on the board). `seed-lessons` adds five week picks. `seed-timeline`, `seed-linter`, `seed-bigboard`, and `seed-ledger` add more. `seed-ledger` writes the season logs into this data directory, so a four-row check after it is false. Run this journey on a fresh launch.
 - Inbox rows use the word `queued` instead of a pick id. They are not the seeded picks.
-- Status chips use `text-transform: uppercase`. The intake chip paints `INTAKE` while its text stays `intake`.
+- Status chips and column headers are CSS-uppercased. DOM text stays `drafted` and `Pick`. The intake chip paints `INTAKE` while its text stays `intake`.
 - A failed policy pick is expected. Its idea text is the refusal fixture from selftest, not a fourth product.
 - `board-empty` is not available after `selftest --keep`. Driving it needs a different empty data directory, and this journey does not claim that path.
