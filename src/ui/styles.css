@@ -140,6 +140,20 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 
 table { width: 100%; border-collapse: collapse; }
 
+#big-board,
+#big-board th,
+#big-board td,
+article[data-pick-id] {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+#big-board th,
+#big-board td {
+  white-space: normal;
+}
+
 th, td {
   text-align: left;
   padding: 10px 8px;

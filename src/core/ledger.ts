@@ -11,6 +11,7 @@ import type { Verdict } from "./types.ts";
 export const LEDGER_STATUSES = ["fresh", "docs-only", "stale", "failed", "unverified"] as const;
 export const MERGE_SAFE = ["fresh", "docs-only"] as const;
 export const RERUN = ["stale", "failed", "unverified"] as const;
+type CountStatus = (typeof LEDGER_STATUSES)[number];
 export const DOCS_PREFIX = "docs/";
 export const TITLE_MAX = 300;
 export const NOTE_MAX = 300;
@@ -19,6 +20,7 @@ export const PATH_MAX = 300;
 export const NUMBER_MAX = 999999;
 
 export type LedgerStatus = (typeof LEDGER_STATUSES)[number];
+type RowStatus = LedgerStatus | "unknown";
 export type LedgerKind = "pr" | "verdict" | "drift";
 export type LedgerLevel = "live-ui-verified" | "unit-test-verified" | "type-check-only" | "verifier-blocked" | "verifier-failed";
 
@@ -110,7 +112,7 @@ export interface SeasonLedger {
   notDraft: number[];
   closed: number[];
   merged: number[];
-  counts: Record<LedgerStatus, number>;
+  counts: Record<CountStatus, number> & { unknown?: number };
   rows: LedgerRow[];
   skipped: {
     lines: { line: number; reason: string }[];
@@ -149,9 +151,19 @@ function rule(field: string, ok: FieldRule["ok"], optional = false): FieldRule {
   return { field, reason: `bad ${field}`, optional, ok };
 }
 
+function driftSegments(value: string): string[] | null {
+  if (value.startsWith("/") || CONTROL_RE.test(value)) return null;
+  const parts = value.split("/");
+  if (parts.some((part) => part === "" || part === "." || part === "..")) return null;
+  return parts;
+}
+
 function goodPath(value: unknown): boolean {
-  return typeof value === "string" && value.length > 0 && codePoints(value) <= PATH_MAX
-    && !value.startsWith("/") && !value.split("/").includes("..") && !CONTROL_RE.test(value);
+  return typeof value === "string" && value.length > 0 && codePoints(value) <= PATH_MAX && driftSegments(value) !== null;
+}
+
+function docsOnlyFiles(files: readonly string[]): boolean {
+  return files.length > 0 && files.every((file) => driftSegments(file) !== null && file.startsWith(DOCS_PREFIX));
 }
 
 const AT = rule("at", (value) => validLedgerAt(value));
@@ -274,11 +286,12 @@ export function prEntriesFromPulls(pulls: unknown, at: string, allowlist: readon
   return { ok: true, entries };
 }
 
-interface RankedVerdict extends LedgerSequenceItem { number: number }
+interface RankedVerdict extends LedgerSequenceItem { number: number; at: string }
 interface Admitted {
   skipped: SeasonLedger["skipped"]["logs"];
   picks: { pickId: string; claim: number | null; verdicts: RankedVerdict[] }[];
   ignored: { selftest: number; otherTarget: number; badVerdicts: number };
+  unknownClaims: number[];
 }
 interface Timed<T> { line: number; entry: T }
 interface Observed {
@@ -300,7 +313,7 @@ interface Classified extends Ordered { rows: LedgerRow[] }
 interface Stacked extends Classified {
   stack: number[];
   offStack: number[];
-  counts: Record<LedgerStatus, number>;
+  counts: Record<CountStatus, number> & { unknown?: number };
   mergeSafeThrough: number | null;
   rerun: number[];
   notDraft: number[];
@@ -332,9 +345,40 @@ function goodVerdict(value: unknown): value is { prNumber: number; headSha: stri
     && Number.isInteger(value.certainty) && (value.certainty as number) >= 1 && (value.certainty as number) <= 5;
 }
 
+function isTorn(log: PickLog): boolean {
+  return (log as { torn?: boolean }).torn === true;
+}
+
+function tornEvents(log: PickLog): readonly DraftEvent[] | null {
+  if (Array.isArray(log.events)) return log.events;
+  const prefix = (log as { prefix?: unknown }).prefix;
+  return Array.isArray(prefix) ? prefix as DraftEvent[] : null;
+}
+
+function tornClaim(log: PickLog, repo: string, clock: number): number | null {
+  const raw = tornEvents(log);
+  if (!raw) return null;
+  const events = [...raw].sort(eventOrder);
+  const created = events.find((event) => (event as { type?: unknown } | null)?.type === "pick_created");
+  if (!created || payloadOf(created).id !== log.pickId) return null;
+  const source = payloadOf(created).source;
+  if (typeof source === "string" && (EXCLUDED_SOURCES as readonly string[]).includes(source)) return null;
+  const targetRaw = payloadOf(created).target;
+  const target = typeof targetRaw === "string" ? targetRaw.trim() : "";
+  if (target !== repo) return null;
+  const stamped = events.map((event) => {
+    const row = (event ?? {}) as DraftEvent;
+    return typeof row.seq === "number" ? row : { ...row, seq: 0 };
+  });
+  const pick = reduce(stamped, clock);
+  const claim = pick?.graft?.recorded ? pick.graft.prNumber : undefined;
+  return typeof claim === "number" && Number.isInteger(claim) && claim > 0 ? claim : null;
+}
+
 function admitPicks(logs: readonly PickLog[], repo: string, now: number | undefined): Admitted {
   const skipped: Admitted["skipped"] = [];
   const picks: Admitted["picks"] = [];
+  const unknownClaims: number[] = [];
   const ignored = { selftest: 0, otherTarget: 0, badVerdicts: 0 };
   const clock = typeof now === "number" && Number.isFinite(now) ? now : Date.now();
   const ordered = [...(logs ?? [])].sort((a, b) => cmp(String(a?.pickId ?? ""), String(b?.pickId ?? "")));
@@ -343,8 +387,12 @@ function admitPicks(logs: readonly PickLog[], repo: string, now: number | undefi
       skipped.push({ pickId: String(log?.pickId), reason: "bad pick id" });
       continue;
     }
-    if (!Array.isArray(log.events)) {
+    if (!Array.isArray(log.events) || isTorn(log)) {
       skipped.push({ pickId: log.pickId, reason: "unreadable" });
+      if (isTorn(log)) {
+        const claim = tornClaim(log, repo, clock);
+        if (claim !== null) unknownClaims.push(claim);
+      }
       continue;
     }
     const events = [...log.events].sort(eventOrder);
@@ -376,8 +424,12 @@ function admitPicks(logs: readonly PickLog[], repo: string, now: number | undefi
     if (!pick) continue;
     const claimRaw = pick.graft?.recorded ? pick.graft.prNumber : undefined;
     const claim = typeof claimRaw === "number" && Number.isInteger(claimRaw) && claimRaw > 0 ? claimRaw : null;
+    const recorded = stamped.filter((event) => event.type === "verdict_recorded");
     const verdicts: RankedVerdict[] = [];
+    let seen = 0;
     for (const verdict of pick.verdicts) {
+      const event = recorded[seen];
+      seen += 1;
       if (!goodVerdict(verdict)) {
         ignored.badVerdicts += 1;
         continue;
@@ -390,11 +442,12 @@ function admitPicks(logs: readonly PickLog[], repo: string, now: number | undefi
         number: verdict.prNumber,
         source: "pick",
         agentId: null,
+        at: typeof event?.ts === "string" ? event.ts : "",
       });
     }
     picks.push({ pickId: log.pickId, claim, verdicts });
   }
-  return { skipped, picks, ignored };
+  return { skipped, picks, ignored, unknownClaims };
 }
 
 function observePrs(admitted: Admitted, book: LedgerBook, repo: string): Observed {
@@ -437,6 +490,16 @@ function later(a: { line: number; entry: { at: string } }, b: { line: number; en
   return Date.parse(a.entry.at) - Date.parse(b.entry.at) || a.line - b.line;
 }
 
+function byTime(a: { at: string; ord: number }, b: { at: string; ord: number }): number {
+  const ta = Date.parse(a.at);
+  const tb = Date.parse(b.at);
+  const aOk = Number.isFinite(ta);
+  const bOk = Number.isFinite(tb);
+  if (aOk && bOk && ta !== tb) return ta - tb;
+  if (aOk !== bOk) return aOk ? -1 : 1;
+  return a.ord - b.ord;
+}
+
 function orderVerdicts(observed: Observed): Ordered {
   const seqByPr = new Map<number, RankedVerdict[]>();
   const claims = new Map<number, string[]>();
@@ -445,13 +508,15 @@ function orderVerdicts(observed: Observed): Ordered {
     if (list) list.push(verdict);
     else seqByPr.set(number, [verdict]);
   };
+  const pending: { at: string; ord: number; verdict: RankedVerdict }[] = [];
+  let ord = 0;
   for (const pick of observed.admitted.picks) {
     if (pick.claim !== null) {
       const list = claims.get(pick.claim);
       if (list) list.push(pick.pickId);
       else claims.set(pick.claim, [pick.pickId]);
     }
-    for (const verdict of pick.verdicts) push(verdict.number, verdict);
+    for (const verdict of pick.verdicts) pending.push({ at: verdict.at, ord: ord++, verdict });
   }
   for (const row of [...observed.ledgerVerdicts].sort(later)) {
     const entry = row.entry;
@@ -463,10 +528,13 @@ function orderVerdicts(observed: Observed): Ordered {
       number: entry.number,
       source: "ledger",
       agentId: entry.agentId ?? null,
+      at: entry.at,
     };
     if (typeof entry.note === "string") ranked.note = entry.note;
-    push(entry.number, ranked);
+    pending.push({ at: entry.at, ord: ord++, verdict: ranked });
   }
+  pending.sort(byTime);
+  for (const item of pending) push(item.verdict.number, item.verdict);
   return { ...observed, seqByPr, claims };
 }
 
@@ -487,8 +555,9 @@ function sequenceItem(verdict: RankedVerdict): LedgerSequenceItem {
   return item;
 }
 
-function whyText(status: LedgerStatus, headSha: string, lastAtHead: LedgerVerdictRef | null, lastVerified: LedgerVerdictRef | null, drift: DriftEntry | null, lastAny: LedgerVerdictRef | null): string {
+function whyText(status: RowStatus, headSha: string, lastAtHead: LedgerVerdictRef | null, lastVerified: LedgerVerdictRef | null, drift: DriftEntry | null, lastAny: LedgerVerdictRef | null): string {
   const head = headSha.slice(0, 7);
+  if (status === "unknown") return `unreadable pick log; head ${head} is not merge-safe`;
   if (status === "fresh" && lastAtHead) return `verified at ${head} (certainty ${lastAtHead.certainty})`;
   if (status === "failed" && lastAtHead) return `${lastAtHead.verdict} at ${head}`;
   if (status === "docs-only" && lastVerified && drift) {
@@ -509,15 +578,17 @@ function classify(ordered: Ordered): Classified {
     const verified = seq.filter((verdict) => verdict.verdict === "VERIFIED");
     const lastVerified = verified.length ? verified[verified.length - 1]! : null;
     const lastAny = seq.length ? seq[seq.length - 1]! : null;
-    let status: LedgerStatus;
+    let status: RowStatus;
     let drift: DriftEntry | null = null;
-    if (lastAtHead) status = lastAtHead.verdict === "VERIFIED" ? "fresh" : "failed";
+    const unreadable = ordered.admitted.unknownClaims.includes(entry.number);
+    if (unreadable) status = "unknown";
+    else if (lastAtHead) status = lastAtHead.verdict === "VERIFIED" ? "fresh" : "failed";
     else if (lastVerified) {
       const matches = ordered.drifts
         .filter((item) => item.entry.number === entry.number && item.entry.fromSha === lastVerified.headSha && item.entry.toSha === entry.headSha)
         .sort(later);
       drift = matches.length ? matches[matches.length - 1]!.entry : null;
-      status = drift && drift.files.every((file) => file.startsWith(DOCS_PREFIX)) ? "docs-only" : "stale";
+      status = drift && docsOnlyFiles(drift.files) ? "docs-only" : "stale";
     } else status = "unverified";
     return {
       number: entry.number,
@@ -529,7 +600,7 @@ function classify(ordered: Ordered): Classified {
       observedAt: entry.at,
       position: null,
       parent: null,
-      status,
+      status: status as LedgerStatus,
       picks: [...(ordered.claims.get(entry.number) ?? [])].sort(),
       verdicts: seq.length,
       last: lastAny
@@ -542,7 +613,7 @@ function classify(ordered: Ordered): Classified {
             agentId: lastAny.agentId,
           }
         : null,
-      verifiedSha: status === "fresh" ? entry.headSha : lastVerified ? lastVerified.headSha : null,
+      verifiedSha: status === "fresh" ? entry.headSha : status === "unknown" || !lastVerified ? null : lastVerified.headSha,
       drift: drift ? { files: drift.files.length, docsOnly: status === "docs-only" } : null,
       why: whyText(status, entry.headSha, lastAtHead, lastVerified, drift, lastAny),
       sequence: seq.map(sequenceItem),
@@ -584,14 +655,21 @@ function stackRows(classified: Classified): Stacked {
     if (row) row.position = index + 1;
   });
   const offStack = rows.map((row) => row.number).filter((number) => !stack.includes(number)).sort((a, b) => a - b);
-  const counts = Object.fromEntries(LEDGER_STATUSES.map((status) => [status, 0])) as Record<LedgerStatus, number>;
-  for (const number of stack) counts[byNumber.get(number)!.status] += 1;
+  const counts = Object.fromEntries(LEDGER_STATUSES.map((status) => [status, 0])) as Record<CountStatus, number> & { unknown?: number };
+  for (const number of stack) {
+    const status = byNumber.get(number)!.status;
+    if ((status as string) === "unknown") counts.unknown = (counts.unknown ?? 0) + 1;
+    else counts[status] += 1;
+  }
   let mergeSafeThrough: number | null = null;
   for (const number of stack) {
     if (!(MERGE_SAFE as readonly string[]).includes(byNumber.get(number)!.status)) break;
     mergeSafeThrough = number;
   }
-  const rerun = stack.filter((number) => (RERUN as readonly string[]).includes(byNumber.get(number)!.status));
+  const rerun = stack.filter((number) => {
+    const status = byNumber.get(number)!.status;
+    return (RERUN as readonly string[]).includes(status) || (status as string) === "unknown";
+  });
   const notDraft = rows.filter((row) => !row.draft).map((row) => row.number).sort((a, b) => a - b);
   const orderedRows = [...stack.map((number) => byNumber.get(number)!), ...offStack.map((number) => byNumber.get(number)!)];
   return { ...classified, rows: orderedRows, stack, offStack, counts, mergeSafeThrough, rerun, notDraft };
@@ -605,6 +683,7 @@ function ledgerSummary(ledger: Pick<SeasonLedger, "open" | "stack" | "mergeSafeT
   parts.push(`merge-safe through ${ledger.mergeSafeThrough === null ? "none" : `#${ledger.mergeSafeThrough}`}`);
   parts.push(`re-run ${ledger.rerun.length ? ledger.rerun.map((number) => `#${number}`).join(", ") : "none"}`);
   const counts = LEDGER_STATUSES.filter((status) => ledger.counts[status] > 0).map((status) => `${ledger.counts[status]} ${status}`);
+  if (ledger.counts.unknown) counts.push(`${ledger.counts.unknown} unknown`);
   if (counts.length) parts.push(counts.join(", "));
   if (ledger.offStack.length) parts.push(`${ledger.offStack.length} off stack`);
   if (ledger.notDraft.length) parts.push(`NOT DRAFT ${ledger.notDraft.map((number) => `#${number}`).join(", ")}`);
